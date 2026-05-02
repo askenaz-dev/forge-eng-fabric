@@ -1,5 +1,25 @@
 # Tasks — bootstrap-forge-platform
 
+> **⚠️ NOTA — CAMBIO META / NO IMPLEMENTABLE DIRECTAMENTE**
+>
+> Este change consolida la **visión, arquitectura y contratos** de Forge end-to-end y **no se implementa directamente con `/opsx-apply`**. Las tareas de implementación se han dividido en changes por fase, cada uno con sus propios `proposal.md`, `design.md`, `specs/` y `tasks.md`:
+>
+> | Fase | Change implementable |
+> |---|---|
+> | Fase 0 — Foundations | `phase-0-foundations` |
+> | Fase 1 — Agentic Platform Core | `phase-1-agentic-core` |
+> | Fase 2 — Workspace & App Onboarding | `phase-2-app-onboarding` |
+> | Fase 3 — Deployable Apps | `phase-3-deployable-apps` |
+> | Fase 4 — SDLC Orchestration | `phase-4-sdlc-orchestration` |
+> | Fase 5 — Workflow Automation & Marketplace | `phase-5-workflow-marketplace` |
+> | Fase 6 — Autonomous Operations & Evolution | `phase-6-autonomous-ops` |
+>
+> Las secciones 8 (Governance) y 9 (Validación) son transversales y se incorporan distribuidas en los changes por fase, aterrizando completamente en las fases finales.
+>
+> Para implementar, ejecuta `openspec list` y luego `/opsx-apply <change-name>` empezando por `phase-0-foundations`.
+>
+> Este documento permanece como **registro histórico** de la visión completa, las decisiones consolidadas y la trazabilidad fase-a-tarea.
+
 Las tareas están agrupadas por **fase del roadmap (0–6)** y, dentro de cada fase, por **capability/spec**. La numeración respeta el orden de dependencias (Fase 0 antes de Fase 1, etc.). Cada tarea es verificable y mapea a uno o más requisitos de las especificaciones.
 
 ## 1. Fase 0 — Foundations: tenancy, IAM, persistencia y backbone
