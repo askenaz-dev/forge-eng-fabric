@@ -5,7 +5,7 @@ description = "Forge Engineering Fabric — Python services workspace"
 requires-python = ">=3.12"
 
 [tool.uv.workspace]
-members = ["services/alfred"]
+members = ["services/alfred", "services/rag-ingest", "services/rag-query", "services/openspec", "services/approvals", "services/permissions", "services/mcp", "skills/reference", "services/prompt-registry"]
 
 [tool.ruff]
 line-length = 100

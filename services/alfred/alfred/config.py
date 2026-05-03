@@ -34,6 +34,11 @@ class Settings(BaseSettings):
     rag_query_url: str = Field(default="http://localhost:8086", alias="RAG_QUERY_URL")
     prompt_registry_url: str = Field(default="http://localhost:8087", alias="PROMPT_REGISTRY_URL")
     permissions_url: str = Field(default="http://localhost:8092", alias="PERMISSIONS_URL")
+    skill_runner_url: str = Field(default="http://localhost:8091", alias="SKILL_RUNNER_URL")
+    mcp_github_url: str = Field(default="http://localhost:8101", alias="MCP_GITHUB_URL")
+    mcp_jira_url: str = Field(default="http://localhost:8102", alias="MCP_JIRA_URL")
+    mcp_confluence_url: str = Field(default="http://localhost:8103", alias="MCP_CONFLUENCE_URL")
+    mcp_openspec_url: str = Field(default="http://localhost:8104", alias="MCP_OPENSPEC_URL")
 
     # Persistence
     postgres_url: str = Field(

@@ -14,10 +14,12 @@ from __future__ import annotations
 
 import json
 import re
+import time
 import uuid
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Awaitable, Callable
+from typing import Any
 
 from alfred.gateways import (
     ApprovalsClient,
@@ -30,6 +32,7 @@ from alfred.guardrails import Guardrails
 from alfred.llm import LiteLLMClient
 from alfred.logging import get_logger
 from alfred.models import DecisionRecord, IntentResponse, Session
+from alfred.observability import AIObserver
 from alfred.redaction import redact
 from alfred.store import Store
 
@@ -52,6 +55,7 @@ class LoopDeps:
     default_model: str
     rag_top_k: int = 8
     max_iterations: int = 8
+    ai_observer: AIObserver | None = None
 
 
 SYSTEM_PROMPT = (
@@ -284,14 +288,33 @@ async def run_intent(
             break
 
         # Allow → execute the tool
+        started = time.perf_counter()
+        result: dict[str, Any]
+        error: str | None = None
         try:
             result = await deps.tool_handler(tool_id, params)
             outcome = "succeeded"
             outcome_detail: dict[str, Any] = {"result_preview": str(result)[:500]}
-        except Exception as exc:  # noqa: BLE001 — convert into decision record
+        except Exception as exc:
             outcome = "failed"
+            error = str(exc)
             outcome_detail = {"error": str(exc)}
             result = {"error": str(exc)}
+        if deps.ai_observer:
+            await deps.ai_observer.capture_tool_call(
+                tool_id=tool_id,
+                params=params,
+                result=result,
+                metadata={
+                    "correlation_id": correlation_id,
+                    "session_id": str(session.id),
+                    "workspace_id": str(workspace_id),
+                    "openspec_id": openspec_id,
+                    "actor": actor,
+                },
+                latency_ms=(time.perf_counter() - started) * 1000,
+                error=error,
+            )
         rec = DecisionRecord(
             session_id=session.id,
             workspace_id=workspace_id,

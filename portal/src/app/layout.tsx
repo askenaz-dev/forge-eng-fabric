@@ -9,16 +9,16 @@ export const metadata = {
 
 const modules = [
   { label: "Workspaces", href: "/" },
-  { label: "Alfred Console", href: "#" },
-  { label: "Asset Registry", href: "#" },
-  { label: "OpenSpecs", href: "#" },
+  { label: "Alfred Console", href: "/alfred" },
+  { label: "Asset Registry", href: "/assets" },
+  { label: "OpenSpecs", href: "/openspecs" },
   { label: "Repositories", href: "/settings/github" },
   { label: "Environments", href: "#" },
   { label: "Deployments", href: "#" },
   { label: "Workflows", href: "#" },
-  { label: "Approvals Inbox", href: "#" },
+  { label: "Approvals Inbox", href: "/approvals" },
   { label: "Observability", href: "#" },
-  { label: "Admin & Governance", href: "#" },
+  { label: "Admin & Governance", href: "/permissions" },
 ];
 
 export default function RootLayout({ children }: { children: ReactNode }) {

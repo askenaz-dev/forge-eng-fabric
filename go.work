@@ -4,5 +4,6 @@ use (
 	./pkg/llmclient
 	./services/audit
 	./services/control-plane
+	./services/policy-engine
 	./services/registry
 )

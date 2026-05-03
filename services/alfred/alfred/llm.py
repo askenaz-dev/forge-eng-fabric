@@ -2,17 +2,21 @@
 
 from __future__ import annotations
 
+import time
 from typing import Any
 
 import httpx
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
+from alfred.observability import AIObserver
+
 
 class LiteLLMClient:
-    def __init__(self, base_url: str, api_key: str, timeout: float = 60.0) -> None:
+    def __init__(self, base_url: str, api_key: str, timeout: float = 60.0, observer: AIObserver | None = None) -> None:
         self._base = base_url.rstrip("/")
         self._key = api_key
         self._timeout = timeout
+        self._observer = observer
 
     @retry(
         reraise=True,
@@ -36,14 +40,36 @@ class LiteLLMClient:
             payload["max_tokens"] = max_tokens
         if metadata:
             payload["metadata"] = metadata
-        async with httpx.AsyncClient(timeout=self._timeout) as client:
-            r = await client.post(
-                f"{self._base}/v1/chat/completions",
-                headers={"authorization": f"Bearer {self._key}"},
-                json=payload,
+        started = time.perf_counter()
+        try:
+            async with httpx.AsyncClient(timeout=self._timeout) as client:
+                r = await client.post(
+                    f"{self._base}/v1/chat/completions",
+                    headers={"authorization": f"Bearer {self._key}"},
+                    json=payload,
+                )
+                r.raise_for_status()
+                response = r.json()
+        except Exception as exc:
+            if self._observer:
+                await self._observer.capture_model_call(
+                    model=model,
+                    messages=messages,
+                    response=None,
+                    metadata=metadata or {},
+                    latency_ms=(time.perf_counter() - started) * 1000,
+                    error=str(exc),
+                )
+            raise
+        if self._observer:
+            await self._observer.capture_model_call(
+                model=model,
+                messages=messages,
+                response=response,
+                metadata=metadata or {},
+                latency_ms=(time.perf_counter() - started) * 1000,
             )
-            r.raise_for_status()
-            return r.json()
+        return response
 
     async def embed(self, *, model: str, inputs: list[str]) -> list[list[float]]:
         async with httpx.AsyncClient(timeout=self._timeout) as client:

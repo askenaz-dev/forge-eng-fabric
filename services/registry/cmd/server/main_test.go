@@ -31,3 +31,28 @@ func TestPhase0AssetTypes(t *testing.T) {
 		}
 	}
 }
+
+func TestLifecycleTransitionsAndEvalThresholds(t *testing.T) {
+	if !canTransition("proposed", "in_review") {
+		t.Fatal("proposed should transition to in_review")
+	}
+	if canTransition("proposed", "approved") {
+		t.Fatal("proposed should not transition directly to approved")
+	}
+	failing := failingEvalScores("T1", map[string]any{"quality": 0.9, "safety": 0.9, "cost": 0.9, "latency": 0.7})
+	if _, ok := failing["latency"]; !ok || len(failing) != 1 {
+		t.Fatalf("expected only latency to fail, got %#v", failing)
+	}
+}
+
+func TestInvocationAllowedRequiresApprovedForProd(t *testing.T) {
+	if ok, _ := invocationAllowed("in_review", "prod"); ok {
+		t.Fatal("in_review asset should not be invocable in prod")
+	}
+	if ok, _ := invocationAllowed("approved", "prod"); !ok {
+		t.Fatal("approved asset should be invocable in prod")
+	}
+	if ok, _ := invocationAllowed("in_review", "dev"); !ok {
+		t.Fatal("dev flow may invoke non-approved assets")
+	}
+}

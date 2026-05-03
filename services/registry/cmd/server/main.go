@@ -87,6 +87,8 @@ func main() {
 			r.Post("/workspaces/{workspaceID}/assets", srv.createAsset)
 			r.Get("/assets/{assetID}", srv.getAssetLatest)
 			r.Get("/assets/{assetID}/versions/{version}", srv.getAssetVersion)
+			r.Post("/assets/{assetID}/versions/{version}/transition", srv.transitionAsset)
+			r.Post("/assets/{assetID}/versions/{version}/invoke-check", srv.checkAssetInvocation)
 		})
 	})
 
@@ -293,6 +295,8 @@ type Asset struct {
 	TenantID       uuid.UUID      `json:"tenant_id"`
 	Visibility     string         `json:"visibility"`
 	LifecycleState string         `json:"lifecycle_state"`
+	TrustLevel     string         `json:"trust_level"`
+	EvalScores     map[string]any `json:"eval_scores"`
 	Owners         []string       `json:"owners"`
 	Metadata       map[string]any `json:"metadata"`
 	CreatedAt      time.Time      `json:"created_at"`
@@ -309,6 +313,8 @@ type assetCreate struct {
 	OutputsSchema  map[string]any `json:"outputs_schema"`
 	Visibility     string         `json:"visibility"`
 	LifecycleState string         `json:"lifecycle_state"`
+	TrustLevel     string         `json:"trust_level"`
+	EvalScores     map[string]any `json:"eval_scores"`
 	Owners         []string       `json:"owners"`
 	Metadata       map[string]any `json:"metadata"`
 }
@@ -318,6 +324,12 @@ var validTypes = map[string]struct{}{
 }
 
 var validVisibility = map[string]struct{}{"workspace": {}, "tenant": {}}
+
+var validLifecycle = map[string]struct{}{"proposed": {}, "in_review": {}, "approved": {}, "deprecated": {}, "retired": {}}
+
+var validTrustLevels = map[string]struct{}{"T0": {}, "T1": {}, "T2": {}, "T3": {}, "T4": {}, "T5": {}}
+
+var evalThresholds = map[string]float64{"T0": 0, "T1": 0.8, "T2": 0.85, "T3": 0.9, "T4": 0.95, "T5": 0.98}
 
 var semverPattern = regexp.MustCompile(`^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$`)
 
@@ -343,7 +355,7 @@ func (s *server) listAssets(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "forbidden", 403)
 		return
 	}
-	q := `SELECT id,version,type,name,COALESCE(description,''),owner_team,inputs_schema,outputs_schema,workspace_id,tenant_id,visibility,lifecycle_state,owners,metadata,created_at,COALESCE(created_by,'')
+	q := `SELECT id,version,type,name,COALESCE(description,''),owner_team,inputs_schema,outputs_schema,workspace_id,tenant_id,visibility,lifecycle_state,COALESCE(trust_level,'T0'),COALESCE(eval_scores,'{}'::jsonb),owners,metadata,created_at,COALESCE(created_by,'')
 		  FROM asset WHERE workspace_id=$1`
 	args := []any{wsID}
 	for _, filter := range []struct{ key, column string }{
@@ -367,7 +379,7 @@ func (s *server) listAssets(w http.ResponseWriter, r *http.Request) {
 	out := []Asset{}
 	for rows.Next() {
 		var a Asset
-		if err := rows.Scan(&a.ID, &a.Version, &a.Type, &a.Name, &a.Description, &a.OwnerTeam, &a.InputsSchema, &a.OutputsSchema, &a.WorkspaceID, &a.TenantID, &a.Visibility, &a.LifecycleState, &a.Owners, &a.Metadata, &a.CreatedAt, &a.CreatedBy); err != nil {
+		if err := rows.Scan(&a.ID, &a.Version, &a.Type, &a.Name, &a.Description, &a.OwnerTeam, &a.InputsSchema, &a.OutputsSchema, &a.WorkspaceID, &a.TenantID, &a.Visibility, &a.LifecycleState, &a.TrustLevel, &a.EvalScores, &a.Owners, &a.Metadata, &a.CreatedAt, &a.CreatedBy); err != nil {
 			http.Error(w, err.Error(), 500)
 			return
 		}
@@ -406,8 +418,18 @@ func (s *server) createAsset(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid visibility", 400)
 		return
 	}
-	if req.LifecycleState != "" && req.LifecycleState != "proposed" {
-		writeJSON(w, 409, map[string]string{"code": "conflict", "message": "Phase 0 only supports lifecycle_state=proposed; full lifecycle transitions arrive in Phase 1"})
+	if req.LifecycleState == "" {
+		req.LifecycleState = "proposed"
+	}
+	if _, ok := validLifecycle[req.LifecycleState]; !ok {
+		http.Error(w, "invalid lifecycle_state", 400)
+		return
+	}
+	if req.TrustLevel == "" {
+		req.TrustLevel = "T0"
+	}
+	if _, ok := validTrustLevels[req.TrustLevel]; !ok {
+		http.Error(w, "invalid trust_level", 400)
 		return
 	}
 	if !semverPattern.MatchString(req.Version) {
@@ -445,13 +467,14 @@ func (s *server) createAsset(w http.ResponseWriter, r *http.Request) {
 	metaBytes, _ := json.Marshal(req.Metadata)
 	inputsBytes, _ := json.Marshal(req.InputsSchema)
 	outputsBytes, _ := json.Marshal(req.OutputsSchema)
+	evalBytes, _ := json.Marshal(req.EvalScores)
 	var a Asset
 	err = s.pool.QueryRow(r.Context(),
-		`INSERT INTO asset(id,version,type,name,description,owner_team,inputs_schema,outputs_schema,workspace_id,tenant_id,visibility,lifecycle_state,owners,metadata,created_by)
-		 VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8::jsonb,$9,$10,$11,'proposed',$12,$13::jsonb,$14)
-		 RETURNING id,version,type,name,COALESCE(description,''),owner_team,inputs_schema,outputs_schema,workspace_id,tenant_id,visibility,lifecycle_state,owners,metadata,created_at,COALESCE(created_by,'')`,
-		assetID, req.Version, req.Type, req.Name, req.Description, req.OwnerTeam, string(inputsBytes), string(outputsBytes), wsID, tenantID, req.Visibility, req.Owners, string(metaBytes), sub).
-		Scan(&a.ID, &a.Version, &a.Type, &a.Name, &a.Description, &a.OwnerTeam, &a.InputsSchema, &a.OutputsSchema, &a.WorkspaceID, &a.TenantID, &a.Visibility, &a.LifecycleState, &a.Owners, &a.Metadata, &a.CreatedAt, &a.CreatedBy)
+		`INSERT INTO asset(id,version,type,name,description,owner_team,inputs_schema,outputs_schema,workspace_id,tenant_id,visibility,lifecycle_state,trust_level,eval_scores,owners,metadata,created_by)
+		 VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8::jsonb,$9,$10,$11,$12,$13,$14::jsonb,$15,$16::jsonb,$17)
+		 RETURNING id,version,type,name,COALESCE(description,''),owner_team,inputs_schema,outputs_schema,workspace_id,tenant_id,visibility,lifecycle_state,COALESCE(trust_level,'T0'),COALESCE(eval_scores,'{}'::jsonb),owners,metadata,created_at,COALESCE(created_by,'')`,
+		assetID, req.Version, req.Type, req.Name, req.Description, req.OwnerTeam, string(inputsBytes), string(outputsBytes), wsID, tenantID, req.Visibility, req.LifecycleState, req.TrustLevel, string(evalBytes), req.Owners, string(metaBytes), sub).
+		Scan(&a.ID, &a.Version, &a.Type, &a.Name, &a.Description, &a.OwnerTeam, &a.InputsSchema, &a.OutputsSchema, &a.WorkspaceID, &a.TenantID, &a.Visibility, &a.LifecycleState, &a.TrustLevel, &a.EvalScores, &a.Owners, &a.Metadata, &a.CreatedAt, &a.CreatedBy)
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
@@ -535,9 +558,9 @@ func (s *server) getAssetLatest(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "assetID")
 	var a Asset
 	err := s.pool.QueryRow(r.Context(),
-		`SELECT id,version,type,name,COALESCE(description,''),owner_team,inputs_schema,outputs_schema,workspace_id,tenant_id,visibility,lifecycle_state,owners,metadata,created_at,COALESCE(created_by,'')
+		`SELECT id,version,type,name,COALESCE(description,''),owner_team,inputs_schema,outputs_schema,workspace_id,tenant_id,visibility,lifecycle_state,COALESCE(trust_level,'T0'),COALESCE(eval_scores,'{}'::jsonb),owners,metadata,created_at,COALESCE(created_by,'')
 		 FROM asset WHERE id=$1 ORDER BY created_at DESC LIMIT 1`, id).
-		Scan(&a.ID, &a.Version, &a.Type, &a.Name, &a.Description, &a.OwnerTeam, &a.InputsSchema, &a.OutputsSchema, &a.WorkspaceID, &a.TenantID, &a.Visibility, &a.LifecycleState, &a.Owners, &a.Metadata, &a.CreatedAt, &a.CreatedBy)
+		Scan(&a.ID, &a.Version, &a.Type, &a.Name, &a.Description, &a.OwnerTeam, &a.InputsSchema, &a.OutputsSchema, &a.WorkspaceID, &a.TenantID, &a.Visibility, &a.LifecycleState, &a.TrustLevel, &a.EvalScores, &a.Owners, &a.Metadata, &a.CreatedAt, &a.CreatedBy)
 	if err != nil {
 		http.Error(w, "not found", 404)
 		return
@@ -550,12 +573,163 @@ func (s *server) getAssetVersion(w http.ResponseWriter, r *http.Request) {
 	v := chi.URLParam(r, "version")
 	var a Asset
 	err := s.pool.QueryRow(r.Context(),
-		`SELECT id,version,type,name,COALESCE(description,''),owner_team,inputs_schema,outputs_schema,workspace_id,tenant_id,visibility,lifecycle_state,owners,metadata,created_at,COALESCE(created_by,'')
+		`SELECT id,version,type,name,COALESCE(description,''),owner_team,inputs_schema,outputs_schema,workspace_id,tenant_id,visibility,lifecycle_state,COALESCE(trust_level,'T0'),COALESCE(eval_scores,'{}'::jsonb),owners,metadata,created_at,COALESCE(created_by,'')
 		 FROM asset WHERE id=$1 AND version=$2`, id, v).
-		Scan(&a.ID, &a.Version, &a.Type, &a.Name, &a.Description, &a.OwnerTeam, &a.InputsSchema, &a.OutputsSchema, &a.WorkspaceID, &a.TenantID, &a.Visibility, &a.LifecycleState, &a.Owners, &a.Metadata, &a.CreatedAt, &a.CreatedBy)
+		Scan(&a.ID, &a.Version, &a.Type, &a.Name, &a.Description, &a.OwnerTeam, &a.InputsSchema, &a.OutputsSchema, &a.WorkspaceID, &a.TenantID, &a.Visibility, &a.LifecycleState, &a.TrustLevel, &a.EvalScores, &a.Owners, &a.Metadata, &a.CreatedAt, &a.CreatedBy)
 	if err != nil {
 		http.Error(w, "not found", 404)
 		return
 	}
 	writeJSON(w, 200, a)
+}
+
+type lifecycleTransition struct {
+	LifecycleState     string         `json:"lifecycle_state"`
+	TrustLevel         string         `json:"trust_level"`
+	EvalScores         map[string]any `json:"eval_scores"`
+	ApprovedBySDLCteam bool           `json:"approved_by_sdlc_team"`
+}
+
+func (s *server) transitionAsset(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "assetID")
+	v := chi.URLParam(r, "version")
+	var req lifecycleTransition
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid body", 400)
+		return
+	}
+	if _, ok := validLifecycle[req.LifecycleState]; !ok {
+		http.Error(w, "invalid lifecycle_state", 400)
+		return
+	}
+	if req.TrustLevel == "" {
+		req.TrustLevel = "T0"
+	}
+	if _, ok := validTrustLevels[req.TrustLevel]; !ok {
+		http.Error(w, "invalid trust_level", 400)
+		return
+	}
+	var current string
+	if err := s.pool.QueryRow(r.Context(), `SELECT lifecycle_state FROM asset WHERE id=$1 AND version=$2`, id, v).Scan(&current); err != nil {
+		http.Error(w, "not found", 404)
+		return
+	}
+	if !canTransition(current, req.LifecycleState) {
+		writeJSON(w, 409, map[string]string{"code": "invalid_transition", "message": "lifecycle transition is not allowed"})
+		return
+	}
+	if req.LifecycleState == "approved" {
+		if req.TrustLevel == "T5" && !req.ApprovedBySDLCteam {
+			writeJSON(w, 202, map[string]any{"decision": "requires_approval", "required_approvers": []string{"sdlc-team"}})
+			return
+		}
+		if failing := failingEvalScores(req.TrustLevel, req.EvalScores); len(failing) > 0 {
+			writeJSON(w, 400, map[string]any{"code": "eval_threshold_failed", "failing": failing})
+			return
+		}
+	}
+	evalBytes, _ := json.Marshal(req.EvalScores)
+	var a Asset
+	err := s.pool.QueryRow(r.Context(),
+		`UPDATE asset SET lifecycle_state=$3, trust_level=$4, eval_scores=$5::jsonb WHERE id=$1 AND version=$2
+		 RETURNING id,version,type,name,COALESCE(description,''),owner_team,inputs_schema,outputs_schema,workspace_id,tenant_id,visibility,lifecycle_state,COALESCE(trust_level,'T0'),COALESCE(eval_scores,'{}'::jsonb),owners,metadata,created_at,COALESCE(created_by,'')`,
+		id, v, req.LifecycleState, req.TrustLevel, string(evalBytes)).
+		Scan(&a.ID, &a.Version, &a.Type, &a.Name, &a.Description, &a.OwnerTeam, &a.InputsSchema, &a.OutputsSchema, &a.WorkspaceID, &a.TenantID, &a.Visibility, &a.LifecycleState, &a.TrustLevel, &a.EvalScores, &a.Owners, &a.Metadata, &a.CreatedAt, &a.CreatedBy)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	s.publishAssetLifecycleEvent(r, a, current, req.LifecycleState)
+	writeJSON(w, 200, a)
+}
+
+type invokeCheck struct {
+	Environment string `json:"environment"`
+}
+
+func (s *server) checkAssetInvocation(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "assetID")
+	v := chi.URLParam(r, "version")
+	var req invokeCheck
+	_ = json.NewDecoder(r.Body).Decode(&req)
+	var state string
+	err := s.pool.QueryRow(r.Context(), `SELECT lifecycle_state FROM asset WHERE id=$1 AND version=$2`, id, v).Scan(&state)
+	if err != nil {
+		http.Error(w, "not found", 404)
+		return
+	}
+	allowed, reason := invocationAllowed(state, req.Environment)
+	writeJSON(w, 200, map[string]any{"allowed": allowed, "reason": reason})
+}
+
+func canTransition(from, to string) bool {
+	allowed := map[string][]string{
+		"proposed":   {"in_review", "retired"},
+		"in_review":  {"approved", "proposed", "retired"},
+		"approved":   {"deprecated", "retired"},
+		"deprecated": {"retired"},
+		"retired":    {},
+	}
+	for _, candidate := range allowed[from] {
+		if candidate == to {
+			return true
+		}
+	}
+	return from == to
+}
+
+func failingEvalScores(trustLevel string, scores map[string]any) map[string]any {
+	threshold := evalThresholds[trustLevel]
+	failing := map[string]any{}
+	for _, key := range []string{"quality", "safety", "cost", "latency"} {
+		value, ok := numeric(scores[key])
+		if !ok || value < threshold {
+			failing[key] = scores[key]
+		}
+	}
+	return failing
+}
+
+func numeric(value any) (float64, bool) {
+	switch v := value.(type) {
+	case float64:
+		return v, true
+	case int:
+		return float64(v), true
+	case json.Number:
+		f, err := v.Float64()
+		return f, err == nil
+	default:
+		return 0, false
+	}
+}
+
+func invocationAllowed(lifecycleState, environment string) (bool, string) {
+	if environment == "prod" || environment == "production" || environment == "staging" {
+		if lifecycleState != "approved" {
+			return false, "production-relevant flows require approved assets"
+		}
+	}
+	return true, "allowed"
+}
+
+func (s *server) publishAssetLifecycleEvent(r *http.Request, a Asset, from, to string) {
+	cid, _ := r.Context().Value(cidKey).(string)
+	sub, _ := r.Context().Value(subjectKey).(string)
+	envelope := map[string]any{
+		"specversion":        "1.0",
+		"id":                 uuid.NewString(),
+		"source":             "forge://service/registry",
+		"type":               "com.forge.asset.lifecycle.transitioned.v1",
+		"subject":            "asset/" + a.ID + "@" + a.Version,
+		"time":               time.Now().UTC().Format(time.RFC3339Nano),
+		"datacontenttype":    "application/json",
+		"forgetenantid":      a.TenantID.String(),
+		"forgeworkspaceid":   a.WorkspaceID.String(),
+		"forgeactor":         "user:" + sub,
+		"forgecorrelationid": cid,
+		"data":               map[string]any{"asset_id": a.ID, "version": a.Version, "from": from, "to": to, "trust_level": a.TrustLevel, "eval_scores": a.EvalScores},
+	}
+	body, _ := json.Marshal(envelope)
+	_ = s.kc.ProduceSync(r.Context(), &kgo.Record{Topic: s.topic, Key: []byte(a.TenantID.String()), Value: body}).FirstErr()
 }

@@ -1,0 +1,25 @@
+assets:
+  - id: skill-create-user-stories
+    type: skill
+    name: create-user-stories
+    version: 0.1.0
+    lifecycle_state: approved
+    trust_level: T1
+    eval_suite: deterministic-reference-skills
+    eval_scores: {schema: 1.0, latency: 1.0, cost: 1.0, safety: 1.0}
+  - id: skill-scaffold-service
+    type: skill
+    name: scaffold-service
+    version: 0.1.0
+    lifecycle_state: approved
+    trust_level: T1
+    eval_suite: deterministic-reference-skills
+    eval_scores: {schema: 1.0, latency: 1.0, cost: 1.0, safety: 1.0}
+  - id: skill-generate-test-cases
+    type: skill
+    name: generate-test-cases
+    version: 0.1.0
+    lifecycle_state: approved
+    trust_level: T1
+    eval_suite: deterministic-reference-skills
+    eval_scores: {schema: 1.0, latency: 1.0, cost: 1.0, safety: 1.0}

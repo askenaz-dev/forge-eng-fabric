@@ -12,8 +12,11 @@ Provides:
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable
+from datetime import datetime
+from typing import Any
+from uuid import uuid4
 
 import jsonschema
 
@@ -45,6 +48,42 @@ class GuardrailTrip:
     source: str
     detail: dict[str, Any] = field(default_factory=dict)
 
+    def cloud_event(self) -> dict[str, Any]:
+        return {
+            "specversion": "1.0",
+            "id": str(uuid4()),
+            "source": "forge.alfred.guardrails",
+            "type": "guardrail.trip.v1",
+            "subject": self.source,
+            "time": datetime.utcnow().isoformat() + "Z",
+            "data": {
+                "severity": self.severity,
+                "pattern": self.pattern,
+                "source": self.source,
+                "detail": self.detail,
+            },
+        }
+
+
+@dataclass
+class GuardrailMetrics:
+    counts: dict[tuple[str, str, str], int] = field(default_factory=dict)
+
+    def record(self, trip: GuardrailTrip) -> None:
+        key = (trip.severity, trip.pattern, trip.source)
+        self.counts[key] = self.counts.get(key, 0) + 1
+
+    def prometheus_text(self) -> str:
+        lines = [
+            "# HELP forge_guardrail_trips_total Guardrail trips by severity, pattern and source.",
+            "# TYPE forge_guardrail_trips_total counter",
+        ]
+        for (severity, pattern, source), count in sorted(self.counts.items()):
+            lines.append(
+                f'forge_guardrail_trips_total{{severity="{severity}",pattern="{_escape(pattern)}",source="{_escape(source)}"}} {count}'
+            )
+        return "\n".join(lines) + "\n"
+
 
 GuardrailEmitter = Callable[[GuardrailTrip], None]
 
@@ -52,6 +91,7 @@ GuardrailEmitter = Callable[[GuardrailTrip], None]
 @dataclass
 class Guardrails:
     emit_trip: GuardrailEmitter = field(default=lambda _: None)
+    metrics: GuardrailMetrics = field(default_factory=GuardrailMetrics)
     trust_allowlists: dict[str, set[str]] = field(default_factory=dict)
     # trust_allowlists maps tool_id -> set of allowed (trust_level, data_classification, env)
     # in the form "T1:public:dev". The simplest enforcement, sufficient for Phase 1.
@@ -67,7 +107,7 @@ class Guardrails:
                     source=source,
                     detail={"match": m.group(0)[:120]},
                 )
-                self.emit_trip(trip)
+                self._emit(trip)
                 trips.append(trip)
         return trips
 
@@ -134,7 +174,7 @@ class Guardrails:
         key = f"{trust_level}:{data_classification}:{env}"
         ok = key in allow
         if not ok:
-            self.emit_trip(
+            self._emit(
                 GuardrailTrip(
                     severity="high",
                     pattern="off-allowlist-tool",
@@ -151,7 +191,7 @@ class Guardrails:
             jsonschema.validate(instance=output, schema=schema)
             return True, None
         except jsonschema.ValidationError as exc:
-            self.emit_trip(
+            self._emit(
                 GuardrailTrip(
                     severity="medium",
                     pattern="output-schema-violation",
@@ -160,3 +200,11 @@ class Guardrails:
                 )
             )
             return False, exc.message
+
+    def _emit(self, trip: GuardrailTrip) -> None:
+        self.metrics.record(trip)
+        self.emit_trip(trip)
+
+
+def _escape(value: str) -> str:
+    return value.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")

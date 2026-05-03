@@ -1,0 +1,30 @@
+{
+  "title": "Forge AI Observability",
+  "schemaVersion": 39,
+  "tags": ["forge", "ai", "phase-1"],
+  "panels": [
+    {
+      "title": "AI cost trend by workspace",
+      "type": "timeseries",
+      "targets": [{ "expr": "sum by (workspace_id, model) (rate(litellm_spend_total[5m]))" }]
+    },
+    {
+      "title": "LLM latency p95/p99 by asset",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "histogram_quantile(0.95, sum by (le, asset_id) (rate(litellm_request_duration_seconds_bucket[5m])))" },
+        { "expr": "histogram_quantile(0.99, sum by (le, asset_id) (rate(litellm_request_duration_seconds_bucket[5m])))" }
+      ]
+    },
+    {
+      "title": "Guardrail trip rate",
+      "type": "timeseries",
+      "targets": [{ "expr": "sum by (severity, pattern) (rate(forge_guardrail_trips_total[5m]))" }]
+    },
+    {
+      "title": "Eval score trend",
+      "type": "timeseries",
+      "targets": [{ "expr": "avg by (asset_id, dimension) (forge_eval_score)" }]
+    }
+  ]
+}

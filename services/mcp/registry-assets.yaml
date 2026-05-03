@@ -1,0 +1,29 @@
+assets:
+  - id: mcp-github
+    type: mcp
+    name: GitHub MCP
+    version: 0.1.0
+    lifecycle_state: approved
+    trust_level: T1
+    eval_scores: {quality: 1.0, safety: 1.0, cost: 1.0, latency: 1.0}
+  - id: mcp-jira
+    type: mcp
+    name: Jira MCP
+    version: 0.1.0
+    lifecycle_state: approved
+    trust_level: T1
+    eval_scores: {quality: 1.0, safety: 1.0, cost: 1.0, latency: 1.0}
+  - id: mcp-confluence
+    type: mcp
+    name: Confluence MCP
+    version: 0.1.0
+    lifecycle_state: approved
+    trust_level: T1
+    eval_scores: {quality: 1.0, safety: 1.0, cost: 1.0, latency: 1.0}
+  - id: mcp-openspec
+    type: mcp
+    name: OpenSpec MCP
+    version: 0.1.0
+    lifecycle_state: approved
+    trust_level: T1
+    eval_scores: {quality: 1.0, safety: 1.0, cost: 1.0, latency: 1.0}
