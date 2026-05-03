@@ -1,0 +1,16 @@
+policies:
+  - id: "thresholds-low"
+    priority: 10
+    decision: "allow"
+    condition: "criticality == 'low'"
+    rationale: "low criticality uses default thresholds"
+  - id: "thresholds-medium"
+    priority: 20
+    decision: "allow"
+    condition: "criticality == 'medium'"
+    rationale: "medium criticality uses medium thresholds"
+  - id: "gate-enforce-signing"
+    priority: 100
+    decision: "requires_approval"
+    condition: "action == 'publish:image' && env == 'main'"
+    rationale: "image publish to main requires signing/attestation"

@@ -54,7 +54,7 @@ type Document struct {
 }
 
 type Engine struct {
-	policies []Rule
+    policies []Rule
 }
 
 func NewEngine(policies []Rule) *Engine {
@@ -92,20 +92,51 @@ func DefaultEngine() *Engine {
 }
 
 func (e *Engine) Evaluate(req EvaluateRequest) (EvaluateResponse, error) {
-	matched := []Rule{}
-	for _, rule := range e.policies {
-		ok, err := evalCEL(rule.Condition, req)
-		if err != nil {
-			return EvaluateResponse{}, fmt.Errorf("policy %s: %w", rule.ID, err)
-		}
-		if ok {
-			matched = append(matched, rule)
-		}
-	}
-	if len(matched) == 0 {
-		return EvaluateResponse{Decision: Allow, Rationale: "no policy matched"}, nil
-	}
-	return mostRestrictive(matched), nil
+    matched := []Rule{}
+    for _, rule := range e.policies {
+        ok, err := evalCEL(rule.Condition, req)
+        if err != nil {
+            return EvaluateResponse{}, fmt.Errorf("policy %s: %w", rule.ID, err)
+        }
+        if ok {
+            matched = append(matched, rule)
+        }
+    }
+    if len(matched) == 0 {
+        return EvaluateResponse{Decision: Allow, Rationale: "no policy matched"}, nil
+    }
+    return mostRestrictive(matched), nil
+}
+
+// EvaluatePipelineGate is a convenience to evaluate pipeline gate events.
+func (e *Engine) EvaluatePipelineGate(event map[string]any) (EvaluateResponse, error) {
+    req := EvaluateRequest{
+        Principal:          strOr(event["principal"]),
+        Action:             strOr(event["action"]),
+        WorkspaceID:        strOr(event["workspace_id"]),
+        Env:                strOr(event["env"]),
+        Criticality:        strOr(event["criticality"]),
+        TrustLevel:         strOr(event["trust_level"]),
+        DataClassification: strOr(event["data_classification"]),
+        Role:               strOr(event["role"]),
+        Responsible:        strOr(event["responsible"]),
+        Target:             mapOr(event["target"]),
+    }
+    return e.Evaluate(req)
+}
+
+func strOr(v any) string {
+    if s, ok := v.(string); ok {
+        return s
+    }
+    return ""
+}
+
+func mapOr(v any) map[string]any {
+    if m, ok := v.(map[string]any); ok {
+        return m
+    }
+    return map[string]any{}
 }
 
 func mostRestrictive(rules []Rule) EvaluateResponse {

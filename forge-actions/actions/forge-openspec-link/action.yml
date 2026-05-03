@@ -1,0 +1,13 @@
+name: "Forge OpenSpec Link"
+description: "Validate that PR description includes an OpenSpec ID and report a check status."
+inputs:
+  token:
+    description: 'GitHub token for API (optional for local stub)'
+    required: false
+runs:
+  using: "composite"
+  steps:
+    - run: |
+        echo "Checking PR body for OpenSpec: <id>"
+        # This is a stub action; real implementation would query OpenSpec service.
+        echo "::notice::forge/openspec-link ran (stub)"

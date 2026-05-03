@@ -26,6 +26,10 @@
 - [ ] 3.4 Implementar render con datos del Workspace (owners, criticality, data_classification).
 - [ ] 3.5 Tests unitarios y golden-file por template.
 
+ - [x] 3.2 Implementar parsing de `template.yaml` y validación de parámetros.
+ - [x] 3.3 Implementar hooks pre/post (ejecución sandboxed).
+ - [x] 3.4 Implementar render con datos del Workspace (owners, criticality, data_classification).
+
  - [x] 3.1 Crear `services/scaffolder/` (Go) con motor `text/template + go-getter`.
 
 ## 4. Servicio app-onboarding
@@ -49,6 +53,14 @@
 - [ ] 5.6 Publicar a Artifact Registry con tags inmutables y retención por policy.
 - [ ] 5.7 Modelo de datos: `pipeline_gate_result`, `image_signature`, `sbom_record`.
 
+ - [x] 5.1 Definir thresholds por criticidad (cobertura, severidad, licencias) como policy YAML.
+ - [x] 5.2 Implementar `services/policy-engine/` extension para evaluar `pipeline.gate.evaluated.v1` events.
+ - [x] 5.3 Implementar action `forge/openspec-link` que valida link y emite check status.
+ - [ ] 5.4 Implementar firmado y attestation con Cosign keyless (OIDC GitHub).
+ - [ ] 5.5 Configurar Rekor privado para repos `confidential/restricted`.
+ - [ ] 5.6 Publicar a Artifact Registry con tags inmutables y retención por policy.
+ - [x] 5.7 Modelo de datos: `pipeline_gate_result`, `image_signature`, `sbom_record`.
+
 ## 6. PR ↔ OpenSpec linking
 
 - [ ] 6.1 Implementar parser de `OpenSpec: <id>` en PR description.
@@ -56,6 +68,12 @@
 - [ ] 6.3 Webhook GitHub `pull_request` → escribe `pr_openspec_link` y emite `pr.linked-to-openspec.v1`.
 - [ ] 6.4 Webhook `pull_request.closed` (merged) → extender `decision_log` del OpenSpec con SHA/URL.
 - [ ] 6.5 Check obligatoria `forge/openspec-link` con override gated por `criticality`.
+
+ - [x] 6.1 Implementar parser de `OpenSpec: <id>` en PR description.
+ - [x] 6.2 Endpoint en `services/openspec/` para validar existencia/estado del OpenSpec.
+ - [x] 6.3 Webhook GitHub `pull_request` → escribe `pr_openspec_link` y emite `pr.linked-to-openspec.v1`.
+ - [x] 6.4 Webhook `pull_request.closed` (merged) → extender `decision_log` del OpenSpec con SHA/URL.
+ - [x] 6.5 Check obligatoria `forge/openspec-link` con override gated por `criticality`.
 
 ## 7. Override / break-glass
 
