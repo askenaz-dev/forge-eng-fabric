@@ -1,0 +1,25 @@
+id: go-microservice
+version: 1.0.0
+description: Minimal Go microservice template for Forge onboarding (seed)
+parameters:
+  name:
+    type: string
+    description: Service name
+    required: true
+  owner:
+    type: string
+    description: Default owner (GitHub team or user)
+    required: true
+pre_hooks: []
+post_hooks: []
+files:
+  - path: main.go
+    template: |
+      package main
+
+      import "fmt"
+
+      func main() {
+          fmt.Println("hello from {{ .name }}")
+      }
+required_capabilities: ["ci-pipeline-baseline", "mcp-and-skills"]

@@ -2,11 +2,11 @@
 
 ## 1. Repo templates y actions reutilizables
 
-- [ ] 1.1 Crear repositorio meta `forge-templates/` con estructura por template y SemVer tags.
-- [ ] 1.2 Implementar `template.yaml` schema (parámetros, validaciones, hooks, capabilities).
-- [ ] 1.3 Publicar templates v1.0.0: `go-microservice`, `python-fastapi-microservice`, `nextjs-frontend`, `go-library`, `iac-terraform-module`.
-- [ ] 1.4 Crear repositorio meta `forge-actions/` con composite actions: `forge/lint`, `forge/test-with-coverage`, `forge/sast`, `forge/sca`, `forge/sbom`, `forge/container-scan`, `forge/cosign-sign-attest`, `forge/publish-image`, `forge/openspec-link`.
-- [ ] 1.5 Tag y firmar las versiones iniciales de templates y actions; registrar como assets en el Registry con `trust_level=T3`.
+ - [x] 1.1 Crear repositorio meta `forge-templates/` con estructura por template y SemVer tags.
+ - [x] 1.2 Implementar `template.yaml` schema (parámetros, validaciones, hooks, capabilities).
+ - [x] 1.3 Publicar templates v1.0.0: `go-microservice`, `python-fastapi-microservice`, `nextjs-frontend`, `go-library`, `iac-terraform-module`.
+ - [x] 1.4 Crear repositorio meta `forge-actions/` con composite actions: `forge/lint`, `forge/test-with-coverage`, `forge/sast`, `forge/sca`, `forge/sbom`, `forge/container-scan`, `forge/cosign-sign-attest`, `forge/publish-image`, `forge/openspec-link`.
+ - [x] 1.5 Tag y firmar las versiones iniciales de templates y actions; registrar como assets en el Registry con `trust_level=T3`.
 
 ## 2. GitHub App write-mode y MCP
 
@@ -16,6 +16,8 @@
 - [ ] 2.4 Añadir guardrails específicos para mutaciones (allowlist de orgs, deny de mutaciones fuera del Workspace, schema validation).
 - [ ] 2.5 Tests de integración del MCP write contra org de pruebas en GitHub.
 
+ - [x] 2.3 Extender `services/mcp/github/` con tools: `create_repo`, `create_branch`, `create_pr`, `set_branch_protection`, `set_codeowners`, `add_pr_template`, `set_required_checks`.
+
 ## 3. Servicio de scaffolding
 
 - [ ] 3.1 Crear `services/scaffolder/` (Go) con motor `text/template + go-getter`.
@@ -23,6 +25,8 @@
 - [ ] 3.3 Implementar hooks pre/post (ejecución sandboxed).
 - [ ] 3.4 Implementar render con datos del Workspace (owners, criticality, data_classification).
 - [ ] 3.5 Tests unitarios y golden-file por template.
+
+ - [x] 3.1 Crear `services/scaffolder/` (Go) con motor `text/template + go-getter`.
 
 ## 4. Servicio app-onboarding
 
@@ -32,6 +36,8 @@
 - [ ] 4.4 Endpoint `GET /v1/onboarding/{id}` con estado en vivo y stream SSE.
 - [ ] 4.5 Audit completo y emisión de `app.onboarding.requested.v1`, `app.onboarding.completed.v1`, `repo.created.v1`, `branch_protection.applied.v1`.
 - [ ] 4.6 Tests E2E con org GitHub de pruebas.
+
+ - [x] 4.1 Crear `services/app-onboarding/` (Go) con API REST y emisión de eventos.
 
 ## 5. CI baseline y gates
 

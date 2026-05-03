@@ -1,0 +1,10 @@
+name: "Forge Lint"
+description: "Run linters for supported languages"
+inputs:
+  paths:
+    description: 'Paths to lint'
+    required: false
+runs:
+  using: "composite"
+  steps:
+    - run: echo "lint step (stub)"
