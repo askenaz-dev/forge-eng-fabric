@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://forge.local/contracts/events/asset.created.v1.json",
+  "title": "asset.created.v1",
+  "type": "object",
+  "required": ["asset_id", "version", "tenant_id", "workspace_id", "type", "name", "lifecycle_state", "created_at"],
+  "properties": {
+    "asset_id": { "type": "string" },
+    "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "tenant_id": { "type": "string", "format": "uuid" },
+    "workspace_id": { "type": "string", "format": "uuid" },
+    "type": { "type": "string", "enum": ["skill", "prompt", "mcp", "workflow", "application", "repo_template", "eval_dataset", "healing_action"] },
+    "name": { "type": "string" },
+    "lifecycle_state": { "const": "proposed" },
+    "trust_level": { "type": "string", "enum": ["T0", "T1", "T2", "T3", "T4", "T5"] },
+    "owners": { "type": "array", "items": { "type": "string" } },
+    "metadata": { "type": "object", "additionalProperties": true },
+    "created_at": { "type": "string", "format": "date-time" },
+    "created_by": { "type": "string" }
+  },
+  "additionalProperties": false
+}

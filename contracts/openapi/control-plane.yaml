@@ -1,0 +1,216 @@
+openapi: 3.1.0
+info:
+  title: Forge Control Plane API
+  version: 0.1.0
+  description: |
+    Phase 0 minimal control-plane. Manages Tenant, BusinessUnit, Workspace and
+    GitHub Installation resources. All endpoints require a Keycloak-issued JWT.
+servers:
+  - url: http://localhost:8081
+    description: Local docker-compose
+security:
+  - bearerAuth: []
+paths:
+  /healthz:
+    get:
+      summary: Liveness probe
+      security: []
+      responses: { "200": { description: ok } }
+  /readyz:
+    get:
+      summary: Readiness probe
+      security: []
+      responses: { "200": { description: ready } }
+
+  /v1/tenants:
+    get:
+      summary: List tenants the caller belongs to
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Tenant" }
+    post:
+      summary: Create a tenant (platform admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TenantCreate" }
+      responses:
+        "201":
+          description: created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Tenant" }
+
+  /v1/tenants/{tenantId}/business-units:
+    parameters:
+      - { name: tenantId, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: List business units in a tenant
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/BusinessUnit" }
+    post:
+      summary: Create a business unit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/BusinessUnitCreate" }
+      responses:
+        "201":
+          description: created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BusinessUnit" }
+
+  /v1/business-units/{buId}/workspaces:
+    parameters:
+      - { name: buId, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: List workspaces in a business unit
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Workspace" }
+    post:
+      summary: Create a workspace
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/WorkspaceCreate" }
+      responses:
+        "201":
+          description: created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Workspace" }
+
+  /v1/workspaces:
+    get:
+      summary: List workspaces visible to the caller across all BUs
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Workspace" }
+
+  /v1/workspaces/{workspaceId}:
+    parameters:
+      - { name: workspaceId, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: Get a workspace
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Workspace" }
+        "404": { description: not found }
+    patch:
+      summary: Update a workspace
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/WorkspaceUpdate" }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Workspace" }
+    delete:
+      summary: Archive a workspace (soft-delete)
+      responses:
+        "204": { description: archived }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Tenant:
+      type: object
+      required: [id, name, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        created_at: { type: string, format: date-time }
+    TenantCreate:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 100 }
+    BusinessUnit:
+      type: object
+      required: [id, tenant_id, name, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        tenant_id: { type: string, format: uuid }
+        name: { type: string }
+        created_at: { type: string, format: date-time }
+    BusinessUnitCreate:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 100 }
+    Workspace:
+      type: object
+      required: [id, business_unit_id, tenant_id, name, owners, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        tenant_id: { type: string, format: uuid }
+        business_unit_id: { type: string, format: uuid }
+        name: { type: string }
+        description: { type: string }
+        owners:
+          type: array
+          items: { type: string }
+        archived_at: { type: string, format: date-time, nullable: true }
+        created_at: { type: string, format: date-time }
+    WorkspaceCreate:
+      type: object
+      required: [name, owners]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 100 }
+        description: { type: string, maxLength: 1000 }
+        owners:
+          type: array
+          minItems: 1
+          items: { type: string }
+    WorkspaceUpdate:
+      type: object
+      properties:
+        name: { type: string }
+        description: { type: string }
+        owners:
+          type: array
+          items: { type: string }
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: string }
+        message: { type: string }
+        correlation_id: { type: string }

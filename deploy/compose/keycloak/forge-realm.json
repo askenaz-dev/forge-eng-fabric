@@ -1,0 +1,110 @@
+{
+  "realm": "forge",
+  "enabled": true,
+  "displayName": "Forge Engineering Fabric",
+  "registrationAllowed": false,
+  "resetPasswordAllowed": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "sslRequired": "none",
+  "accessTokenLifespan": 900,
+  "refreshTokenMaxReuse": 0,
+  "roles": {
+    "realm": [
+      { "name": "platform-admin", "description": "Platform-wide administrator" },
+      { "name": "tenant-admin",   "description": "Administrator within a tenant" },
+      { "name": "developer",      "description": "Standard developer role" }
+    ]
+  },
+  "groups": [
+    { "name": "forge-admins" },
+    { "name": "forge-developers" }
+  ],
+  "users": [
+    {
+      "username": "alice",
+      "enabled": true,
+      "email": "alice@forge.local",
+      "firstName": "Alice",
+      "lastName": "Admin",
+      "emailVerified": true,
+      "credentials": [
+        { "type": "password", "value": "alice", "temporary": false }
+      ],
+      "realmRoles": ["platform-admin", "tenant-admin", "developer"],
+      "groups": ["/forge-admins"]
+    },
+    {
+      "username": "bob",
+      "enabled": true,
+      "email": "bob@forge.local",
+      "firstName": "Bob",
+      "lastName": "Developer",
+      "emailVerified": true,
+      "credentials": [
+        { "type": "password", "value": "bob", "temporary": false }
+      ],
+      "realmRoles": ["developer"],
+      "groups": ["/forge-developers"]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "forge-portal",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": [
+        "http://localhost:3000/*"
+      ],
+      "webOrigins": ["http://localhost:3000"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "protocolMappers": [
+        {
+          "name": "audience-control-plane",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.client.audience": "forge-control-plane",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        },
+        {
+          "name": "groups",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-group-membership-mapper",
+          "config": {
+            "claim.name": "groups",
+            "full.path": "false",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "forge-control-plane",
+      "enabled": true,
+      "bearerOnly": true,
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "serviceAccountsEnabled": false
+    },
+    {
+      "clientId": "forge-cli",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": ["http://localhost:*", "urn:ietf:wg:oauth:2.0:oob"],
+      "attributes": { "pkce.code.challenge.method": "S256" }
+    }
+  ],
+  "defaultDefaultClientScopes": ["profile", "email", "roles"],
+  "defaultOptionalClientScopes": ["offline_access"]
+}

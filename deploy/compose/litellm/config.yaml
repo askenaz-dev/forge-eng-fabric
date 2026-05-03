@@ -1,0 +1,19 @@
+model_list:
+  - model_name: stub-chat
+    litellm_params:
+      model: openai/stub-chat
+      api_base: http://litellm:4000/v1   # self-loop placeholder; replaced when a real provider is configured
+      api_key: "sk-forge-local"
+
+  # Add real providers (Vertex AI, OpenAI, Anthropic, etc.) by exporting their
+  # credentials as env vars and adding entries here. They are intentionally
+  # absent in the local-first slice.
+
+litellm_settings:
+  drop_params: true
+  num_retries: 1
+  request_timeout: 30
+  telemetry: false
+
+general_settings:
+  master_key: "sk-forge-local"

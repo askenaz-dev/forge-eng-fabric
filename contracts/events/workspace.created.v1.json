@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://forge.local/contracts/events/workspace.created.v1.json",
+  "title": "workspace.created.v1",
+  "type": "object",
+  "required": ["workspace_id", "tenant_id", "business_unit_id", "name", "owners", "created_at"],
+  "properties": {
+    "workspace_id": { "type": "string", "format": "uuid" },
+    "tenant_id": { "type": "string", "format": "uuid" },
+    "business_unit_id": { "type": "string", "format": "uuid" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 100 },
+    "description": { "type": "string", "maxLength": 1000 },
+    "owners": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "created_at": { "type": "string", "format": "date-time" },
+    "created_by": { "type": "string" }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://forge.local/contracts/events/cloudevents-envelope.v1.json",
+  "title": "Forge CloudEvents Envelope v1.0",
+  "type": "object",
+  "required": ["specversion", "id", "source", "type", "time", "forgetenantid", "forgeactor", "forgecorrelationid"],
+  "properties": {
+    "specversion": { "const": "1.0" },
+    "id": { "type": "string", "format": "uuid" },
+    "source": { "type": "string", "pattern": "^forge://service/[a-z0-9-]+$" },
+    "type": { "type": "string", "pattern": "^com\\.forge\\.[a-z]+\\.[a-z_]+\\.v[0-9]+$" },
+    "subject": { "type": "string" },
+    "time": { "type": "string", "format": "date-time" },
+    "datacontenttype": { "const": "application/json" },
+    "forgetenantid": { "type": "string", "format": "uuid" },
+    "forgeworkspaceid": { "type": "string", "format": "uuid" },
+    "forgeactor": { "type": "string", "pattern": "^(user|service|agent):[A-Za-z0-9._:-]+$" },
+    "forgecorrelationid": { "type": "string" },
+    "data": {}
+  },
+  "additionalProperties": true
+}

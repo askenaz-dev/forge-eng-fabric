@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://forge.local/contracts/events/github.connected.v1.json",
+  "title": "github.connected.v1",
+  "type": "object",
+  "required": ["installation_id", "tenant_id", "workspace_id", "github_account", "connected_at"],
+  "properties": {
+    "installation_id": { "type": "string" },
+    "tenant_id": { "type": "string", "format": "uuid" },
+    "workspace_id": { "type": "string", "format": "uuid" },
+    "github_account": { "type": "string" },
+    "scopes": { "type": "array", "items": { "type": "string" } },
+    "connected_at": { "type": "string", "format": "date-time" },
+    "connected_by": { "type": "string" }
+  },
+  "additionalProperties": false
+}

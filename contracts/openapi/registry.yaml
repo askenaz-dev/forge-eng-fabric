@@ -1,0 +1,125 @@
+openapi: 3.1.0
+info:
+  title: Forge Asset Registry API
+  version: 0.1.0
+  description: |
+    Phase 0 minimal asset registry. Stores AI assets (skills, prompts, MCP servers,
+    workflows, applications, repo templates, eval datasets, healing actions).
+    In Phase 0 every asset is created with lifecycle_state=proposed only.
+servers:
+  - url: http://localhost:8082
+    description: Local docker-compose
+security:
+  - bearerAuth: []
+paths:
+  /healthz: { get: { summary: Liveness, security: [], responses: { "200": { description: ok } } } }
+  /readyz:  { get: { summary: Readiness, security: [], responses: { "200": { description: ready } } } }
+
+  /v1/workspaces/{workspaceId}/assets:
+    parameters:
+      - { name: workspaceId, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: List assets in a workspace
+      parameters:
+        - { name: type, in: query, schema: { $ref: "#/components/schemas/AssetType" } }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Asset" }
+    post:
+      summary: Register a new asset (always lifecycle_state=proposed in Phase 0)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AssetCreate" }
+      responses:
+        "201":
+          description: created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Asset" }
+
+  /v1/assets/{assetId}:
+    parameters:
+      - { name: assetId, in: path, required: true, schema: { type: string } }
+    get:
+      summary: Get an asset (latest version)
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Asset" }
+        "404": { description: not found }
+
+  /v1/assets/{assetId}/versions/{version}:
+    parameters:
+      - { name: assetId, in: path, required: true, schema: { type: string } }
+      - { name: version, in: path, required: true, schema: { type: string, pattern: "^[0-9]+\\.[0-9]+\\.[0-9]+$" } }
+    get:
+      summary: Get a specific version of an asset (immutable)
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Asset" }
+        "404": { description: not found }
+
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  schemas:
+    AssetType:
+      type: string
+      enum: [skill, prompt, mcp, workflow, application, repo_template, eval_dataset, healing_action]
+    LifecycleState:
+      type: string
+      enum: [proposed]
+      description: Phase 0 only supports `proposed`. Phase 1 introduces T0–T5 transitions.
+    Asset:
+      type: object
+      required: [id, version, type, name, workspace_id, tenant_id, lifecycle_state, created_at]
+      properties:
+        id: { type: string }
+        version: { type: string, pattern: "^[0-9]+\\.[0-9]+\\.[0-9]+$" }
+        type: { $ref: "#/components/schemas/AssetType" }
+        name: { type: string }
+        description: { type: string }
+        workspace_id: { type: string, format: uuid }
+        tenant_id: { type: string, format: uuid }
+        lifecycle_state: { $ref: "#/components/schemas/LifecycleState" }
+        owners:
+          type: array
+          items: { type: string }
+        metadata:
+          type: object
+          additionalProperties: true
+        created_at: { type: string, format: date-time }
+        created_by: { type: string }
+    AssetCreate:
+      type: object
+      required: [type, name, version]
+      properties:
+        type: { $ref: "#/components/schemas/AssetType" }
+        name: { type: string, minLength: 1, maxLength: 200 }
+        description: { type: string }
+        version: { type: string, pattern: "^[0-9]+\\.[0-9]+\\.[0-9]+$" }
+        owners:
+          type: array
+          items: { type: string }
+        metadata:
+          type: object
+          additionalProperties: true
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: string }
+        message: { type: string }
+        correlation_id: { type: string }

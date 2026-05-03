@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://forge.local/contracts/events/workspace.archived.v1.json",
+  "title": "workspace.archived.v1",
+  "type": "object",
+  "required": ["workspace_id", "tenant_id", "archived_at"],
+  "properties": {
+    "workspace_id": { "type": "string", "format": "uuid" },
+    "tenant_id": { "type": "string", "format": "uuid" },
+    "archived_at": { "type": "string", "format": "date-time" },
+    "archived_by": { "type": "string" },
+    "reason": { "type": "string" }
+  },
+  "additionalProperties": false
+}

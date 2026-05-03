@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://forge.local/contracts/events/audit.events.v1.json",
+  "title": "audit.events.v1",
+  "type": "object",
+  "required": ["audit_id", "tenant_id", "actor", "action", "resource", "outcome", "occurred_at"],
+  "properties": {
+    "audit_id": { "type": "string", "format": "uuid" },
+    "tenant_id": { "type": "string", "format": "uuid" },
+    "workspace_id": { "type": "string", "format": "uuid" },
+    "actor": { "type": "string" },
+    "action": { "type": "string" },
+    "resource": { "type": "string" },
+    "outcome": { "type": "string", "enum": ["success", "denied", "error"] },
+    "details": { "type": "object", "additionalProperties": true },
+    "correlation_id": { "type": "string" },
+    "prev_hash": { "type": "string" },
+    "hash": { "type": "string" },
+    "occurred_at": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": false
+}

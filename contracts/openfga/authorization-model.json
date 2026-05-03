@@ -1,0 +1,112 @@
+{
+  "schema_version": "1.1",
+  "type_definitions": [
+    { "type": "user" },
+    {
+      "type": "tenant",
+      "relations": {
+        "admin": { "this": {} },
+        "member": { "this": {} }
+      },
+      "metadata": {
+        "relations": {
+          "admin": { "directly_related_user_types": [{ "type": "user" }] },
+          "member": { "directly_related_user_types": [{ "type": "user" }, { "type": "tenant", "relation": "admin" }] }
+        }
+      }
+    },
+    {
+      "type": "business_unit",
+      "relations": {
+        "tenant": { "this": {} },
+        "admin": {
+          "union": {
+            "child": [
+              { "this": {} },
+              { "tupleToUserset": { "tupleset": { "object": "", "relation": "tenant" }, "computedUserset": { "object": "", "relation": "admin" } } }
+            ]
+          }
+        },
+        "member": {
+          "union": {
+            "child": [
+              { "this": {} },
+              { "computedUserset": { "object": "", "relation": "admin" } }
+            ]
+          }
+        }
+      },
+      "metadata": {
+        "relations": {
+          "tenant": { "directly_related_user_types": [{ "type": "tenant" }] },
+          "admin": { "directly_related_user_types": [{ "type": "user" }] },
+          "member": { "directly_related_user_types": [{ "type": "user" }] }
+        }
+      }
+    },
+    {
+      "type": "workspace",
+      "relations": {
+        "business_unit": { "this": {} },
+        "owner": { "this": {} },
+        "editor": {
+          "union": {
+            "child": [
+              { "this": {} },
+              { "computedUserset": { "object": "", "relation": "owner" } }
+            ]
+          }
+        },
+        "viewer": {
+          "union": {
+            "child": [
+              { "this": {} },
+              { "computedUserset": { "object": "", "relation": "editor" } },
+              { "tupleToUserset": { "tupleset": { "object": "", "relation": "business_unit" }, "computedUserset": { "object": "", "relation": "member" } } }
+            ]
+          }
+        },
+        "can_view": { "computedUserset": { "object": "", "relation": "viewer" } },
+        "can_edit": { "computedUserset": { "object": "", "relation": "editor" } },
+        "can_admin": { "computedUserset": { "object": "", "relation": "owner" } }
+      },
+      "metadata": {
+        "relations": {
+          "business_unit": { "directly_related_user_types": [{ "type": "business_unit" }] },
+          "owner": { "directly_related_user_types": [{ "type": "user" }] },
+          "editor": { "directly_related_user_types": [{ "type": "user" }] },
+          "viewer": { "directly_related_user_types": [{ "type": "user" }] }
+        }
+      }
+    },
+    {
+      "type": "asset",
+      "relations": {
+        "workspace": { "this": {} },
+        "owner": { "this": {} },
+        "can_view": {
+          "union": {
+            "child": [
+              { "computedUserset": { "object": "", "relation": "owner" } },
+              { "tupleToUserset": { "tupleset": { "object": "", "relation": "workspace" }, "computedUserset": { "object": "", "relation": "viewer" } } }
+            ]
+          }
+        },
+        "can_edit": {
+          "union": {
+            "child": [
+              { "computedUserset": { "object": "", "relation": "owner" } },
+              { "tupleToUserset": { "tupleset": { "object": "", "relation": "workspace" }, "computedUserset": { "object": "", "relation": "editor" } } }
+            ]
+          }
+        }
+      },
+      "metadata": {
+        "relations": {
+          "workspace": { "directly_related_user_types": [{ "type": "workspace" }] },
+          "owner": { "directly_related_user_types": [{ "type": "user" }] }
+        }
+      }
+    }
+  ]
+}

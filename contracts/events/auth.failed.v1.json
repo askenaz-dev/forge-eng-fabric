@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://forge.local/contracts/events/auth.failed.v1.json",
+  "title": "auth.failed.v1",
+  "type": "object",
+  "required": ["actor", "reason", "occurred_at"],
+  "properties": {
+    "actor": { "type": "string" },
+    "reason": { "type": "string" },
+    "ip": { "type": "string" },
+    "user_agent": { "type": "string" },
+    "occurred_at": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": false
+}

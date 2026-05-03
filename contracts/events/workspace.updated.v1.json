@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://forge.local/contracts/events/workspace.updated.v1.json",
+  "title": "workspace.updated.v1",
+  "type": "object",
+  "required": ["workspace_id", "tenant_id", "changes", "updated_at"],
+  "properties": {
+    "workspace_id": { "type": "string", "format": "uuid" },
+    "tenant_id": { "type": "string", "format": "uuid" },
+    "changes": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "updated_by": { "type": "string" }
+  },
+  "additionalProperties": false
+}
