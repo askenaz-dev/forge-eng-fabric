@@ -5,6 +5,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -13,6 +14,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/forge-eng-fabric/services/audit/internal/telemetry"
+
 	"github.com/MicahParks/keyfunc/v3"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -20,10 +23,16 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/twmb/franz-go/pkg/kgo"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 func main() {
 	cfg := loadConfig()
+	shutdownTelemetry, err := telemetry.Init(context.Background(), "audit-service", cfg.Environment, cfg.OTLPEndpoint)
+	if err != nil {
+		log.Fatalf("otel: %v", err)
+	}
+	defer func() { _ = shutdownTelemetry(context.Background()) }()
 
 	pool, err := pgxpool.New(context.Background(), cfg.PostgresURL)
 	if err != nil {
@@ -68,9 +77,10 @@ func main() {
 	r.Group(func(r chi.Router) {
 		r.Use(srv.requireJWT)
 		r.Get("/v1/audit", srv.listAudit)
+		r.Get("/v1/audit/verify", srv.verifyAuditChain)
 	})
 
-	httpSrv := &http.Server{Addr: cfg.Addr, Handler: r, ReadHeaderTimeout: 10 * time.Second}
+	httpSrv := &http.Server{Addr: cfg.Addr, Handler: otelhttp.NewHandler(r, "audit-service"), ReadHeaderTimeout: 10 * time.Second}
 	go func() {
 		log.Printf("audit listening on %s", cfg.Addr)
 		if err := httpSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -94,6 +104,8 @@ type config struct {
 	KeycloakAudience string
 	KafkaBrokers     string
 	EventsTopic      string
+	Environment      string
+	OTLPEndpoint     string
 }
 
 func loadConfig() config {
@@ -110,6 +122,8 @@ func loadConfig() config {
 		KeycloakAudience: get("KEYCLOAK_AUDIENCE", "forge-control-plane"),
 		KafkaBrokers:     get("KAFKA_BROKERS", "localhost:29092"),
 		EventsTopic:      get("EVENTS_TOPIC", "forge.events"),
+		Environment:      get("ENV", "local"),
+		OTLPEndpoint:     get("OTEL_EXPORTER_OTLP_ENDPOINT", "localhost:4317"),
 	}
 }
 
@@ -197,6 +211,13 @@ type AuditRow struct {
 	OccurredAt    time.Time  `json:"occurred_at"`
 }
 
+type VerifyResult struct {
+	TenantID     uuid.UUID `json:"tenant_id"`
+	CheckedRows  int       `json:"checked_rows"`
+	InvalidRows  int       `json:"invalid_rows"`
+	ChainIsValid bool      `json:"chain_is_valid"`
+}
+
 func (s *queryServer) requireJWT(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		h := r.Header.Get("authorization")
@@ -224,9 +245,49 @@ func (s *queryServer) listAudit(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid tenant_id", 400)
 		return
 	}
-	rows, err := s.pool.Query(r.Context(),
-		`SELECT id,tenant_id,workspace_id,actor,action,resource,outcome,details,COALESCE(correlation_id,''),prev_hash,hash,occurred_at
-		 FROM audit_event WHERE tenant_id=$1 ORDER BY occurred_at DESC LIMIT 200`, tid)
+	// Optional filters
+	q := `SELECT id,tenant_id,workspace_id,actor,action,resource,outcome,details,COALESCE(correlation_id,''),prev_hash,hash,occurred_at
+         FROM audit_event WHERE tenant_id=$1`
+	args := []any{tid}
+	if ws := r.URL.Query().Get("workspace_id"); ws != "" {
+		wid, err := uuid.Parse(ws)
+		if err != nil {
+			http.Error(w, "invalid workspace_id", 400)
+			return
+		}
+		q += fmt.Sprintf(" AND workspace_id = $%d", len(args)+1)
+		args = append(args, wid)
+	}
+	if actor := r.URL.Query().Get("actor"); actor != "" {
+		q += fmt.Sprintf(" AND actor = $%d", len(args)+1)
+		args = append(args, actor)
+	}
+	if action := r.URL.Query().Get("action"); action != "" {
+		q += fmt.Sprintf(" AND action = $%d", len(args)+1)
+		args = append(args, action)
+	}
+	// Time window filters (ISO8601)
+	if since := r.URL.Query().Get("since"); since != "" {
+		t, err := time.Parse(time.RFC3339, since)
+		if err != nil {
+			http.Error(w, "invalid since", 400)
+			return
+		}
+		q += fmt.Sprintf(" AND occurred_at >= $%d", len(args)+1)
+		args = append(args, t)
+	}
+	if until := r.URL.Query().Get("until"); until != "" {
+		t, err := time.Parse(time.RFC3339, until)
+		if err != nil {
+			http.Error(w, "invalid until", 400)
+			return
+		}
+		q += fmt.Sprintf(" AND occurred_at <= $%d", len(args)+1)
+		args = append(args, t)
+	}
+	q += " ORDER BY occurred_at DESC LIMIT 200"
+
+	rows, err := s.pool.Query(r.Context(), q, args...)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
@@ -245,4 +306,63 @@ func (s *queryServer) listAudit(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("content-type", "application/json")
 	_ = json.NewEncoder(w).Encode(out)
+}
+
+func (s *queryServer) verifyAuditChain(w http.ResponseWriter, r *http.Request) {
+	tenantStr := r.URL.Query().Get("tenant_id")
+	if tenantStr == "" {
+		http.Error(w, "tenant_id is required", 400)
+		return
+	}
+	tid, err := uuid.Parse(tenantStr)
+	if err != nil {
+		http.Error(w, "invalid tenant_id", 400)
+		return
+	}
+
+	var result VerifyResult
+	result.TenantID = tid
+	err = s.pool.QueryRow(r.Context(), `
+		WITH ordered AS (
+		  SELECT
+		    tenant_id,
+		    workspace_id,
+		    actor,
+		    action,
+		    resource,
+		    outcome,
+		    details,
+		    correlation_id,
+		    occurred_at,
+		    prev_hash,
+		    hash,
+		    COALESCE(LAG(hash) OVER (ORDER BY occurred_at, id), repeat('0', 64)) AS expected_prev_hash
+		  FROM audit_event
+		  WHERE tenant_id = $1
+		), checked AS (
+		  SELECT
+		    prev_hash = expected_prev_hash
+		    AND hash = encode(digest(concat_ws('|',
+		      tenant_id::text,
+		      coalesce(workspace_id::text, ''),
+		      actor,
+		      action,
+		      resource,
+		      outcome,
+		      details::text,
+		      coalesce(correlation_id, ''),
+		      occurred_at::text,
+		      prev_hash), 'sha256'), 'hex') AS valid
+		  FROM ordered
+		)
+		SELECT COUNT(*)::int, COUNT(*) FILTER (WHERE NOT valid)::int FROM checked`, tid).
+		Scan(&result.CheckedRows, &result.InvalidRows)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	result.ChainIsValid = result.InvalidRows == 0
+
+	w.Header().Set("content-type", "application/json")
+	_ = json.NewEncoder(w).Encode(result)
 }

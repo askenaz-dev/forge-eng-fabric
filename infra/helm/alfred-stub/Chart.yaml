@@ -1,0 +1,6 @@
+apiVersion: v2
+name: alfred-stub
+description: Forge Alfred Phase 0 stub
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

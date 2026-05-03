@@ -5,13 +5,14 @@
 SHELL := /bin/sh
 COMPOSE := docker compose -f deploy/compose/docker-compose.yaml
 
-.PHONY: help bootstrap lint test up down logs ps smoke clean fmt
+.PHONY: help bootstrap lint test codegen up down logs ps smoke clean fmt
 
 help:
 	@echo "Forge — make targets:"
 	@echo "  bootstrap   Install local toolchain prerequisites (info only)"
 	@echo "  lint        Run linters across Go / Python / Node"
 	@echo "  test        Run tests across Go / Python / Node"
+	@echo "  codegen     Generate OpenAPI clients into contracts/generated"
 	@echo "  up          Bring docker-compose stack up (detached)"
 	@echo "  down        Stop docker-compose stack"
 	@echo "  logs        Tail docker-compose logs"
@@ -49,6 +50,9 @@ test:
 	@cd services/alfred && pytest -q || true
 	@echo ">> Node tests"
 	@cd portal && pnpm test || true
+
+codegen:
+	@bash contracts/openapi/codegen.sh
 
 up:
 	$(COMPOSE) up -d

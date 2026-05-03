@@ -1,0 +1,17 @@
+replicaCount: 1
+image:
+  repository: forge/portal
+  tag: local
+  pullPolicy: IfNotPresent
+service:
+  port: 3000
+probes:
+  enabled: true
+  readinessPath: /
+  livenessPath: /
+env:
+  CONTROL_PLANE_URL: "http://control-plane:8081"
+  NEXTAUTH_URL: "http://portal:3000"
+  KEYCLOAK_ISSUER: "http://keycloak:8080/realms/forge"
+  KEYCLOAK_CLIENT_ID: "forge-portal"
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4317"

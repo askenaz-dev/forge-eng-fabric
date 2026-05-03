@@ -1,0 +1,28 @@
+replicaCount: 1
+image:
+  repository: otel/opentelemetry-collector-contrib
+  tag: 0.108.0
+  pullPolicy: IfNotPresent
+service:
+  port: 4318
+  grpcPort: 4317
+  metricsPort: 8889
+probes:
+  enabled: false
+config: |
+  receivers:
+    otlp:
+      protocols:
+        grpc: { endpoint: 0.0.0.0:4317 }
+        http: { endpoint: 0.0.0.0:4318 }
+  processors:
+    batch: {}
+  exporters:
+    prometheus: { endpoint: 0.0.0.0:8889 }
+    otlp/tempo: { endpoint: tempo:4317, tls: { insecure: true } }
+    otlphttp/loki: { endpoint: http://loki:3100/otlp }
+  service:
+    pipelines:
+      traces: { receivers: [otlp], processors: [batch], exporters: [otlp/tempo] }
+      metrics: { receivers: [otlp], processors: [batch], exporters: [prometheus] }
+      logs: { receivers: [otlp], processors: [batch], exporters: [otlphttp/loki] }

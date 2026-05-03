@@ -1,0 +1,73 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "links": [],
+  "panels": [
+    {
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "id": 1,
+      "options": { "legend": { "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "single" } },
+      "targets": [
+        { "expr": "up{job=~\"control-plane|registry|audit|otel-collector\"}", "legendFormat": "{{job}}", "refId": "A" }
+      ],
+      "title": "Service Health",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "id": 2,
+      "options": { "legend": { "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "single" } },
+      "targets": [
+        { "expr": "histogram_quantile(0.95, sum by (le, job) (rate(http_server_duration_milliseconds_bucket{job=~\"control-plane|registry|audit\"}[5m])))", "legendFormat": "p95 {{job}}", "refId": "A" },
+        { "expr": "histogram_quantile(0.99, sum by (le, job) (rate(http_server_duration_milliseconds_bucket{job=~\"control-plane|registry|audit\"}[5m])))", "legendFormat": "p99 {{job}}", "refId": "B" }
+      ],
+      "title": "API Latency p95/p99",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "id": 3,
+      "options": { "legend": { "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "single" } },
+      "targets": [
+        { "expr": "sum by (job) (rate(http_requests_total{job=~\"control-plane|registry|audit\",status=~\"5..\"}[5m]))", "legendFormat": "{{job}} 5xx", "refId": "A" },
+        { "expr": "sum(rate(auth_failed_total[5m]))", "legendFormat": "auth failures", "refId": "B" }
+      ],
+      "title": "Errors And Auth Failures",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "id": 4,
+      "options": { "legend": { "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "single" } },
+      "targets": [
+        { "expr": "sum(rate(audit_events_total[5m]))", "legendFormat": "audit events/s", "refId": "A" },
+        { "expr": "sum by (model) (rate(litellm_total_tokens[5m]))", "legendFormat": "tokens {{model}}", "refId": "B" }
+      ],
+      "title": "Audit Volume And LiteLLM Tokens",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["forge", "phase-0"],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Forge Overview",
+  "uid": "forge-overview",
+  "version": 1,
+  "weekStart": ""
+}

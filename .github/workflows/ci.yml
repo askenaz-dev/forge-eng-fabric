@@ -1,0 +1,78 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  go:
+    name: go services
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - services/control-plane
+          - services/registry
+          - services/audit
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+      - name: Test
+        working-directory: ${{ matrix.service }}
+        run: go test ./...
+
+  python:
+    name: python services
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile Alfred stub
+        run: python -m compileall services/alfred
+
+  node:
+    name: portal
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - uses: pnpm/action-setup@v4
+        with:
+          version: "9"
+      - name: Install dependencies
+        working-directory: portal
+        run: pnpm install
+      - name: Build portal
+        working-directory: portal
+        run: pnpm build
+
+  contracts:
+    name: contracts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate OpenAPI contracts
+        run: npx -y @redocly/cli lint contracts/openapi/control-plane.yaml contracts/openapi/registry.yaml
+      - name: Generate OpenAPI clients
+        run: bash contracts/openapi/codegen.sh
+      - name: Validate JSON contracts
+        shell: bash
+        run: |
+          python -m json.tool contracts/openfga/authorization-model.json >/dev/null
+          for f in contracts/events/*.json; do python -m json.tool "$f" >/dev/null; done
+      - name: Check OpenSpec change status
+        run: npx -y @fission-ai/openspec status --change phase-0-foundations --json

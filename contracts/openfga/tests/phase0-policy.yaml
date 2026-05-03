@@ -1,0 +1,63 @@
+name: phase0-policy
+model_file: ../authorization-model.json
+tuples:
+  - user: tenant:acme
+    relation: tenant
+    object: business_unit:platform
+  - user: business_unit:platform
+    relation: business_unit
+    object: workspace:workspace-a
+  - user: business_unit:platform
+    relation: business_unit
+    object: workspace:workspace-b
+  - user: user:alice
+    relation: owner
+    object: workspace:workspace-a
+  - user: workspace:workspace-a
+    relation: workspace
+    object: asset:asset-a
+  - user: workspace:workspace-a
+    relation: workspace
+    object: repo:repo-a
+  - user: workspace:workspace-a
+    relation: workspace
+    object: environment:dev
+  - user: environment:dev
+    relation: environment
+    object: deployment:deployment-a
+tests:
+  - name: workspace owners can view their own workspace
+    check:
+      - user: user:alice
+        object: workspace:workspace-a
+        assertions:
+          can_view: true
+          can_edit: true
+  - name: workspace owners do not cross workspace boundaries
+    check:
+      - user: user:alice
+        object: workspace:workspace-b
+        assertions:
+          can_view: false
+          can_edit: false
+  - name: workspace relations flow to assets repos environments and deployments
+    check:
+      - user: user:alice
+        object: asset:asset-a
+        assertions:
+          can_view: true
+          can_edit: true
+      - user: user:alice
+        object: repo:repo-a
+        assertions:
+          can_view: true
+          can_edit: true
+      - user: user:alice
+        object: environment:dev
+        assertions:
+          can_view: true
+          can_deploy: true
+      - user: user:alice
+        object: deployment:deployment-a
+        assertions:
+          can_view: true

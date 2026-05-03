@@ -1,0 +1,19 @@
+replicaCount: 1
+image:
+  repository: forge/audit-service
+  tag: local
+  pullPolicy: IfNotPresent
+service:
+  port: 8083
+probes:
+  enabled: true
+  readinessPath: /readyz
+  livenessPath: /healthz
+env:
+  ADDR: ":8083"
+  POSTGRES_URL: "postgres://forge:forge@postgres:5432/forge_audit?sslmode=disable"
+  KEYCLOAK_ISSUER: "http://keycloak:8080/realms/forge"
+  KEYCLOAK_AUDIENCE: "forge-control-plane"
+  KAFKA_BROKERS: "kafka:9092"
+  EVENTS_TOPIC: "forge.events"
+  OTEL_EXPORTER_OTLP_ENDPOINT: "otel-collector:4317"

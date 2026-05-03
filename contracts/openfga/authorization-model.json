@@ -107,6 +107,102 @@
           "owner": { "directly_related_user_types": [{ "type": "user" }] }
         }
       }
+    },
+    {
+      "type": "repo",
+      "relations": {
+        "workspace": { "this": {} },
+        "owner": { "this": {} },
+        "viewer": {
+          "union": {
+            "child": [
+              { "this": {} },
+              { "computedUserset": { "object": "", "relation": "owner" } },
+              { "tupleToUserset": { "tupleset": { "object": "", "relation": "workspace" }, "computedUserset": { "object": "", "relation": "viewer" } } }
+            ]
+          }
+        },
+        "can_view": { "computedUserset": { "object": "", "relation": "viewer" } },
+        "can_edit": {
+          "union": {
+            "child": [
+              { "computedUserset": { "object": "", "relation": "owner" } },
+              { "tupleToUserset": { "tupleset": { "object": "", "relation": "workspace" }, "computedUserset": { "object": "", "relation": "editor" } } }
+            ]
+          }
+        }
+      },
+      "metadata": {
+        "relations": {
+          "workspace": { "directly_related_user_types": [{ "type": "workspace" }] },
+          "owner": { "directly_related_user_types": [{ "type": "user" }] },
+          "viewer": { "directly_related_user_types": [{ "type": "user" }] }
+        }
+      }
+    },
+    {
+      "type": "environment",
+      "relations": {
+        "workspace": { "this": {} },
+        "owner": { "this": {} },
+        "viewer": {
+          "union": {
+            "child": [
+              { "this": {} },
+              { "computedUserset": { "object": "", "relation": "owner" } },
+              { "tupleToUserset": { "tupleset": { "object": "", "relation": "workspace" }, "computedUserset": { "object": "", "relation": "viewer" } } }
+            ]
+          }
+        },
+        "can_view": { "computedUserset": { "object": "", "relation": "viewer" } },
+        "can_deploy": {
+          "union": {
+            "child": [
+              { "computedUserset": { "object": "", "relation": "owner" } },
+              { "tupleToUserset": { "tupleset": { "object": "", "relation": "workspace" }, "computedUserset": { "object": "", "relation": "editor" } } }
+            ]
+          }
+        }
+      },
+      "metadata": {
+        "relations": {
+          "workspace": { "directly_related_user_types": [{ "type": "workspace" }] },
+          "owner": { "directly_related_user_types": [{ "type": "user" }] },
+          "viewer": { "directly_related_user_types": [{ "type": "user" }] }
+        }
+      }
+    },
+    {
+      "type": "deployment",
+      "relations": {
+        "environment": { "this": {} },
+        "owner": { "this": {} },
+        "viewer": {
+          "union": {
+            "child": [
+              { "this": {} },
+              { "computedUserset": { "object": "", "relation": "owner" } },
+              { "tupleToUserset": { "tupleset": { "object": "", "relation": "environment" }, "computedUserset": { "object": "", "relation": "viewer" } } }
+            ]
+          }
+        },
+        "can_view": { "computedUserset": { "object": "", "relation": "viewer" } },
+        "can_admin": {
+          "union": {
+            "child": [
+              { "computedUserset": { "object": "", "relation": "owner" } },
+              { "tupleToUserset": { "tupleset": { "object": "", "relation": "environment" }, "computedUserset": { "object": "", "relation": "owner" } } }
+            ]
+          }
+        }
+      },
+      "metadata": {
+        "relations": {
+          "environment": { "directly_related_user_types": [{ "type": "environment" }] },
+          "owner": { "directly_related_user_types": [{ "type": "user" }] },
+          "viewer": { "directly_related_user_types": [{ "type": "user" }] }
+        }
+      }
     }
   ]
 }

@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: forge-llm-egress-negative
+  namespace: forge-system
+  labels:
+    app.kubernetes.io/name: forge-llm-egress-negative
+    app.kubernetes.io/part-of: forge
+spec:
+  restartPolicy: Never
+  containers:
+    - name: curl
+      image: curlimages/curl:8.10.1
+      command: ["sh", "-c"]
+      args:
+        - |
+          code="$(curl -m 8 -sS -o /tmp/provider.out -w '%{http_code}' https://api.openai.com/v1/models || true)"
+          if [ "${code}" != "000" ]; then
+            echo "unexpected provider reachability, status=${code}"
+            cat /tmp/provider.out || true
+            exit 1
+          fi
+          echo "provider egress denied as expected"

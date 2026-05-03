@@ -25,7 +25,7 @@ func Open(ctx context.Context, url string) (*DB, error) {
 	return &DB{pool: pool}, nil
 }
 
-func (d *DB) Close()                       { d.pool.Close() }
+func (d *DB) Close()                         { d.pool.Close() }
 func (d *DB) Ping(ctx context.Context) error { return d.pool.Ping(ctx) }
 
 // --- models ------------------------------------------------------------
@@ -52,6 +52,17 @@ type Workspace struct {
 	Owners         []string   `json:"owners"`
 	ArchivedAt     *time.Time `json:"archived_at,omitempty"`
 	CreatedAt      time.Time  `json:"created_at"`
+}
+
+type GitHubInstallation struct {
+	ID             uuid.UUID `json:"id"`
+	TenantID       uuid.UUID `json:"tenant_id"`
+	WorkspaceID    uuid.UUID `json:"workspace_id"`
+	InstallationID string    `json:"installation_id"`
+	GitHubAccount  string    `json:"github_account"`
+	Scopes         []string  `json:"scopes"`
+	ConnectedAt    time.Time `json:"connected_at"`
+	ConnectedBy    string    `json:"connected_by"`
 }
 
 // --- tenants ----------------------------------------------------------
@@ -201,4 +212,36 @@ func (d *DB) ArchiveWorkspace(ctx context.Context, id uuid.UUID) (*Workspace, er
 		return nil, err
 	}
 	return d.GetWorkspace(ctx, id)
+}
+
+func (d *DB) CreateGitHubInstallation(ctx context.Context, workspaceID uuid.UUID, installationID, githubAccount string, scopes []string, connectedBy string) (*GitHubInstallation, error) {
+	var g GitHubInstallation
+	err := d.pool.QueryRow(ctx,
+		`INSERT INTO github_installation(tenant_id, workspace_id, installation_id, github_account, scopes, connected_by)
+		 SELECT w.tenant_id, w.id, $2, $3, $4, $5 FROM workspace w WHERE w.id=$1
+		 RETURNING id, tenant_id, workspace_id, installation_id, github_account, scopes, connected_at, COALESCE(connected_by,'')`,
+		workspaceID, installationID, githubAccount, scopes, connectedBy).
+		Scan(&g.ID, &g.TenantID, &g.WorkspaceID, &g.InstallationID, &g.GitHubAccount, &g.Scopes, &g.ConnectedAt, &g.ConnectedBy)
+	if err != nil {
+		return nil, err
+	}
+	return &g, nil
+}
+
+func (d *DB) LatestGitHubInstallation(ctx context.Context, workspaceID uuid.UUID) (*GitHubInstallation, error) {
+	var g GitHubInstallation
+	err := d.pool.QueryRow(ctx,
+		`SELECT id, tenant_id, workspace_id, installation_id, github_account, scopes, connected_at, COALESCE(connected_by,'')
+		 FROM github_installation
+		 WHERE workspace_id=$1
+		 ORDER BY connected_at DESC
+		 LIMIT 1`, workspaceID).
+		Scan(&g.ID, &g.TenantID, &g.WorkspaceID, &g.InstallationID, &g.GitHubAccount, &g.Scopes, &g.ConnectedAt, &g.ConnectedBy)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, errors.New("github installation not found")
+		}
+		return nil, err
+	}
+	return &g, nil
 }

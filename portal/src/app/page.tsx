@@ -1,6 +1,8 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "./api/auth/[...nextauth]/route";
+import { authOptions } from "@/auth";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
+import { randomUUID } from "crypto";
 
 type Workspace = {
   id: string;
@@ -12,14 +14,20 @@ type Workspace = {
   created_at: string;
 };
 
-async function fetchWorkspaces(token: string): Promise<Workspace[]> {
+async function fetchWorkspaces(
+  token: string,
+  correlationId: string,
+): Promise<{ workspaces: Workspace[]; responseCorrelationId: string }> {
   const cp = process.env.CONTROL_PLANE_URL ?? "http://localhost:8081";
   const r = await fetch(`${cp}/v1/workspaces`, {
-    headers: { authorization: `Bearer ${token}` },
+    headers: { authorization: `Bearer ${token}`, "x-correlation-id": correlationId },
     cache: "no-store",
   });
   if (!r.ok) throw new Error(`control-plane ${r.status}`);
-  return r.json();
+  return {
+    workspaces: await r.json(),
+    responseCorrelationId: r.headers.get("x-correlation-id") ?? correlationId,
+  };
 }
 
 export default async function HomePage() {
@@ -27,11 +35,15 @@ export default async function HomePage() {
   if (!session) redirect("/api/auth/signin");
 
   const token = (session as any).accessToken as string | undefined;
+  const correlationId = headers().get("x-correlation-id") ?? randomUUID();
+  let responseCorrelationId = correlationId;
   let workspaces: Workspace[] = [];
   let error: string | null = null;
   if (token) {
     try {
-      workspaces = await fetchWorkspaces(token);
+      const result = await fetchWorkspaces(token, correlationId);
+      workspaces = result.workspaces;
+      responseCorrelationId = result.responseCorrelationId;
     } catch (e: any) {
       error = e.message;
     }
@@ -43,7 +55,17 @@ export default async function HomePage() {
     <section className="space-y-4">
       <div className="flex items-baseline justify-between">
         <h2 className="text-2xl font-semibold">Workspaces</h2>
-        <span className="text-sm opacity-70">signed in as {session.user?.email ?? session.user?.name}</span>
+        <div className="flex items-center gap-3">
+          <a className="rounded bg-neutral-900 px-3 py-2 text-sm text-white dark:bg-neutral-100 dark:text-neutral-900" href="/workspaces/new">
+            New workspace
+          </a>
+          <span className="text-sm opacity-70">signed in as {session.user?.email ?? session.user?.name}</span>
+        </div>
+      </div>
+
+      <div className="rounded border border-dashed border-neutral-300 bg-white p-3 text-xs dark:border-neutral-800 dark:bg-neutral-900">
+        <span className="font-medium">Dev correlation ID:</span>{" "}
+        <code className="break-all">{responseCorrelationId}</code>
       </div>
 
       {error && (

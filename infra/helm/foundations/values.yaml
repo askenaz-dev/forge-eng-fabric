@@ -1,0 +1,51 @@
+postgresql:
+  enabled: true
+  auth:
+    username: forge
+    database: forge
+    existingSecret: forge-postgres
+redis:
+  enabled: true
+  architecture: standalone
+  auth:
+    existingSecret: forge-redis
+kafka:
+  enabled: true
+  kraft:
+    enabled: true
+  controller:
+    replicaCount: 1
+  broker:
+    replicaCount: 0
+keycloak:
+  enabled: true
+  auth:
+    adminUser: admin
+    existingSecret: forge-keycloak
+openfga:
+  enabled: true
+milvus:
+  enabled: true
+  cluster:
+    enabled: false
+observability:
+  enabled: true
+litellm:
+  enabled: true
+  image: ghcr.io/berriai/litellm:main-stable
+  masterKeySecretName: forge-litellm
+  config: |
+    model_list:
+      - model_name: stub-chat
+        litellm_params:
+          model: openai/stub-chat
+          api_base: http://litellm:4000/v1
+          api_key: sk-forge-local
+    litellm_settings:
+      drop_params: true
+      num_retries: 1
+      request_timeout: 30
+      success_callback: [prometheus]
+      failure_callback: [prometheus]
+    general_settings:
+      master_key: sk-forge-local

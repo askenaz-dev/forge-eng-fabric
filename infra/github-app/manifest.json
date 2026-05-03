@@ -1,0 +1,25 @@
+{
+  "name": "Forge",
+  "url": "http://localhost:3000",
+  "hook_attributes": {
+    "url": "http://localhost:8081/v1/github/webhook"
+  },
+  "redirect_url": "http://localhost:3000/github/callback",
+  "callback_urls": [
+    "http://localhost:3000/github/callback"
+  ],
+  "public": false,
+  "default_permissions": {
+    "metadata": "read",
+    "contents": "read",
+    "pull_requests": "read"
+  },
+  "default_events": [
+    "installation",
+    "installation_repositories",
+    "repository"
+  ],
+  "request_oauth_on_install": true,
+  "setup_url": "http://localhost:3000/settings/github",
+  "setup_on_update": true
+}

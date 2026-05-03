@@ -1,0 +1,42 @@
+apiVersion: v2
+name: foundations
+description: Forge Phase 0 platform dependencies
+type: application
+version: 0.1.0
+dependencies:
+  - name: postgresql
+    version: 15.x.x
+    repository: oci://registry-1.docker.io/bitnamicharts
+    condition: postgresql.enabled
+  - name: redis
+    version: 19.x.x
+    repository: oci://registry-1.docker.io/bitnamicharts
+    condition: redis.enabled
+  - name: kafka
+    version: 30.x.x
+    repository: oci://registry-1.docker.io/bitnamicharts
+    condition: kafka.enabled
+  - name: keycloak
+    version: 22.x.x
+    repository: oci://registry-1.docker.io/bitnamicharts
+    condition: keycloak.enabled
+  - name: kube-prometheus-stack
+    version: 61.x.x
+    repository: https://prometheus-community.github.io/helm-charts
+    condition: observability.enabled
+  - name: loki
+    version: 6.x.x
+    repository: https://grafana.github.io/helm-charts
+    condition: observability.enabled
+  - name: tempo
+    version: 1.x.x
+    repository: https://grafana.github.io/helm-charts
+    condition: observability.enabled
+  - name: milvus
+    version: 4.x.x
+    repository: https://zilliztech.github.io/milvus-helm
+    condition: milvus.enabled
+  - name: openfga
+    version: 0.x.x
+    repository: https://openfga.github.io/helm-charts
+    condition: openfga.enabled

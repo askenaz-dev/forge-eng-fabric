@@ -14,6 +14,10 @@ litellm_settings:
   num_retries: 1
   request_timeout: 30
   telemetry: false
+  success_callback: [prometheus]
+  failure_callback: [prometheus]
+  redact_user_api_key_info: true
+  turn_off_message_logging: true
 
 general_settings:
   master_key: "sk-forge-local"

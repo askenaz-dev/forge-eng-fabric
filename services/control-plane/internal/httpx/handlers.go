@@ -8,6 +8,7 @@ import (
 
 	"github.com/forge-eng-fabric/services/control-plane/internal/auth"
 	"github.com/forge-eng-fabric/services/control-plane/internal/events"
+	"github.com/forge-eng-fabric/services/control-plane/internal/githubapp"
 	"github.com/forge-eng-fabric/services/control-plane/internal/store"
 
 	"github.com/go-chi/chi/v5"
@@ -16,13 +17,14 @@ import (
 
 // API bundles dependencies needed by handlers.
 type API struct {
-	DB   *store.DB
-	FGA  *auth.OpenFGAClient
-	Pub  *events.KafkaPublisher
+	DB          *store.DB
+	FGA         *auth.OpenFGAClient
+	Pub         *events.KafkaPublisher
+	GitHubRepos *githubapp.Service
 }
 
-func NewAPI(db *store.DB, fga *auth.OpenFGAClient, pub *events.KafkaPublisher) *API {
-	return &API{DB: db, FGA: fga, Pub: pub}
+func NewAPI(db *store.DB, fga *auth.OpenFGAClient, pub *events.KafkaPublisher, githubRepos *githubapp.Service) *API {
+	return &API{DB: db, FGA: fga, Pub: pub, GitHubRepos: githubRepos}
 }
 
 // Routes mounts the v1 API on r.
@@ -41,6 +43,8 @@ func (a *API) Routes(r chi.Router) {
 		r.Get("/workspaces/{workspaceID}", a.getWorkspace)
 		r.Patch("/workspaces/{workspaceID}", a.updateWorkspace)
 		r.Delete("/workspaces/{workspaceID}", a.archiveWorkspace)
+		r.Post("/workspaces/{workspaceID}/github/installations", a.createGitHubInstallation)
+		r.Get("/workspaces/{workspaceID}/github/repositories", a.listGitHubRepositories)
 	})
 }
 
@@ -181,6 +185,19 @@ type wsUpdate struct {
 	Owners      *[]string `json:"owners,omitempty"`
 }
 
+type githubInstallationCreate struct {
+	InstallationID string   `json:"installation_id"`
+	GitHubAccount  string   `json:"github_account"`
+	Scopes         []string `json:"scopes"`
+}
+
+type githubRepositoriesResponse struct {
+	InstallationID string                 `json:"installation_id"`
+	GitHubAccount  string                 `json:"github_account"`
+	CacheHit       bool                   `json:"cache_hit"`
+	Repositories   []githubapp.Repository `json:"repositories"`
+}
+
 func (a *API) listWorkspaces(w http.ResponseWriter, r *http.Request) {
 	buID, err := uuid.Parse(chi.URLParam(r, "buID"))
 	if err != nil {
@@ -201,7 +218,26 @@ func (a *API) listAllWorkspaces(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, r, 500, "db_error", err.Error())
 		return
 	}
-	writeJSON(w, 200, rows)
+	p := principal(r)
+	if hasRole(p, "platform-admin") {
+		writeJSON(w, 200, rows)
+		return
+	}
+
+	// Best-effort OpenFGA scoping: list all workspaces and filter by can_view.
+	out := []store.Workspace{}
+	for _, ws := range rows {
+		ok, err := a.FGA.Check(r.Context(), "user:"+p.Subject, "can_view", "workspace:"+ws.ID.String())
+		if err != nil {
+			// If FGA errors, fail closed for safety.
+			writeErr(w, r, 500, "fga_error", err.Error())
+			return
+		}
+		if ok {
+			out = append(out, ws)
+		}
+	}
+	writeJSON(w, 200, out)
 }
 
 func (a *API) createWorkspace(w http.ResponseWriter, r *http.Request) {
@@ -233,18 +269,21 @@ func (a *API) createWorkspace(w http.ResponseWriter, r *http.Request) {
 	_ = a.FGA.Write(r.Context(), "business_unit:"+buID.String(), "business_unit", "workspace:"+ws.ID.String())
 	for _, o := range req.Owners {
 		_ = a.FGA.Write(r.Context(), "user:"+o, "owner", "workspace:"+ws.ID.String())
+		if p.Username != "" && o == p.Username && p.Subject != p.Username {
+			_ = a.FGA.Write(r.Context(), "user:"+p.Subject, "owner", "workspace:"+ws.ID.String())
+		}
 	}
 
 	// Emit event (best-effort; failures don't roll back the API call).
 	_ = a.Pub.Publish(r.Context(), events.CloudEvent{
-		Type:           "com.forge.workspace.created.v1",
-		Source:         "forge://service/control-plane",
-		Subject:        "workspace/" + ws.ID.String(),
-		TenantID:       ws.TenantID.String(),
-		WorkspaceID:    ws.ID.String(),
-		Actor:          "user:" + p.Subject,
-		CorrelationID:  CorrelationFromContext(r.Context()),
-		Time:           time.Now().UTC(),
+		Type:          "com.forge.workspace.created.v1",
+		Source:        "forge://service/control-plane",
+		Subject:       "workspace/" + ws.ID.String(),
+		TenantID:      ws.TenantID.String(),
+		WorkspaceID:   ws.ID.String(),
+		Actor:         "user:" + p.Subject,
+		CorrelationID: CorrelationFromContext(r.Context()),
+		Time:          time.Now().UTC(),
 		Data: map[string]any{
 			"workspace_id":     ws.ID,
 			"tenant_id":        ws.TenantID,
@@ -296,6 +335,14 @@ func (a *API) updateWorkspace(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, r, 400, "bad_request", "invalid body")
 		return
 	}
+	// If owners is provided, ensure it won't leave the workspace without owners.
+	if req.Owners != nil {
+		if len(*req.Owners) == 0 {
+			writeErr(w, r, 409, "conflict", "operation would remove the last owner; transfer ownership before removing")
+			return
+		}
+	}
+
 	ws, err := a.DB.UpdateWorkspace(r.Context(), id, req.Name, req.Description, req.Owners)
 	if err != nil {
 		writeErr(w, r, 500, "db_error", err.Error())
@@ -355,6 +402,90 @@ func (a *API) archiveWorkspace(w http.ResponseWriter, r *http.Request) {
 		},
 	})
 	w.WriteHeader(204)
+}
+
+func (a *API) createGitHubInstallation(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(chi.URLParam(r, "workspaceID"))
+	if err != nil {
+		writeErr(w, r, 400, "bad_request", "invalid workspaceID")
+		return
+	}
+	p := principal(r)
+	ok, _ := a.FGA.Check(r.Context(), "user:"+p.Subject, "can_admin", "workspace:"+id.String())
+	if !ok && !hasRole(p, "platform-admin") {
+		writeErr(w, r, 403, "forbidden", "workspace owner required")
+		return
+	}
+	var req githubInstallationCreate
+	if err := parseJSON(r, &req); err != nil || req.InstallationID == "" || req.GitHubAccount == "" {
+		writeErr(w, r, 400, "bad_request", "installation_id and github_account are required")
+		return
+	}
+	installation, err := a.DB.CreateGitHubInstallation(r.Context(), id, req.InstallationID, req.GitHubAccount, req.Scopes, p.Subject)
+	if err != nil {
+		writeErr(w, r, 500, "db_error", err.Error())
+		return
+	}
+	_ = a.Pub.Publish(r.Context(), events.CloudEvent{
+		Type:          "com.forge.github.connected.v1",
+		Source:        "forge://service/control-plane",
+		Subject:       "github-installation/" + installation.InstallationID,
+		TenantID:      installation.TenantID.String(),
+		WorkspaceID:   installation.WorkspaceID.String(),
+		Actor:         "user:" + p.Subject,
+		CorrelationID: CorrelationFromContext(r.Context()),
+		Time:          time.Now().UTC(),
+		Data: map[string]any{
+			"installation_id": installation.InstallationID,
+			"github_account":  installation.GitHubAccount,
+			"scopes":          installation.Scopes,
+			"connected_at":    installation.ConnectedAt,
+			"connected_by":    installation.ConnectedBy,
+		},
+	})
+	writeJSON(w, 201, installation)
+}
+
+func (a *API) listGitHubRepositories(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(chi.URLParam(r, "workspaceID"))
+	if err != nil {
+		writeErr(w, r, 400, "bad_request", "invalid workspaceID")
+		return
+	}
+	p := principal(r)
+	ok, _ := a.FGA.Check(r.Context(), "user:"+p.Subject, "can_view", "workspace:"+id.String())
+	if !ok && !hasRole(p, "platform-admin") {
+		writeErr(w, r, 403, "forbidden", "no view access")
+		return
+	}
+	if a.GitHubRepos == nil {
+		writeErr(w, r, 503, "github_unavailable", "github repository service is not configured")
+		return
+	}
+	installation, err := a.DB.LatestGitHubInstallation(r.Context(), id)
+	if err != nil {
+		writeErr(w, r, 404, "not_found", err.Error())
+		return
+	}
+	repos, cacheHit, err := a.GitHubRepos.ListRepositories(r.Context(), githubapp.Installation{
+		InstallationID: installation.InstallationID,
+		GitHubAccount:  installation.GitHubAccount,
+	}, refreshRequested(r))
+	if err != nil {
+		writeErr(w, r, 502, "github_error", err.Error())
+		return
+	}
+	writeJSON(w, 200, githubRepositoriesResponse{
+		InstallationID: installation.InstallationID,
+		GitHubAccount:  installation.GitHubAccount,
+		CacheHit:       cacheHit,
+		Repositories:   repos,
+	})
+}
+
+func refreshRequested(r *http.Request) bool {
+	refresh := r.URL.Query().Get("refresh")
+	return refresh == "1" || refresh == "true"
 }
 
 var _ = context.Background

@@ -2,16 +2,22 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"regexp"
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/forge-eng-fabric/services/registry/internal/telemetry"
 
 	"github.com/MicahParks/keyfunc/v3"
 	"github.com/go-chi/chi/v5"
@@ -19,12 +25,19 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/twmb/franz-go/pkg/kgo"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 func main() {
 	cfg := loadConfig()
+	shutdownTelemetry, err := telemetry.Init(context.Background(), "registry", cfg.Environment, cfg.OTLPEndpoint)
+	if err != nil {
+		log.Fatalf("otel: %v", err)
+	}
+	defer func() { _ = shutdownTelemetry(context.Background()) }()
 
 	pool, err := pgxpool.New(context.Background(), cfg.PostgresURL)
 	if err != nil {
@@ -57,7 +70,15 @@ func main() {
 		w.WriteHeader(200)
 	})
 
-	srv := &server{pool: pool, keys: keys, kc: kc, topic: cfg.EventsTopic, issuer: cfg.KeycloakIssuer, audience: cfg.KeycloakAudience}
+	srv := &server{
+		pool:     pool,
+		keys:     keys,
+		kc:       kc,
+		fga:      newOpenFGAClient(cfg.OpenFGAURL, cfg.OpenFGAStoreID, cfg.OpenFGAModelID),
+		topic:    cfg.EventsTopic,
+		issuer:   cfg.KeycloakIssuer,
+		audience: cfg.KeycloakAudience,
+	}
 
 	r.Group(func(r chi.Router) {
 		r.Use(srv.requireJWT)
@@ -69,7 +90,7 @@ func main() {
 		})
 	})
 
-	httpSrv := &http.Server{Addr: cfg.Addr, Handler: r, ReadHeaderTimeout: 10 * time.Second}
+	httpSrv := &http.Server{Addr: cfg.Addr, Handler: otelhttp.NewHandler(r, "registry"), ReadHeaderTimeout: 10 * time.Second}
 	go func() {
 		log.Printf("registry listening on %s", cfg.Addr)
 		if err := httpSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -91,6 +112,11 @@ type config struct {
 	KeycloakAudience string
 	KafkaBrokers     string
 	EventsTopic      string
+	OpenFGAURL       string
+	OpenFGAStoreID   string
+	OpenFGAModelID   string
+	Environment      string
+	OTLPEndpoint     string
 }
 
 func loadConfig() config {
@@ -107,6 +133,11 @@ func loadConfig() config {
 		KeycloakAudience: get("KEYCLOAK_AUDIENCE", "forge-control-plane"),
 		KafkaBrokers:     get("KAFKA_BROKERS", "localhost:29092"),
 		EventsTopic:      get("EVENTS_TOPIC", "forge.events"),
+		OpenFGAURL:       get("OPENFGA_API_URL", "http://localhost:8088"),
+		OpenFGAStoreID:   get("OPENFGA_STORE_ID", ""),
+		OpenFGAModelID:   get("OPENFGA_AUTHORIZATION_MODEL_ID", ""),
+		Environment:      get("ENV", "local"),
+		OTLPEndpoint:     get("OTEL_EXPORTER_OTLP_ENDPOINT", "localhost:4317"),
 	}
 }
 
@@ -134,6 +165,7 @@ type server struct {
 	pool     *pgxpool.Pool
 	keys     keyfunc.Keyfunc
 	kc       *kgo.Client
+	fga      *openFGAClient
 	topic    string
 	issuer   string
 	audience string
@@ -179,6 +211,73 @@ func audienceMatches(aud any, want string) bool {
 	return false
 }
 
+type openFGAClient struct {
+	url     string
+	storeID string
+	modelID string
+	http    *http.Client
+}
+
+func newOpenFGAClient(url, storeID, modelID string) *openFGAClient {
+	return &openFGAClient{url: strings.TrimRight(url, "/"), storeID: storeID, modelID: modelID, http: &http.Client{Timeout: 5 * time.Second}}
+}
+
+func (c *openFGAClient) Check(ctx context.Context, user, relation, object string) (bool, error) {
+	if c.storeID == "" {
+		return true, nil
+	}
+	body, _ := json.Marshal(map[string]any{
+		"authorization_model_id": c.modelID,
+		"tuple_key": map[string]string{
+			"user":     user,
+			"relation": relation,
+			"object":   object,
+		},
+	})
+	req, _ := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("%s/stores/%s/check", c.url, c.storeID), bytes.NewReader(body))
+	req.Header.Set("content-type", "application/json")
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return false, err
+	}
+	defer resp.Body.Close()
+	data, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode/100 != 2 {
+		return false, fmt.Errorf("openfga check %d: %s", resp.StatusCode, string(data))
+	}
+	var out struct {
+		Allowed bool `json:"allowed"`
+	}
+	if err := json.Unmarshal(data, &out); err != nil {
+		return false, err
+	}
+	return out.Allowed, nil
+}
+
+func (c *openFGAClient) Write(ctx context.Context, user, relation, object string) error {
+	if c.storeID == "" {
+		return nil
+	}
+	body, _ := json.Marshal(map[string]any{
+		"authorization_model_id": c.modelID,
+		"writes": map[string]any{
+			"tuple_keys": []map[string]string{{"user": user, "relation": relation, "object": object}},
+		},
+	})
+	req, _ := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("%s/stores/%s/write", c.url, c.storeID), bytes.NewReader(body))
+	req.Header.Set("content-type", "application/json")
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode/100 != 2 {
+		data, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("openfga write %d: %s", resp.StatusCode, string(data))
+	}
+	return nil
+}
+
 // --- handlers ---------------------------------------------------------
 
 type Asset struct {
@@ -187,8 +286,12 @@ type Asset struct {
 	Type           string         `json:"type"`
 	Name           string         `json:"name"`
 	Description    string         `json:"description,omitempty"`
+	OwnerTeam      string         `json:"owner_team"`
+	InputsSchema   map[string]any `json:"inputs_schema"`
+	OutputsSchema  map[string]any `json:"outputs_schema"`
 	WorkspaceID    uuid.UUID      `json:"workspace_id"`
 	TenantID       uuid.UUID      `json:"tenant_id"`
+	Visibility     string         `json:"visibility"`
 	LifecycleState string         `json:"lifecycle_state"`
 	Owners         []string       `json:"owners"`
 	Metadata       map[string]any `json:"metadata"`
@@ -197,18 +300,26 @@ type Asset struct {
 }
 
 type assetCreate struct {
-	Type        string         `json:"type"`
-	Name        string         `json:"name"`
-	Description string         `json:"description"`
-	Version     string         `json:"version"`
-	Owners      []string       `json:"owners"`
-	Metadata    map[string]any `json:"metadata"`
+	Type           string         `json:"type"`
+	Name           string         `json:"name"`
+	Description    string         `json:"description"`
+	Version        string         `json:"version"`
+	OwnerTeam      string         `json:"owner_team"`
+	InputsSchema   map[string]any `json:"inputs_schema"`
+	OutputsSchema  map[string]any `json:"outputs_schema"`
+	Visibility     string         `json:"visibility"`
+	LifecycleState string         `json:"lifecycle_state"`
+	Owners         []string       `json:"owners"`
+	Metadata       map[string]any `json:"metadata"`
 }
 
 var validTypes = map[string]struct{}{
-	"skill": {}, "prompt": {}, "mcp": {}, "workflow": {}, "application": {},
-	"repo_template": {}, "eval_dataset": {}, "healing_action": {},
+	"mcp": {}, "skill": {}, "agent": {}, "workflow": {}, "prompt_template": {},
 }
+
+var validVisibility = map[string]struct{}{"workspace": {}, "tenant": {}}
+
+var semverPattern = regexp.MustCompile(`^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$`)
 
 func writeJSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("content-type", "application/json")
@@ -222,13 +333,29 @@ func (s *server) listAssets(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid workspaceID", 400)
 		return
 	}
-	typeFilter := r.URL.Query().Get("type")
-	q := `SELECT id,version,type,name,COALESCE(description,''),workspace_id,tenant_id,lifecycle_state,owners,metadata,created_at,COALESCE(created_by,'')
+	sub, _ := r.Context().Value(subjectKey).(string)
+	ok, err := s.fga.Check(r.Context(), "user:"+sub, "can_view", "workspace:"+wsID.String())
+	if err != nil {
+		http.Error(w, "fga check failed: "+err.Error(), 500)
+		return
+	}
+	if !ok {
+		http.Error(w, "forbidden", 403)
+		return
+	}
+	q := `SELECT id,version,type,name,COALESCE(description,''),owner_team,inputs_schema,outputs_schema,workspace_id,tenant_id,visibility,lifecycle_state,owners,metadata,created_at,COALESCE(created_by,'')
 		  FROM asset WHERE workspace_id=$1`
 	args := []any{wsID}
-	if typeFilter != "" {
-		q += " AND type=$2"
-		args = append(args, typeFilter)
+	for _, filter := range []struct{ key, column string }{
+		{"type", "type"},
+		{"owner_team", "owner_team"},
+		{"visibility", "visibility"},
+		{"lifecycle_state", "lifecycle_state"},
+	} {
+		if value := r.URL.Query().Get(filter.key); value != "" {
+			q += fmt.Sprintf(" AND %s=$%d", filter.column, len(args)+1)
+			args = append(args, value)
+		}
 	}
 	q += " ORDER BY name, version"
 	rows, err := s.pool.Query(r.Context(), q, args...)
@@ -240,7 +367,7 @@ func (s *server) listAssets(w http.ResponseWriter, r *http.Request) {
 	out := []Asset{}
 	for rows.Next() {
 		var a Asset
-		if err := rows.Scan(&a.ID, &a.Version, &a.Type, &a.Name, &a.Description, &a.WorkspaceID, &a.TenantID, &a.LifecycleState, &a.Owners, &a.Metadata, &a.CreatedAt, &a.CreatedBy); err != nil {
+		if err := rows.Scan(&a.ID, &a.Version, &a.Type, &a.Name, &a.Description, &a.OwnerTeam, &a.InputsSchema, &a.OutputsSchema, &a.WorkspaceID, &a.TenantID, &a.Visibility, &a.LifecycleState, &a.Owners, &a.Metadata, &a.CreatedAt, &a.CreatedBy); err != nil {
 			http.Error(w, err.Error(), 500)
 			return
 		}
@@ -268,7 +395,35 @@ func (s *server) createAsset(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "name and version required", 400)
 		return
 	}
+	if req.OwnerTeam == "" || req.InputsSchema == nil || req.OutputsSchema == nil {
+		http.Error(w, "owner_team, inputs_schema and outputs_schema are required", 400)
+		return
+	}
+	if req.Visibility == "" {
+		req.Visibility = "workspace"
+	}
+	if _, ok := validVisibility[req.Visibility]; !ok {
+		http.Error(w, "invalid visibility", 400)
+		return
+	}
+	if req.LifecycleState != "" && req.LifecycleState != "proposed" {
+		writeJSON(w, 409, map[string]string{"code": "conflict", "message": "Phase 0 only supports lifecycle_state=proposed; full lifecycle transitions arrive in Phase 1"})
+		return
+	}
+	if !semverPattern.MatchString(req.Version) {
+		http.Error(w, "version must be SemVer (MAJOR.MINOR.PATCH)", 400)
+		return
+	}
 	sub, _ := r.Context().Value(subjectKey).(string)
+	ok, err := s.fga.Check(r.Context(), "user:"+sub, "can_edit", "workspace:"+wsID.String())
+	if err != nil {
+		http.Error(w, "fga check failed: "+err.Error(), 500)
+		return
+	}
+	if !ok {
+		http.Error(w, "forbidden", 403)
+		return
+	}
 
 	// Resolve tenant_id from workspace via cross-DB query? In Phase 0 the registry
 	// keeps its own copy of tenant_id supplied by the caller via the workspace
@@ -288,16 +443,27 @@ func (s *server) createAsset(w http.ResponseWriter, r *http.Request) {
 	assetID := req.Type + ":" + wsID.String() + ":" + req.Name
 
 	metaBytes, _ := json.Marshal(req.Metadata)
+	inputsBytes, _ := json.Marshal(req.InputsSchema)
+	outputsBytes, _ := json.Marshal(req.OutputsSchema)
 	var a Asset
 	err = s.pool.QueryRow(r.Context(),
-		`INSERT INTO asset(id,version,type,name,description,workspace_id,tenant_id,lifecycle_state,owners,metadata,created_by)
-		 VALUES ($1,$2,$3,$4,$5,$6,$7,'proposed',$8,$9::jsonb,$10)
-		 RETURNING id,version,type,name,COALESCE(description,''),workspace_id,tenant_id,lifecycle_state,owners,metadata,created_at,COALESCE(created_by,'')`,
-		assetID, req.Version, req.Type, req.Name, req.Description, wsID, tenantID, req.Owners, string(metaBytes), sub).
-		Scan(&a.ID, &a.Version, &a.Type, &a.Name, &a.Description, &a.WorkspaceID, &a.TenantID, &a.LifecycleState, &a.Owners, &a.Metadata, &a.CreatedAt, &a.CreatedBy)
+		`INSERT INTO asset(id,version,type,name,description,owner_team,inputs_schema,outputs_schema,workspace_id,tenant_id,visibility,lifecycle_state,owners,metadata,created_by)
+		 VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8::jsonb,$9,$10,$11,'proposed',$12,$13::jsonb,$14)
+		 RETURNING id,version,type,name,COALESCE(description,''),owner_team,inputs_schema,outputs_schema,workspace_id,tenant_id,visibility,lifecycle_state,owners,metadata,created_at,COALESCE(created_by,'')`,
+		assetID, req.Version, req.Type, req.Name, req.Description, req.OwnerTeam, string(inputsBytes), string(outputsBytes), wsID, tenantID, req.Visibility, req.Owners, string(metaBytes), sub).
+		Scan(&a.ID, &a.Version, &a.Type, &a.Name, &a.Description, &a.OwnerTeam, &a.InputsSchema, &a.OutputsSchema, &a.WorkspaceID, &a.TenantID, &a.Visibility, &a.LifecycleState, &a.Owners, &a.Metadata, &a.CreatedAt, &a.CreatedBy)
 	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			writeJSON(w, 409, map[string]string{"code": "conflict", "message": "asset version already exists; bump version"})
+			return
+		}
 		http.Error(w, err.Error(), 500)
 		return
+	}
+	_ = s.fga.Write(r.Context(), "workspace:"+wsID.String(), "workspace", "asset:"+a.ID)
+	for _, owner := range req.Owners {
+		_ = s.fga.Write(r.Context(), "user:"+owner, "owner", "asset:"+a.ID)
 	}
 
 	// Emit asset.created.v1
@@ -321,6 +487,10 @@ func (s *server) createAsset(w http.ResponseWriter, r *http.Request) {
 			"workspace_id":    a.WorkspaceID,
 			"type":            a.Type,
 			"name":            a.Name,
+			"owner_team":      a.OwnerTeam,
+			"visibility":      a.Visibility,
+			"inputs_schema":   a.InputsSchema,
+			"outputs_schema":  a.OutputsSchema,
 			"lifecycle_state": "proposed",
 			"owners":          a.Owners,
 			"metadata":        a.Metadata,
@@ -365,9 +535,9 @@ func (s *server) getAssetLatest(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "assetID")
 	var a Asset
 	err := s.pool.QueryRow(r.Context(),
-		`SELECT id,version,type,name,COALESCE(description,''),workspace_id,tenant_id,lifecycle_state,owners,metadata,created_at,COALESCE(created_by,'')
+		`SELECT id,version,type,name,COALESCE(description,''),owner_team,inputs_schema,outputs_schema,workspace_id,tenant_id,visibility,lifecycle_state,owners,metadata,created_at,COALESCE(created_by,'')
 		 FROM asset WHERE id=$1 ORDER BY created_at DESC LIMIT 1`, id).
-		Scan(&a.ID, &a.Version, &a.Type, &a.Name, &a.Description, &a.WorkspaceID, &a.TenantID, &a.LifecycleState, &a.Owners, &a.Metadata, &a.CreatedAt, &a.CreatedBy)
+		Scan(&a.ID, &a.Version, &a.Type, &a.Name, &a.Description, &a.OwnerTeam, &a.InputsSchema, &a.OutputsSchema, &a.WorkspaceID, &a.TenantID, &a.Visibility, &a.LifecycleState, &a.Owners, &a.Metadata, &a.CreatedAt, &a.CreatedBy)
 	if err != nil {
 		http.Error(w, "not found", 404)
 		return
@@ -380,9 +550,9 @@ func (s *server) getAssetVersion(w http.ResponseWriter, r *http.Request) {
 	v := chi.URLParam(r, "version")
 	var a Asset
 	err := s.pool.QueryRow(r.Context(),
-		`SELECT id,version,type,name,COALESCE(description,''),workspace_id,tenant_id,lifecycle_state,owners,metadata,created_at,COALESCE(created_by,'')
+		`SELECT id,version,type,name,COALESCE(description,''),owner_team,inputs_schema,outputs_schema,workspace_id,tenant_id,visibility,lifecycle_state,owners,metadata,created_at,COALESCE(created_by,'')
 		 FROM asset WHERE id=$1 AND version=$2`, id, v).
-		Scan(&a.ID, &a.Version, &a.Type, &a.Name, &a.Description, &a.WorkspaceID, &a.TenantID, &a.LifecycleState, &a.Owners, &a.Metadata, &a.CreatedAt, &a.CreatedBy)
+		Scan(&a.ID, &a.Version, &a.Type, &a.Name, &a.Description, &a.OwnerTeam, &a.InputsSchema, &a.OutputsSchema, &a.WorkspaceID, &a.TenantID, &a.Visibility, &a.LifecycleState, &a.Owners, &a.Metadata, &a.CreatedAt, &a.CreatedBy)
 	if err != nil {
 		http.Error(w, "not found", 404)
 		return

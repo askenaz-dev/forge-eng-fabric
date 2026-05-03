@@ -4,11 +4,23 @@ receivers:
       grpc: { endpoint: 0.0.0.0:4317 }
       http: { endpoint: 0.0.0.0:4318 }
 
+connectors:
+  servicegraph:
+    dimensions:
+      - service.name
+      - forge.tenant_id
+      - forge.workspace_id
+
 processors:
   batch: {}
   memory_limiter:
     check_interval: 5s
     limit_mib: 512
+  attributes/loki:
+    actions:
+      - action: insert
+        key: loki.resource.labels
+        value: service.name,deployment.environment,forge.tenant_id,forge.workspace_id,forge.correlation_id
 
 exporters:
   prometheus:
@@ -28,12 +40,12 @@ service:
     traces:
       receivers: [otlp]
       processors: [memory_limiter, batch]
-      exporters: [otlp/tempo, debug]
+      exporters: [otlp/tempo, servicegraph, debug]
     metrics:
-      receivers: [otlp]
+      receivers: [otlp, servicegraph]
       processors: [memory_limiter, batch]
       exporters: [prometheus, debug]
     logs:
       receivers: [otlp]
-      processors: [memory_limiter, batch]
+      processors: [memory_limiter, attributes/loki, batch]
       exporters: [otlphttp/loki, debug]

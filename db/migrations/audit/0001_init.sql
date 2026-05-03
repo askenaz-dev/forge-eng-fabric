@@ -3,7 +3,7 @@
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 CREATE TABLE audit_event (
-  id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  id              uuid NOT NULL DEFAULT gen_random_uuid(),
   tenant_id       uuid NOT NULL,
   workspace_id    uuid,
   actor           text NOT NULL,
@@ -14,11 +14,38 @@ CREATE TABLE audit_event (
   correlation_id  text,
   prev_hash       text NOT NULL,
   hash            text NOT NULL,
-  occurred_at     timestamptz NOT NULL DEFAULT now()
-);
+  occurred_at     timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (id, occurred_at)
+) PARTITION BY RANGE (occurred_at);
+
+CREATE TABLE audit_event_default PARTITION OF audit_event DEFAULT;
 CREATE INDEX ON audit_event (tenant_id, occurred_at DESC);
 CREATE INDEX ON audit_event (workspace_id);
 CREATE INDEX ON audit_event (correlation_id);
+
+-- +goose StatementBegin
+CREATE OR REPLACE FUNCTION create_audit_event_month_partition(month_start date) RETURNS void AS $$
+DECLARE
+  partition_name text := format('audit_event_%s', to_char(month_start, 'YYYY_MM'));
+  month_end date := (month_start + interval '1 month')::date;
+BEGIN
+  IF to_regclass(partition_name) IS NULL THEN
+    EXECUTE format(
+      'CREATE TABLE %I PARTITION OF audit_event FOR VALUES FROM (%L) TO (%L)',
+      partition_name,
+      month_start::timestamptz,
+      month_end::timestamptz
+    );
+    EXECUTE format('CREATE INDEX %I ON %I (tenant_id, occurred_at DESC)', partition_name || '_tenant_time_idx', partition_name);
+    EXECUTE format('CREATE INDEX %I ON %I (workspace_id)', partition_name || '_workspace_idx', partition_name);
+    EXECUTE format('CREATE INDEX %I ON %I (correlation_id)', partition_name || '_correlation_idx', partition_name);
+  END IF;
+END;
+$$ LANGUAGE plpgsql;
+-- +goose StatementEnd
+
+SELECT create_audit_event_month_partition(date_trunc('month', now())::date);
+SELECT create_audit_event_month_partition((date_trunc('month', now()) + interval '1 month')::date);
 
 -- +goose StatementBegin
 CREATE OR REPLACE FUNCTION audit_event_chain() RETURNS trigger AS $$
@@ -73,4 +100,5 @@ DROP TRIGGER IF EXISTS audit_event_no_update ON audit_event;
 DROP TRIGGER IF EXISTS audit_event_chain_trg ON audit_event;
 DROP FUNCTION IF EXISTS audit_event_no_modify();
 DROP FUNCTION IF EXISTS audit_event_chain();
+DROP FUNCTION IF EXISTS create_audit_event_month_partition(date);
 DROP TABLE IF EXISTS audit_event;

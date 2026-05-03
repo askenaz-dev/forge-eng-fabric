@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.fullnameOverride | default .Chart.Name }}
+  labels:
+    app.kubernetes.io/name: {{ .Chart.Name }}
+    app.kubernetes.io/part-of: forge
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Chart.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ .Chart.Name }}
+        app.kubernetes.io/part-of: forge
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args: ["--config=/etc/otel/config.yaml"]
+          ports:
+            - { name: otlp-http, containerPort: {{ .Values.service.port }} }
+            - { name: otlp-grpc, containerPort: {{ .Values.service.grpcPort }} }
+            - { name: metrics, containerPort: {{ .Values.service.metricsPort }} }
+          volumeMounts:
+            - { name: config, mountPath: /etc/otel, readOnly: true }
+      volumes:
+        - name: config
+          configMap:
+            name: {{ .Values.fullnameOverride | default .Chart.Name }}

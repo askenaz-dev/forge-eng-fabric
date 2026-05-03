@@ -143,6 +143,37 @@ paths:
       responses:
         "204": { description: archived }
 
+  /v1/workspaces/{workspaceId}/github/installations:
+    parameters:
+      - { name: workspaceId, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      summary: Record a GitHub App installation for a workspace
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/GitHubInstallationCreate" }
+      responses:
+        "201":
+          description: created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GitHubInstallation" }
+
+  /v1/workspaces/{workspaceId}/github/repositories:
+    parameters:
+      - { name: workspaceId, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: List repositories accessible to the workspace GitHub installation
+      parameters:
+        - { name: refresh, in: query, required: false, schema: { type: boolean } }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GitHubRepositoriesResponse" }
+
 components:
   securitySchemes:
     bearerAuth:
@@ -187,7 +218,10 @@ components:
         owners:
           type: array
           items: { type: string }
-        archived_at: { type: string, format: date-time, nullable: true }
+        archived_at:
+          anyOf:
+            - { type: string, format: date-time }
+            - { type: "null" }
         created_at: { type: string, format: date-time }
     WorkspaceCreate:
       type: object
@@ -207,6 +241,49 @@ components:
         owners:
           type: array
           items: { type: string }
+    GitHubInstallation:
+      type: object
+      required: [id, tenant_id, workspace_id, installation_id, github_account, scopes, connected_at]
+      properties:
+        id: { type: string, format: uuid }
+        tenant_id: { type: string, format: uuid }
+        workspace_id: { type: string, format: uuid }
+        installation_id: { type: string }
+        github_account: { type: string }
+        scopes:
+          type: array
+          items: { type: string }
+        connected_at: { type: string, format: date-time }
+        connected_by: { type: string }
+    GitHubInstallationCreate:
+      type: object
+      required: [installation_id, github_account]
+      properties:
+        installation_id: { type: string }
+        github_account: { type: string }
+        scopes:
+          type: array
+          items: { type: string }
+    GitHubRepository:
+      type: object
+      required: [name, full_name, private]
+      properties:
+        id: { type: integer, format: int64 }
+        name: { type: string }
+        full_name: { type: string }
+        private: { type: boolean }
+        html_url: { type: string, format: uri }
+        default_branch: { type: string }
+    GitHubRepositoriesResponse:
+      type: object
+      required: [installation_id, github_account, cache_hit, repositories]
+      properties:
+        installation_id: { type: string }
+        github_account: { type: string }
+        cache_hit: { type: boolean }
+        repositories:
+          type: array
+          items: { $ref: "#/components/schemas/GitHubRepository" }
     Error:
       type: object
       required: [code, message]

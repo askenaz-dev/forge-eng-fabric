@@ -12,15 +12,23 @@ import (
 
 	"github.com/forge-eng-fabric/services/control-plane/internal/auth"
 	"github.com/forge-eng-fabric/services/control-plane/internal/events"
+	"github.com/forge-eng-fabric/services/control-plane/internal/githubapp"
 	"github.com/forge-eng-fabric/services/control-plane/internal/httpx"
 	"github.com/forge-eng-fabric/services/control-plane/internal/store"
+	"github.com/forge-eng-fabric/services/control-plane/internal/telemetry"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 func main() {
 	cfg := loadConfig()
+	shutdownTelemetry, err := telemetry.Init(context.Background(), "control-plane", cfg.Environment, cfg.OTLPEndpoint)
+	if err != nil {
+		log.Fatalf("otel: %v", err)
+	}
+	defer func() { _ = shutdownTelemetry(context.Background()) }()
 
 	db, err := store.Open(context.Background(), cfg.PostgresURL)
 	if err != nil {
@@ -44,7 +52,18 @@ func main() {
 	}
 	defer pub.Close()
 
-	api := httpx.NewAPI(db, fga, pub)
+	githubRepos, err := githubapp.NewService(githubapp.Config{
+		RedisURL:          cfg.RedisURL,
+		GitHubAPIURL:      cfg.GitHubAPIURL,
+		InstallationToken: cfg.GitHubInstallationToken,
+		FixtureJSON:       cfg.GitHubRepositoriesFixture,
+		CacheTTL:          cfg.GitHubRepoCacheTTL,
+	})
+	if err != nil {
+		log.Fatalf("github repository service: %v", err)
+	}
+
+	api := httpx.NewAPI(db, fga, pub, githubRepos)
 
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
@@ -69,7 +88,7 @@ func main() {
 
 	srv := &http.Server{
 		Addr:              cfg.Addr,
-		Handler:           r,
+		Handler:           otelhttp.NewHandler(r, "control-plane"),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 
@@ -99,12 +118,29 @@ type config struct {
 	OpenFGAModel     string
 	KafkaBrokers     string
 	EventsTopic      string
+	RedisURL         string
+
+	GitHubAPIURL              string
+	GitHubInstallationToken   string
+	GitHubRepositoriesFixture string
+	GitHubRepoCacheTTL        time.Duration
+	Environment               string
+	OTLPEndpoint              string
 }
 
 func loadConfig() config {
 	get := func(k, def string) string {
 		if v := os.Getenv(k); v != "" {
 			return v
+		}
+		return def
+	}
+	getDuration := func(k string, def time.Duration) time.Duration {
+		if v := os.Getenv(k); v != "" {
+			d, err := time.ParseDuration(v)
+			if err == nil {
+				return d
+			}
 		}
 		return def
 	}
@@ -118,5 +154,13 @@ func loadConfig() config {
 		OpenFGAModel:     get("OPENFGA_AUTHORIZATION_MODEL_ID", ""),
 		KafkaBrokers:     get("KAFKA_BROKERS", "localhost:29092"),
 		EventsTopic:      get("EVENTS_TOPIC", "forge.events"),
+		RedisURL:         get("REDIS_URL", "redis://localhost:6379/0"),
+
+		GitHubAPIURL:              get("GITHUB_API_URL", "https://api.github.com"),
+		GitHubInstallationToken:   get("GITHUB_INSTALLATION_TOKEN", ""),
+		GitHubRepositoriesFixture: get("GITHUB_REPOSITORIES_FIXTURE", ""),
+		GitHubRepoCacheTTL:        getDuration("GITHUB_REPOSITORY_CACHE_TTL", 5*time.Minute),
+		Environment:               get("ENV", "local"),
+		OTLPEndpoint:              get("OTEL_EXPORTER_OTLP_ENDPOINT", "localhost:4317"),
 	}
 }

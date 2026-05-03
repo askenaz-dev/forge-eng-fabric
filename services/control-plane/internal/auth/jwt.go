@@ -17,11 +17,12 @@ const principalKey ctxKey = 1
 
 // Principal is the authenticated user extracted from the JWT.
 type Principal struct {
-	Subject string
-	Email   string
-	Roles   []string
-	Groups  []string
-	Raw     map[string]any
+	Subject  string
+	Username string
+	Email    string
+	Roles    []string
+	Groups   []string
+	Raw      map[string]any
 }
 
 // Verifier validates Keycloak-issued JWTs.
@@ -60,6 +61,9 @@ func (v *Verifier) verify(tokenStr string) (*Principal, error) {
 	p := &Principal{Raw: claims}
 	if s, _ := claims["sub"].(string); s != "" {
 		p.Subject = s
+	}
+	if u, _ := claims["preferred_username"].(string); u != "" {
+		p.Username = u
 	}
 	if e, _ := claims["email"].(string); e != "" {
 		p.Email = e

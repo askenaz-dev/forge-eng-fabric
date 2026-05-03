@@ -1,0 +1,16 @@
+replicaCount: 1
+image:
+  repository: forge/alfred-stub
+  tag: local
+  pullPolicy: IfNotPresent
+service:
+  port: 8090
+probes:
+  enabled: true
+  readinessPath: /healthz
+  livenessPath: /healthz
+env:
+  CONTROL_PLANE_URL: "http://control-plane:8081"
+  LITELLM_URL: "http://litellm:4000"
+  LITELLM_KEY: "sk-forge-local"
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4317"
