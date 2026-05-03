@@ -3,7 +3,7 @@ name = "reference-skills"
 version = "0.1.0"
 description = "Forge Phase 1 reference skills"
 requires-python = ">=3.12"
-dependencies = ["jsonschema>=4.23", "pydantic>=2.9"]
+dependencies = ["fastapi>=0.115", "jsonschema>=4.23", "pydantic>=2.9", "uvicorn[standard]>=0.30"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8.3", "ruff>=0.6"]

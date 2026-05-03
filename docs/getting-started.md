@@ -2,6 +2,8 @@
 
 This is the **local-first slice** of Phase 0. It runs entirely on your laptop with Docker Compose. Cloud (GKE, Cloud SQL, Memorystore, Artifact Registry, etc.) is out of scope here and tracked as remaining tasks in `openspec/changes/phase-0-foundations/tasks.md`.
 
+For the cross-phase platform enablement path, use `docs/platform-enablement.md` as the canonical living guide. This page stays focused on the Phase 0 local slice.
+
 ## Prerequisites
 
 | Tool | Version | Notes |

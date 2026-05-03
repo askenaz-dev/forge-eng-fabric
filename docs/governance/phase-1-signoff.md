@@ -9,6 +9,7 @@ This record is prepared for the SDLC Team sign-off required by `phase-1-agentic-
 - Alfred local E2E smoke covers OpenSpec creation intent, Jira/Confluence linked artifacts, a 7-day `openspec:write` delegated grant, policy behavior for `deploy:prod`, reference Skill invocation, schema validation, decision audit and Langfuse-compatible correlation IDs.
 - Policy engine golden tests cover `deploy:prod` requiring approval and default autonomous behavior.
 - Registry lifecycle tests cover T1 eval threshold rejection and production-relevant invocation blocking for `in_review` assets.
+- Automated staging integration tests are available in `services/registry/tests/test_integration_promotion.py` and write JSON evidence under `docs/governance/evidence/phase-1/<timestamp>/`.
 - Portal build validates the Alfred Console `/openspec create` command path, including Jira and Confluence link fields.
 
 ## Integrated Evidence Checklist

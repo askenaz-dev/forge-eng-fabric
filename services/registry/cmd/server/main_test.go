@@ -1,6 +1,10 @@
 package main
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/google/uuid"
+)
 
 func TestSemVerPattern(t *testing.T) {
 	tests := map[string]bool{
@@ -54,5 +58,35 @@ func TestInvocationAllowedRequiresApprovedForProd(t *testing.T) {
 	}
 	if ok, _ := invocationAllowed("in_review", "dev"); !ok {
 		t.Fatal("dev flow may invoke non-approved assets")
+	}
+}
+
+func TestAssetInvocationCheckedEventIncludesAuditContext(t *testing.T) {
+	workspaceID := uuid.New()
+	tenantID := uuid.New()
+	event := buildAssetInvocationCheckedEvent(
+		"asset-1",
+		"0.1.0",
+		workspaceID,
+		tenantID,
+		"in_review",
+		"T1",
+		"prod",
+		false,
+		"production-relevant flows require approved assets",
+		"com.forge.asset.invocation.checked.v1",
+		"corr-registry",
+		"user-1",
+	)
+
+	if event["type"] != "com.forge.asset.invocation.checked.v1" {
+		t.Fatalf("unexpected event type: %#v", event["type"])
+	}
+	if event["forgecorrelationid"] != "corr-registry" {
+		t.Fatalf("missing correlation id: %#v", event["forgecorrelationid"])
+	}
+	data := event["data"].(map[string]any)
+	if data["allowed"] != false || data["environment"] != "prod" {
+		t.Fatalf("unexpected invocation audit data: %#v", data)
 	}
 }

@@ -32,7 +32,14 @@ def main() -> None:
     vectors = [[float(i)] + [random.random() for _ in range(dimension - 1)] for i in ids]
     collection.insert([ids, ["tenant-local"] * 5, ["workspace-local"] * 5, vectors])
     collection.flush()
-    collection.create_index("embedding", {"index_type": "HNSW", "metric_type": "L2", "params": {"M": 8, "efConstruction": 64}})
+    collection.create_index(
+        "embedding",
+        {
+            "index_type": "HNSW",
+            "metric_type": "L2",
+            "params": {"M": 8, "efConstruction": 64},
+        },
+    )
     collection.load()
 
     results = collection.search(

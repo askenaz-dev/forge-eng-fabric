@@ -653,13 +653,28 @@ func (s *server) checkAssetInvocation(w http.ResponseWriter, r *http.Request) {
 	var req invokeCheck
 	_ = json.NewDecoder(r.Body).Decode(&req)
 	var state string
-	err := s.pool.QueryRow(r.Context(), `SELECT lifecycle_state FROM asset WHERE id=$1 AND version=$2`, id, v).Scan(&state)
+	var workspaceID uuid.UUID
+	var tenantID uuid.UUID
+	var trustLevel string
+	err := s.pool.QueryRow(
+		r.Context(),
+		`SELECT lifecycle_state, workspace_id, tenant_id, COALESCE(trust_level,'T0') FROM asset WHERE id=$1 AND version=$2`,
+		id,
+		v,
+	).Scan(&state, &workspaceID, &tenantID, &trustLevel)
 	if err != nil {
 		http.Error(w, "not found", 404)
 		return
 	}
 	allowed, reason := invocationAllowed(state, req.Environment)
-	writeJSON(w, 200, map[string]any{"allowed": allowed, "reason": reason})
+	eventType := "com.forge.asset.invocation.checked.v1"
+	s.publishAssetInvocationCheckedEvent(r, id, v, workspaceID, tenantID, state, trustLevel, req.Environment, allowed, reason, eventType)
+	writeJSON(w, 200, map[string]any{
+		"allowed":          allowed,
+		"reason":           reason,
+		"audit_event_type": eventType,
+		"correlation_id":   r.Context().Value(cidKey),
+	})
 }
 
 func canTransition(from, to string) bool {
@@ -732,4 +747,83 @@ func (s *server) publishAssetLifecycleEvent(r *http.Request, a Asset, from, to s
 	}
 	body, _ := json.Marshal(envelope)
 	_ = s.kc.ProduceSync(r.Context(), &kgo.Record{Topic: s.topic, Key: []byte(a.TenantID.String()), Value: body}).FirstErr()
+}
+
+func (s *server) publishAssetInvocationCheckedEvent(
+	r *http.Request,
+	assetID string,
+	version string,
+	workspaceID uuid.UUID,
+	tenantID uuid.UUID,
+	lifecycleState string,
+	trustLevel string,
+	environment string,
+	allowed bool,
+	reason string,
+	eventType string,
+) {
+	cid, _ := r.Context().Value(cidKey).(string)
+	sub, _ := r.Context().Value(subjectKey).(string)
+	envelope := buildAssetInvocationCheckedEvent(
+		assetID,
+		version,
+		workspaceID,
+		tenantID,
+		lifecycleState,
+		trustLevel,
+		environment,
+		allowed,
+		reason,
+		eventType,
+		cid,
+		sub,
+	)
+	body, _ := json.Marshal(envelope)
+	_ = s.kc.ProduceSync(r.Context(), &kgo.Record{
+		Topic: s.topic,
+		Key:   []byte(tenantID.String()),
+		Value: body,
+		Headers: []kgo.RecordHeader{
+			{Key: "ce_type", Value: []byte(eventType)},
+			{Key: "ce_correlation_id", Value: []byte(cid)},
+		},
+	}).FirstErr()
+}
+
+func buildAssetInvocationCheckedEvent(
+	assetID string,
+	version string,
+	workspaceID uuid.UUID,
+	tenantID uuid.UUID,
+	lifecycleState string,
+	trustLevel string,
+	environment string,
+	allowed bool,
+	reason string,
+	eventType string,
+	correlationID string,
+	subject string,
+) map[string]any {
+	return map[string]any{
+		"specversion":        "1.0",
+		"id":                 uuid.NewString(),
+		"source":             "forge://service/registry",
+		"type":               eventType,
+		"subject":            "asset/" + assetID + "@" + version,
+		"time":               time.Now().UTC().Format(time.RFC3339Nano),
+		"datacontenttype":    "application/json",
+		"forgetenantid":      tenantID.String(),
+		"forgeworkspaceid":   workspaceID.String(),
+		"forgeactor":         "user:" + subject,
+		"forgecorrelationid": correlationID,
+		"data": map[string]any{
+			"asset_id":        assetID,
+			"version":         version,
+			"lifecycle_state": lifecycleState,
+			"trust_level":     trustLevel,
+			"environment":     environment,
+			"allowed":         allowed,
+			"reason":          reason,
+		},
+	}
 }

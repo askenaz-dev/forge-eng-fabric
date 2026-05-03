@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+from fastapi.testclient import TestClient
+
 from reference_skills.evals import run_eval_suite
+from reference_skills.runner import create_app
 from reference_skills.skills import create_user_stories, generate_test_cases, scaffold_service
 
 OPENSPEC = {
@@ -29,3 +32,17 @@ def test_generate_test_cases_and_eval_suites_pass() -> None:
     assert run_eval_suite("create-user-stories", create_user_stories, OPENSPEC)["passed"] is True
     assert run_eval_suite("scaffold-service", scaffold_service, name="worker")["passed"] is True
     assert run_eval_suite("generate-test-cases", generate_test_cases, OPENSPEC)["passed"] is True
+
+
+def test_skill_runner_invokes_reference_skills() -> None:
+    client = TestClient(create_app())
+    response = client.post(
+        "/v1/invoke",
+        json={"tool_id": "skill:create-user-stories", "params": {"openspec": OPENSPEC}},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["tool_id"] == "skill:create-user-stories"
+    assert body["ok"] is True
+    assert body["result"]["stories"][0]["links"]["openspec_id"] == "os-payments"

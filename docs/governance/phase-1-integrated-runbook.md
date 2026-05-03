@@ -29,7 +29,7 @@ Prerequisites
   - OPENFGA_API_ENDPOINT / OPENFGA_TOKEN
   - JIRA_BASE / JIRA_TOKEN (or test Jira instance)
   - CONFLUENCE_BASE / CONFLUENCE_TOKEN
-  - LANGFUSE_API_KEY (or equivalent)
+  - LANGFUSE_PUBLIC_KEY / LANGFUSE_SECRET_KEY, or LANGFUSE_API_KEY if the deployment uses bearer auth
   - ALFRED_API_URL (e.g., https://alfred.staging.example)
   - OPENSPEC_API_URL
   - REGISTRY_API_URL
@@ -38,8 +38,8 @@ Prerequisites
 
 High‑level validation steps
 1. Health checks
-   - Confirm the endpoints are reachable and healthy.
-   - Example: curl -sSf "$ALFRED_API_URL/health" && echo OK
+    - Confirm the endpoints are reachable and healthy.
+    - Example: curl -sSf "$ALFRED_API_URL/healthz" && echo OK
 
 2. Prepare test workspace and principal
    - Create a test Workspace (via Portal or openspec/registry API).
@@ -50,9 +50,9 @@ High‑level validation steps
    - Verify OpenFGA tuple or permission query returns allowed for Alfred.
 
 4. Create a low‑eval OpenSpec and verify promotion rejection
-   - Create or import an OpenSpec asset with eval scores below the threshold for T1.
-   - Attempt to promote the asset to `approved` via registry API.
-   - Expected: API rejects promotion with a list of failing eval dimensions.
+    - Create or import a T1 Registry asset in `in_review`.
+    - Attempt to promote the asset to `approved` via `POST /v1/assets/{asset_id}/versions/{version}/transition` with eval scores below the T1 threshold.
+    - Expected: API rejects promotion with a list of failing eval dimensions.
 
 5. Run Alfred intent that creates OpenSpec and invokes Skills
    - Call Alfred: POST /v1/intents (see example payload below) with correlation_id
@@ -64,12 +64,12 @@ High‑level validation steps
    - Verify Tempo/OpenTelemetry traces link to the same correlation_id.
 
 7. Test promotion with passing evals
-   - Run the eval harness to produce passing eval scores for the asset (or replace evals in the registry if allowed for testing).
-   - Attempt promotion to `approved`; expected: success and lifecycle transition event emitted.
+    - Run the eval harness to produce passing eval scores for the asset (or replace evals in the registry if allowed for testing).
+    - Attempt promotion via `POST /v1/assets/{asset_id}/versions/{version}/transition`; expected: success and lifecycle transition event emitted.
 
 8. Verify production gating for `in_review` assets
-   - Mark an asset as `in_review` and attempt to invoke it in a production flow (metadata env=prod) via Alfred.
-   - Expected: invocation blocked by policy engine and an audit event created.
+    - Mark an asset as `in_review` and call `POST /v1/assets/{asset_id}/versions/{version}/invoke-check` with `environment=prod`.
+    - Expected: invocation is blocked and the response references `com.forge.asset.invocation.checked.v1` for the audit event.
 
 9. Collect evidence for SDLC sign‑off
    - Decision logs (JSON) for the runs (include correlation_id).
@@ -82,9 +82,8 @@ High‑level validation steps
 Example Alfred intent payload (POST /v1/intents)
 ```
 {
-  "actor": "alice",
   "workspace_id": "<workspace-uuid>",
-  "intent": "Validate Phase 1 E2E from Alfred Console",
+  "text": "Validate Phase 1 E2E from Alfred Console",
   "correlation_id": "phase-1-integrated-<random>",
   "openspec_id": "phase-1-integrated",
   "metadata": {"env": "dev"}
@@ -92,7 +91,9 @@ Example Alfred intent payload (POST /v1/intents)
 ```
 
 Automated checks
-- The companion script (scripts/integration/run_phase1_integrated_checks.ps1) automates health checks, permission grant, intent submission, polling for decisions and basic verification of outcomes. It requires the environment variables listed above.
+- The companion script (`scripts/integration/run_phase1_integrated_checks.ps1`) runs the automated pytest integration checks and saves JSON evidence under `docs/governance/evidence/phase-1/<timestamp>/`.
+- Required variables for registry checks: `REGISTRY_API_URL`, `WORKSPACE_ID`, `AUTH_TOKEN`.
+- Additional variables for Alfred/Langfuse checks: `ALFRED_API_URL`, `ALFRED_TOKEN` or `AUTH_TOKEN`, `LANGFUSE_API_URL` or `LANGFUSE_HOST`, and either `LANGFUSE_PUBLIC_KEY`/`LANGFUSE_SECRET_KEY` or `LANGFUSE_API_KEY`.
 
 When to stop and escalate
 - If any step fails due to missing infrastructure (e.g., Langfuse not configured), stop and record the blocker.
@@ -103,8 +104,9 @@ Sign-off
 
 Appendix: common API endpoints (examples)
 - Alfred intents: POST $ALFRED_API_URL/v1/intents
-- Decisions: GET $ALFRED_API_URL/v1/decisions?correlation_id=<id>
-- Registry promote: POST $REGISTRY_API_URL/v1/assets/{asset_id}/lifecycle/promote
+- Decisions: GET $ALFRED_API_URL/v1/decisions?workspace_id=<workspace_id>&correlation_id=<id>
+- Registry transition: POST $REGISTRY_API_URL/v1/assets/{asset_id}/versions/{version}/transition
+- Registry invoke check: POST $REGISTRY_API_URL/v1/assets/{asset_id}/versions/{version}/invoke-check
 - Permission grant (example): POST $APPROVALS_API_URL/v1/grants
 
 Notes

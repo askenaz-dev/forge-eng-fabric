@@ -6,7 +6,11 @@ assets:
     lifecycle_state: approved
     trust_level: T1
     eval_suite: deterministic-reference-skills
-    eval_scores: {schema: 1.0, latency: 1.0, cost: 1.0, safety: 1.0}
+    eval_scores: {quality: 1.0, safety: 1.0, cost: 1.0, latency: 1.0}
+    source:
+      format: agentskills.io/v1
+      path: agent-skills/create-user-stories
+      runtime: reference_skills.skills:create_user_stories
   - id: skill-scaffold-service
     type: skill
     name: scaffold-service
@@ -14,7 +18,11 @@ assets:
     lifecycle_state: approved
     trust_level: T1
     eval_suite: deterministic-reference-skills
-    eval_scores: {schema: 1.0, latency: 1.0, cost: 1.0, safety: 1.0}
+    eval_scores: {quality: 1.0, safety: 1.0, cost: 1.0, latency: 1.0}
+    source:
+      format: agentskills.io/v1
+      path: agent-skills/scaffold-service
+      runtime: reference_skills.skills:scaffold_service
   - id: skill-generate-test-cases
     type: skill
     name: generate-test-cases
@@ -22,4 +30,8 @@ assets:
     lifecycle_state: approved
     trust_level: T1
     eval_suite: deterministic-reference-skills
-    eval_scores: {schema: 1.0, latency: 1.0, cost: 1.0, safety: 1.0}
+    eval_scores: {quality: 1.0, safety: 1.0, cost: 1.0, latency: 1.0}
+    source:
+      format: agentskills.io/v1
+      path: agent-skills/generate-test-cases
+      runtime: reference_skills.skills:generate_test_cases
