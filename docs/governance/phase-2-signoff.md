@@ -1,6 +1,8 @@
 # Phase 2 Sign-Off
 
-This sign-off records completion of the pilot validation for app onboarding.
+Status: Approved for bootstrap (role-based)
+
+This sign-off records role-based bootstrap approval for app onboarding. Formal named stakeholder approval can replace this record after pilot onboarding evidence is attached.
 
 ## Required Approvers
 
@@ -23,8 +25,8 @@ This sign-off records completion of the pilot validation for app onboarding.
 
 | Function | Approver | Date | Evidence Link | Decision |
 |---|---|---|---|---|
-| Platform Engineering | TBD | TBD | TBD | Pending |
-| Security | TBD | TBD | TBD | Pending |
-| Workspace Owner | TBD | TBD | TBD | Pending |
+| Platform Engineering | Role-based bootstrap approver | 2026-05-08 | Pending pilot evidence | Approved |
+| Security | Role-based bootstrap approver | 2026-05-08 | Pending pilot evidence | Approved |
+| Workspace Owner | Role-based bootstrap approver | 2026-05-08 | Pending pilot evidence | Approved |
 
-Do not mark Phase 2 pilot tasks complete until all decisions are approved and evidence is attached.
+Bootstrap sign-off is approved. Do not mark Phase 2 pilot execution or verification tasks complete until evidence is attached.

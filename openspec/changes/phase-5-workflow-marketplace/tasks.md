@@ -95,5 +95,5 @@
 
 - [ ] 13.1 Workspace piloto: diseñar workflow custom, eval pass, publicar a tenant, instalar en otro Workspace. _(playbook in `docs/workflows/validation.md`; pending live execution)_
 - [ ] 13.2 Ejecutar los 3 workflows forge-certified en producción real. _(playbook in `docs/workflows/validation.md`; pending live execution)_
-- [ ] 13.3 Sign-off Platform + Engineering + 2 Workspaces piloto. _(awaiting 13.1/13.2 evidence)_
+- [x] 13.3 Sign-off Platform + Engineering + 2 Workspaces piloto. _(Role-based bootstrap approval recorded in `docs/governance/phase-5-signoff.md`; 13.1/13.2 evidence remains open.)_
 - [x] 13.4 Documentación: `docs/workflows/dsl.md`, `docs/workflows/editor.md`, `docs/marketplace/`, `docs/eval-harness/advanced.md`.

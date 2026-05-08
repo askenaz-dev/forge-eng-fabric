@@ -4,7 +4,7 @@
 
 ### Requirement: Optional runtime defaults at onboarding
 
-The onboarding service MAY, when requested, provision a default runtime (typically `dev`) by invoking `POST /v1/runtimes/provision` (Provisioned mode) or by accepting a pre-existing BYO runtime id.
+The onboarding service SHALL support optional runtime defaults and, when requested, MUST provision a default runtime (typically `dev`) by invoking `POST /v1/runtimes/provision` (Provisioned mode) or accept a pre-existing BYO runtime id.
 
 #### Scenario: Onboarding with provisioned dev runtime
 

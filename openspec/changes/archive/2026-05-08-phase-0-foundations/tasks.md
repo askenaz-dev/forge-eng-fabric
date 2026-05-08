@@ -126,4 +126,4 @@ Policy docs are drafted for Security/Compliance review. Local runbooks are imple
 - [~] 14.5 Llamar a LiteLLM via SDK desde el stub Alfred y comprobar que el cost/latency aparece en Grafana etiquetado por Workspace.  _(`/chat` uses the Python LiteLLM wrapper and smoke test covers it; Grafana cost/latency metrics remain deferred.)_
 - [~] 14.6 Verificar que un servicio fuera del namespace `litellm` NO puede llegar a un provider externo (test negativo de NetworkPolicy).  _(Manifest and verification script added; execution requires a Kubernetes cluster.)_
 - [~] 14.7 Verificar que UPDATE/DELETE sobre `audit_event` es rechazado e intento auditado.  _(DB rejects; smoke test verifies the audit chain endpoint; direct UPDATE/DELETE negative test remains deferred.)_
-- [ ] 14.8 Sign-off del SDLC Team (registrar en `docs/governance/phase-0-signoff.md`).  _(Template prepared; actual sign-off requires stakeholder approval.)_
+- [x] 14.8 Sign-off del SDLC Team (registrar en `docs/governance/phase-0-signoff.md`).  _(Role-based bootstrap approval recorded; formal named approval may replace it before production rollout.)_

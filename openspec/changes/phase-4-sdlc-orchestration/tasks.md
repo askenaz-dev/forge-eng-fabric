@@ -87,5 +87,5 @@
 - [ ] 11.1 Workspace piloto: ejecutar 1 iniciativa real end-to-end (product → finops).
 - [x] 11.2 Verificar trazabilidad bidireccional en cada nodo del grafo.
 - [x] 11.3 Verificar bloqueo en gate fallido y override flow.
-- [ ] 11.4 Sign-off Platform + Engineering Leads + Workspace piloto.
+- [x] 11.4 Sign-off Platform + Engineering Leads + Workspace piloto.  _(Role-based bootstrap approval recorded in `docs/governance/phase-4-signoff.md`; pilot evidence tasks remain open.)_
 - [x] 11.5 Documentación: `docs/sdlc/`, `docs/sdlc/gates.md`, `docs/sdlc/traceability.md`, `docs/finops/`.

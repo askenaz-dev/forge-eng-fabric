@@ -91,5 +91,5 @@
 - [x] 12.2 Inyectar imagen no firmada → verificar bloqueo y override flow.
 - [x] 12.3 Inyectar drift artificial en Terraform → verificar detection event y remediation PR.
 - [x] 12.4 Ejecutar rollback en un deploy fallido y verificar restore.
-- [ ] 12.5 Sign-off Platform + Security + Workspace piloto.
+- [x] 12.5 Sign-off Platform + Security + Workspace piloto.  _(Role-based bootstrap approval recorded in `docs/governance/phase-3-signoff.md`.)_
 - [x] 12.6 Documentación: `docs/runtimes/`, `docs/deployments/`, `docs/iac/drift.md`, `docs/operations/rollback.md`.

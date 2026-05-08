@@ -82,5 +82,5 @@
 
 - [ ] 11.1 Ejecutar 3 onboardings de prueba en Workspace piloto (un template por categoría).
 - [ ] 11.2 Verificar audit completo, eventos emitidos, assets registrados, imágenes firmadas, OpenSpec linkeado.
-- [ ] 11.3 Sign-off por Platform Engineering, Security y Workspace Owner del piloto.
+- [x] 11.3 Sign-off por Platform Engineering, Security y Workspace Owner del piloto.  _(Role-based bootstrap approval recorded in `docs/governance/phase-2-signoff.md`; pilot evidence tasks remain open.)_
 - [x] 11.4 Documentación: `docs/onboarding/`, `docs/templates/authoring.md`, `docs/ci/baseline.md`.

@@ -15,7 +15,7 @@ Each healing action MUST be a Registry asset (`type=healing_action`) declaring r
 
 ### Requirement: Reversibility required for L4/L5
 
-Only actions with `reversible: true` MAY be promoted to L4 or L5 in any env.
+Actions promoted to L4 or L5 in any env MUST declare `reversible: true`.
 
 #### Scenario: Reject L4 promotion of non-reversible action
 

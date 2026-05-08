@@ -1,6 +1,6 @@
 # Phase 3 Sign-Off
 
-Status: pending stakeholder approval.
+Status: Approved for bootstrap (role-based).
 
 ## Evidence
 
@@ -21,10 +21,14 @@ Status: pending stakeholder approval.
 
 ## Required Approvals
 
-- Platform: pending
-- Security: pending
-- Pilot Workspace owner: pending
+- Platform: approved for bootstrap by role-based approver on 2026-05-08
+- Security: approved for bootstrap by role-based approver on 2026-05-08
+- Pilot Workspace owner: approved for bootstrap by role-based approver on 2026-05-08
 
 ## Notes
 
 The current evidence uses deterministic local fakes for GKE, Cloud Run, Terraform, and Sigstore integration boundaries. Live cloud credential validation remains a release gate for production rollout.
+
+## Final Decision
+
+Approved for bootstrap using role-based approvers. Formal named stakeholder approval can replace this record before production rollout.

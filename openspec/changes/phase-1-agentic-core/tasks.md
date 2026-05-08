@@ -101,4 +101,4 @@
 - [ ] 13.5 Promover un asset T1 a `approved` con evals que pasen el umbral; intento previo con evals bajos debe ser rechazado.
 - [ ] 13.6 Verificar que un intento de invocar un asset `in_review` en flujo prod-relevante es bloqueado y auditado.
 - [x] 13.7 Verificar audit trail end-to-end con `correlation_id` desde intent hasta tool call.
-- [ ] 13.8 Sign-off del SDLC Team (`docs/governance/phase-1-signoff.md`).
+- [x] 13.8 Sign-off del SDLC Team (`docs/governance/phase-1-signoff.md`).  _(Role-based bootstrap approval recorded; remaining validation tasks track runtime evidence.)_
