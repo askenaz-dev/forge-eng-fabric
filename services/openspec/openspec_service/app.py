@@ -9,11 +9,13 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from openspec_service.events import EventPublisher, InMemoryEventPublisher
 from openspec_service.models import (
     DecisionLogEntry,
+    EvolutionLoopStats,
     LinkedArtifact,
     OpenSpecCreate,
     OpenSpecDocument,
     OpenSpecListResponse,
     OpenSpecPatch,
+    OpenSpecReviewRequest,
 )
 from openspec_service.store import FilesystemOpenSpecStore
 
@@ -27,6 +29,15 @@ class Settings(BaseSettings):
 class LinkRequest(BaseModel):
     actor: str
     link: LinkedArtifact
+
+
+class JiraHookRequest(BaseModel):
+    openspec_id: str
+    key: str
+    url: str | None = None
+    status: str | None = None
+    actor: str = "jira"
+    correlation_id: str | None = None
 
 
 def create_app(
@@ -121,10 +132,69 @@ def create_app(
         )
         return document
 
+    @app.post("/v1/hooks/jira", response_model=OpenSpecDocument)
+    async def jira_hook(request: JiraHookRequest) -> OpenSpecDocument:
+        link = LinkedArtifact(
+            kind="jira",
+            namespace="jira",
+            ref=f"jira:{request.key}",
+            metadata={"url": request.url, "status": request.status},
+        )
+        document = store.append_link(request.openspec_id, link, request.actor)
+        if not document:
+            raise HTTPException(status_code=404, detail="openspec not found")
+        decision = DecisionLogEntry(
+            type="jira_link",
+            actor=request.actor,
+            decision=f"Jira issue {request.key} linked or updated",
+            rationale="Jira webhook updated OpenSpec traceability",
+            correlation_id=request.correlation_id,
+            key=request.key,
+            url=request.url,
+            status=request.status,
+        )
+        document = store.append_decision(request.openspec_id, decision)
+        publisher.publish(
+            "openspec.updated.v1",
+            document.openspec_id,
+            {"openspec_id": document.openspec_id, "decision_id": decision.id, "link": link.model_dump(mode="json")},
+        )
+        return document
+
     @app.post("/v1/sync/filesystem")
     async def sync_filesystem() -> dict[str, int]:
         store.sync_from_filesystem()
         return {"openspecs": len(store.index.rows)}
+
+    @app.post("/v1/openspecs/{openspec_id}/review", response_model=OpenSpecDocument)
+    async def review_openspec(openspec_id: str, request: OpenSpecReviewRequest) -> OpenSpecDocument:
+        try:
+            document = store.review(
+                openspec_id,
+                approved=request.approved,
+                reviewer=request.reviewer,
+                comment=request.comment,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        if not document:
+            raise HTTPException(status_code=404, detail="openspec not found")
+        publisher.publish(
+            "openspec.autonomous_loop.reviewed.v1",
+            document.openspec_id,
+            {
+                "openspec_id": document.openspec_id,
+                "approved": request.approved,
+                "reviewer": request.reviewer,
+                "version": document.version,
+            },
+        )
+        return document
+
+    @app.get("/v1/evolution/stats", response_model=EvolutionLoopStats)
+    async def evolution_stats() -> EvolutionLoopStats:
+        stats = store.evolution_stats()
+        return EvolutionLoopStats(**stats)
 
     return app
 

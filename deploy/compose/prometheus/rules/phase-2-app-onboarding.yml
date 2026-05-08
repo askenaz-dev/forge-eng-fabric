@@ -1,0 +1,32 @@
+groups:
+  - name: phase2-app-onboarding-slos
+    rules:
+      - alert: OnboardingP95AboveFiveMinutes
+        expr: histogram_quantile(0.95, sum(rate(onboarding_duration_seconds_bucket[15m])) by (le)) > 300
+        for: 15m
+        labels:
+          severity: warning
+          phase: phase-2
+        annotations:
+          summary: App onboarding p95 is above five minutes
+          description: The Phase 2 SLO requires onboarding p95 <= 5 minutes.
+
+      - alert: ImageSigningRateBelowOneHundredPercent
+        expr: image_signing_rate < 1
+        for: 15m
+        labels:
+          severity: critical
+          phase: phase-2
+        annotations:
+          summary: Image signing rate is below 100 percent
+          description: Every image published from main must be signed and attested.
+
+      - alert: OpenSpecLinkCoverageBelowTarget
+        expr: pr_openspec_link_coverage < 0.95
+        for: 30m
+        labels:
+          severity: warning
+          phase: phase-2
+        annotations:
+          summary: PR to OpenSpec link coverage is below 95 percent
+          description: Criticality medium or higher repositories should maintain OpenSpec link coverage >= 95 percent.

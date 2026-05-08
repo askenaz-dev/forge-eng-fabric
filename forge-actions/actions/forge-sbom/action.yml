@@ -1,0 +1,36 @@
+name: "Forge SBOM"
+description: |
+  Generate SPDX and CycloneDX SBOMs for a container image using Syft and
+  store them as build artifacts. Emits `sbom.published.v1` notice.
+
+inputs:
+  image:
+    description: "Image to scan (e.g. ghcr.io/org/svc:dev or :digest)"
+    required: true
+  output_dir:
+    description: "Directory to write SBOM files"
+    required: false
+    default: "./sbom"
+
+outputs:
+  spdx_path:
+    description: "Path to SPDX SBOM"
+    value: ${{ steps.gen.outputs.spdx }}
+  cyclonedx_path:
+    description: "Path to CycloneDX SBOM"
+    value: ${{ steps.gen.outputs.cyclonedx }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install syft
+      uses: anchore/sbom-action/download-syft@v0
+    - id: gen
+      shell: bash
+      run: |
+        mkdir -p "${{ inputs.output_dir }}"
+        syft "${{ inputs.image }}" -o spdx-json="${{ inputs.output_dir }}/sbom.spdx.json"
+        syft "${{ inputs.image }}" -o cyclonedx-json="${{ inputs.output_dir }}/sbom.cdx.json"
+        echo "spdx=${{ inputs.output_dir }}/sbom.spdx.json" >> "$GITHUB_OUTPUT"
+        echo "cyclonedx=${{ inputs.output_dir }}/sbom.cdx.json" >> "$GITHUB_OUTPUT"
+        echo "::notice::sbom.published.v1 image=${{ inputs.image }}"

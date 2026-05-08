@@ -1,0 +1,93 @@
+groups:
+  - name: phase6-healing-funnel
+    rules:
+      # Healing invocations by level (counter — used in dashboards / alerting)
+      # are recorded as healing_invocations_total{level="L1..L5"} by the
+      # healing-engine. Success rate is computed against
+      # healing_invocations_outcome_total{outcome="executed"}.
+
+      - alert: HealingSuccessRateBelowEightyPercent
+        expr: |
+          sum(rate(healing_invocations_outcome_total{outcome="executed"}[15m])) by (level)
+          /
+          sum(rate(healing_invocations_total[15m])) by (level)
+          < 0.80
+        for: 15m
+        labels:
+          severity: warning
+          phase: phase-6
+        annotations:
+          summary: Healing success rate by level dropped
+          description: One of the autonomy levels is succeeding less than 80% of the time over 15 minutes.
+
+      - alert: AutoRollbackRateAboveTenPercent
+        expr: |
+          sum(rate(healing_rolled_back_total[1h]))
+          /
+          sum(rate(healing_invocations_total{level="L5"}[1h]))
+          > 0.10
+        for: 30m
+        labels:
+          severity: warning
+          phase: phase-6
+        annotations:
+          summary: Auto-rollback rate above 10%
+          description: More than 10% of L5 invocations rolled back in the last hour — investigate envelopes.
+
+      - alert: KillSwitchActivationsSpike
+        expr: increase(healing_kill_switch_activation_count_total[24h]) > 3
+        for: 5m
+        labels:
+          severity: critical
+          phase: phase-6
+        annotations:
+          summary: Kill switch activated multiple times in 24h
+          description: Sustained kill-switch activations point to systemic healing-engine errors.
+
+      - alert: MTTRAboveOneHour
+        expr: histogram_quantile(0.95, sum(rate(mttr_seconds_bucket[1h])) by (le)) > 3600
+        for: 30m
+        labels:
+          severity: warning
+          phase: phase-6
+        annotations:
+          summary: MTTR p95 above 1h
+          description: Time-to-resolution from detection to incident.resolved is exceeding the SLO.
+
+      - alert: IncidentDetectionDiagnosisGap
+        # Detection→diagnosis funnel: emitted as
+        # incident_detected_total / incident_diagnosed_total.
+        expr: |
+          sum(rate(incident_detected_total[15m]))
+          -
+          sum(rate(incident_diagnosed_total[15m]))
+          > 0.5
+        for: 15m
+        labels:
+          severity: warning
+          phase: phase-6
+        annotations:
+          summary: Diagnosis pipeline lagging detection
+          description: New incidents are being detected faster than the diagnosis pipeline produces reports.
+
+      - alert: IncidentCountBySeveritySpike
+        expr: increase(incident_count_by_severity_total{severity="critical"}[1h]) > 5
+        for: 30m
+        labels:
+          severity: critical
+          phase: phase-6
+        annotations:
+          summary: Critical incident count spiking
+          description: More than 5 critical incidents in the last hour — escalate to incident commander.
+
+      - alert: EvolutionInboxStalled
+        expr: |
+          sum(evolution_proposal_status{status="inbox"})
+          > 25
+        for: 6h
+        labels:
+          severity: info
+          phase: phase-6
+        annotations:
+          summary: Evolution inbox not being processed
+          description: More than 25 proposals waiting for review for over 6 hours.

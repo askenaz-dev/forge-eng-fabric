@@ -1,0 +1,29 @@
+apiVersion: forge.eval/v1
+kind: EvalDataset
+metadata:
+  id: ds-increase-rate-limit-eval
+  version: 1.0.0
+  category: healing-action
+  owners:
+    - sre-platform
+  description: Golden dataset for increase-rate-limit healing action.
+spec:
+  threshold:
+    pass_rate: 0.95
+    last_n_runs: 50
+  cases:
+    - id: legitimate-burst
+      input: {tenant_id: t-acme, limit_key: api/req_per_min, new_limit: 1000, ttl_minutes: 60}
+      expected: {outcome: succeeded, verify: limit_applied}
+    - id: limit-exceeds-cap
+      input: {tenant_id: t-acme, limit_key: api/req_per_min, new_limit: 1000000, ttl_minutes: 60}
+      expected: {outcome: blocked, rationale: tenant_cap_exceeded}
+    - id: ttl-too-long
+      input: {tenant_id: t-acme, limit_key: api/req_per_min, new_limit: 1000, ttl_minutes: 1440}
+      expected: {outcome: blocked, rationale: ttl_above_max}
+    - id: missing-key
+      input: {tenant_id: t-acme, limit_key: nope, new_limit: 100, ttl_minutes: 30}
+      expected: {outcome: blocked, rationale: unknown_limit_key}
+    - id: noop-already-higher
+      input: {tenant_id: t-acme, limit_key: api/req_per_min, new_limit: 100, ttl_minutes: 60}
+      expected: {outcome: skipped, rationale: limit_already_higher}

@@ -1,0 +1,29 @@
+apiVersion: forge.eval/v1
+kind: EvalDataset
+metadata:
+  id: ds-scale-up-eval
+  version: 1.0.0
+  category: healing-action
+  owners:
+    - sre-platform
+  description: Golden dataset for scale-up healing action.
+spec:
+  threshold:
+    pass_rate: 0.95
+    last_n_runs: 50
+  cases:
+    - id: capacity-exhausted
+      input: {namespace: default, deployment: web, replicas: 6, cluster: prod-1}
+      expected: {outcome: succeeded, verify: deployment_ready_within_300s}
+    - id: hpa-conflicts
+      input: {namespace: default, deployment: web-hpa-managed, replicas: 6, cluster: prod-1}
+      expected: {outcome: blocked, rationale: hpa_conflict}
+    - id: scale-up-no-capacity
+      input: {namespace: default, deployment: heavy, replicas: 50, cluster: prod-1}
+      expected: {outcome: blocked, rationale: insufficient_node_capacity}
+    - id: scale-up-recovers-latency
+      input: {namespace: default, deployment: api, replicas: 8, cluster: prod-1}
+      expected: {outcome: succeeded, verify: latency_p95_under_200ms}
+    - id: scale-up-noop
+      input: {namespace: default, deployment: api, replicas: 4, cluster: prod-1}
+      expected: {outcome: skipped, rationale: already_at_target}

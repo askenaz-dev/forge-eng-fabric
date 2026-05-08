@@ -1,0 +1,116 @@
+apiVersion: forge.workflows/v1
+kind: Workflow
+metadata:
+  id: release-train
+  name: Release Train
+  version: 1.0.0
+  visibility: forge-certified
+  criticality: critical
+  owners:
+    - platform-engineering
+  description: |
+    Orchestrates a release across multiple assets with quality, security and
+    business gates. Requires human approval before promote-to-prod.
+  tags:
+    - sdlc
+    - release
+    - certified
+  success_metric: pr_merged_within_24h
+  openspec_ids:
+    - phase-5-workflow-marketplace
+spec:
+  inputs:
+    - name: release_train_id
+      type: string
+      required: true
+    - name: candidate_revision
+      type: string
+      required: true
+    - name: target_env
+      type: string
+      required: true
+  outputs:
+    - name: release_status
+      type: string
+    - name: deployment_id
+      type: string
+  steps:
+    - id: collect-changes
+      type: skill
+      ref: registry:skill/sdlc-devops/collect-release-changes@1.0.0
+      inputs:
+        release_train_id: $inputs.release_train_id
+        revision: $inputs.candidate_revision
+      outputs:
+        - changes
+        - assets
+
+    - id: run-quality-gate
+      type: skill
+      ref: registry:skill/sdlc-qa/run-quality-gate@1.0.0
+      depends_on:
+        - collect-changes
+      inputs:
+        assets: $steps.collect-changes.outputs.assets
+      retries:
+        max: 2
+        backoff: exponential
+      timeout: 10m
+      outputs:
+        - quality_passed
+
+    - id: run-security-review
+      type: skill
+      ref: registry:skill/sdlc-security/security-review@1.0.0
+      depends_on:
+        - collect-changes
+      inputs:
+        assets: $steps.collect-changes.outputs.assets
+      outputs:
+        - security_passed
+
+    - id: release-manager-approval
+      type: human-in-the-loop
+      depends_on:
+        - run-quality-gate
+        - run-security-review
+      approver_role: release-manager
+      timeout: 24h
+      on_timeout: escalate
+      escalation_role: engineering-manager
+
+    - id: deploy
+      type: mcp
+      ref: registry:mcp/deploy-orchestrator@write
+      tool: rollout
+      depends_on:
+        - release-manager-approval
+      inputs:
+        release_train_id: $inputs.release_train_id
+        env: $inputs.target_env
+        revision: $inputs.candidate_revision
+      retries:
+        max: 1
+      compensate_with: rollback
+      outputs:
+        - deployment_id
+
+    - id: announce
+      type: skill
+      ref: registry:skill/sdlc-devops/post-release-note@1.0.0
+      depends_on:
+        - deploy
+      inputs:
+        deployment_id: $steps.deploy.outputs.deployment_id
+
+  on_failure:
+    - id: rollback
+      type: mcp
+      ref: registry:mcp/deploy-orchestrator@write
+      tool: rollback
+      inputs:
+        release_train_id: $inputs.release_train_id
+        env: $inputs.target_env
+    - id: notify-incident
+      type: skill
+      ref: registry:skill/sdlc-devops/post-incident-note@1.0.0

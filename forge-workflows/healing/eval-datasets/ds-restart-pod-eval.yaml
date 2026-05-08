@@ -1,0 +1,54 @@
+apiVersion: forge.eval/v1
+kind: EvalDataset
+metadata:
+  id: ds-restart-pod-eval
+  version: 1.0.0
+  category: healing-action
+  owners:
+    - sre-platform
+  description: Golden dataset for restart-pod healing action.
+spec:
+  threshold:
+    pass_rate: 0.95
+    last_n_runs: 50
+  cases:
+    - id: pod-crashloop
+      input:
+        namespace: default
+        pod_name: app-1234abc
+        cluster: prod-1
+      expected:
+        outcome: succeeded
+        verify: pod_running_within_120s
+    - id: pod-already-deleted
+      input:
+        namespace: default
+        pod_name: ghost-pod
+        cluster: prod-1
+      expected:
+        outcome: skipped
+        rationale: pod_not_found
+    - id: pod-protected-by-pdb
+      input:
+        namespace: payments
+        pod_name: payments-leader
+        cluster: prod-1
+      expected:
+        outcome: blocked
+        rationale: pdb_violation
+    - id: pod-restart-recovers
+      input:
+        namespace: default
+        pod_name: failing-readiness
+        cluster: prod-1
+      expected:
+        outcome: succeeded
+        verify: ready_within_60s
+    - id: pod-restart-fails-twice
+      input:
+        namespace: default
+        pod_name: persistent-failure
+        cluster: prod-1
+      expected:
+        outcome: escalated
+        rationale: still_unhealthy_after_restart

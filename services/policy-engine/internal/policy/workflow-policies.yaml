@@ -1,0 +1,54 @@
+# Phase 5 policy templates for workflow publish/install flows.
+#
+# These templates can be loaded into the policy-engine via LoadYAML and are
+# referenced by the marketplace and workflow-registry services when
+# evaluating publish or install requests.
+#
+# The expected `target` shape mirrors the marketplace listing payload:
+#
+#   target:
+#     visibility: tenant            # private|workspace|tenant|forge-certified
+#     eval_outcome: passed          # passed|failed|missing
+#     security_review_id: sec-1     # non-empty when a review exists
+#     workflow_id: wf-1
+#     workflow_version: 1.0.0
+#     workspace_id: ws-source
+#     target_workspace_id: ws-target
+
+policies:
+  - id: require-eval-pass
+    priority: 90
+    decision: deny
+    condition: |
+      (action == "workflow:publish" || action == "marketplace:certify")
+      && target.eval_outcome != "passed"
+    rationale: workflow publication requires a passing eval run
+    required_approvers: []
+
+  - id: require-security-review
+    priority: 91
+    decision: deny
+    condition: |
+      action == "marketplace:certify"
+      && target.security_review_id == ""
+    rationale: forge-certified workflows require a security review
+    required_approvers: []
+
+  - id: require-tenant-share-approval
+    priority: 80
+    decision: requires_approval
+    condition: |
+      (action == "workflow:promote" || action == "marketplace:publish")
+      && target.visibility == "tenant"
+    rationale: promoting a workflow to Tenant visibility requires Tenant admin approval
+    required_approvers:
+      - tenant-admin
+
+  - id: forge-certification-prerequisites
+    priority: 81
+    decision: requires_approval
+    condition: |
+      action == "marketplace:certify" && target.visibility == "forge-certified"
+    rationale: forge-certified status requires Forge certifier sign-off after eval+security
+    required_approvers:
+      - forge-certifier

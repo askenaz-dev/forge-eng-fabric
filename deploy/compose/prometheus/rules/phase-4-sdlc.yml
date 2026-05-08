@@ -1,0 +1,32 @@
+groups:
+  - name: phase4-sdlc-slos
+    rules:
+      - alert: SDLCGateEvaluationP95AboveFiveSeconds
+        expr: histogram_quantile(0.95, sum(rate(sdlc_gate_evaluation_duration_seconds_bucket[5m])) by (le, workspace)) > 5
+        for: 10m
+        labels:
+          severity: warning
+          phase: phase-4
+        annotations:
+          summary: SDLC gate evaluation p95 is above 5 seconds
+          description: Initial Phase 4 SLO requires gate eval p95 <= 5s.
+
+      - alert: TraceabilityQueryP95AboveOneSecond
+        expr: traceability_query_latency_p95 > 1
+        for: 10m
+        labels:
+          severity: warning
+          phase: phase-4
+        annotations:
+          summary: Traceability query p95 is above 1 second
+          description: Initial Phase 4 SLO requires traceability query p95 <= 1s.
+
+      - alert: JiraOrConfluenceSyncLagAboveFiveMinutes
+        expr: jira_sync_lag_seconds > 300 or confluence_sync_lag_seconds > 300
+        for: 10m
+        labels:
+          severity: warning
+          phase: phase-4
+        annotations:
+          summary: Jira or Confluence sync lag is above 5 minutes
+          description: Initial Phase 4 SLO requires Jira/Confluence sync lag <= 5 minutes.

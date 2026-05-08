@@ -5,7 +5,7 @@ from typing import Any
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
-from reference_skills.skills import create_user_stories, generate_test_cases, scaffold_service
+from reference_skills.skills import SDLC_SKILL_FUNCTIONS, create_user_stories, generate_test_cases, scaffold_service
 
 
 class InvokeRequest(BaseModel):
@@ -37,6 +37,8 @@ def create_app() -> FastAPI:
                 name=str(request.params.get("name") or "forge-service"),
                 language=str(request.params.get("language") or "python"),
             )
+        elif request.tool_id.startswith("skill:") and request.tool_id.removeprefix("skill:") in SDLC_SKILL_FUNCTIONS:
+            result = SDLC_SKILL_FUNCTIONS[request.tool_id.removeprefix("skill:")](request.params)
         else:
             raise HTTPException(status_code=404, detail="unknown skill")
         return InvokeResponse(tool_id=request.tool_id, result=result)

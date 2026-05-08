@@ -1,0 +1,23 @@
+apiVersion: forge.eval/v1
+kind: EvalDataset
+metadata:
+  asset_id: eval-incident-response
+  version: 1.0.0
+  description: Golden cases for incident-response workflow
+  trust_level: forge-certified
+items:
+  - id: high-severity-customer-impact
+    input:
+      alert_id: alert-001
+      severity: SEV1
+    expected:
+      incident_id_present: true
+      status_update_posted: true
+      mitigation_started: true
+  - id: low-severity-deflected
+    input:
+      alert_id: alert-002
+      severity: SEV4
+    expected:
+      incident_id_present: false
+      status_update_posted: false

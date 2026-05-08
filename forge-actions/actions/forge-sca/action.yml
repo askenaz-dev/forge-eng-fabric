@@ -1,0 +1,37 @@
+name: "Forge SCA"
+description: "Dependency vulnerability scan using OSV-scanner and Trivy fs."
+
+inputs:
+  scan_path:
+    description: "Path to scan (default: workspace root)"
+    required: false
+    default: "."
+  fail_on_severity:
+    description: "MEDIUM | HIGH | CRITICAL"
+    required: false
+    default: "HIGH"
+
+runs:
+  using: "composite"
+  steps:
+    - name: OSV scanner
+      shell: bash
+      run: |
+        curl -sSfL https://github.com/google/osv-scanner/releases/latest/download/osv-scanner_linux_amd64 -o /usr/local/bin/osv-scanner
+        chmod +x /usr/local/bin/osv-scanner
+        osv-scanner --recursive "${{ inputs.scan_path }}" || RC=$?
+        if [ "${RC:-0}" -ne 0 ]; then
+          echo "::error::pipeline.gate.failed.v1 stage=sca tool=osv-scanner"
+          exit "$RC"
+        fi
+
+    - name: Trivy fs scan
+      uses: aquasecurity/trivy-action@0.20.0
+      with:
+        scan-type: 'fs'
+        scan-ref: ${{ inputs.scan_path }}
+        severity: ${{ inputs.fail_on_severity }},CRITICAL
+        exit-code: '1'
+
+    - shell: bash
+      run: echo "::notice::pipeline.gate.evaluated.v1 stage=sca outcome=pass"

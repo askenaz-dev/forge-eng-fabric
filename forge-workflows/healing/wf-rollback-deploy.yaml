@@ -1,0 +1,62 @@
+apiVersion: forge.workflows/v1
+kind: Workflow
+metadata:
+  id: wf-rollback-deploy
+  name: Rollback deployment healing action
+  version: 1.0.0
+  visibility: forge-certified
+  criticality: critical
+  owners:
+    - sre-platform
+  description: |
+    Healing action workflow to rollback a Kubernetes deployment to the previous
+    revision. Used when a fresh release fails health checks. Inherently reversible
+    by another rollback (forward) action.
+  tags:
+    - healing
+    - kubernetes
+    - reversible
+    - destructive
+spec:
+  inputs:
+    - name: namespace
+      type: string
+      required: true
+    - name: deployment
+      type: string
+      required: true
+    - name: cluster
+      type: string
+      required: true
+  outputs:
+    - name: rolled_back_from_revision
+      type: integer
+    - name: rolled_back_to_revision
+      type: integer
+  steps:
+    - id: get-current-revision
+      type: mcp
+      ref: registry:mcp/kubernetes@read
+      tool: get_deployment_revision
+      inputs:
+        namespace: $inputs.namespace
+        name: $inputs.deployment
+        cluster: $inputs.cluster
+    - id: rollback
+      type: mcp
+      ref: registry:mcp/kubernetes@write
+      tool: rollback_deployment
+      depends_on: [get-current-revision]
+      inputs:
+        namespace: $inputs.namespace
+        name: $inputs.deployment
+        cluster: $inputs.cluster
+    - id: verify
+      type: skill
+      ref: registry:skill/sre-platform/verify-deployment-ready@1.0.0
+      depends_on: [rollback]
+      inputs:
+        namespace: $inputs.namespace
+        name: $inputs.deployment
+        cluster: $inputs.cluster
+        timeout_seconds: 600

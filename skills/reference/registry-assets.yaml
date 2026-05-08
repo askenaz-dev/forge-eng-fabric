@@ -35,3 +35,246 @@ assets:
       format: agentskills.io/v1
       path: agent-skills/generate-test-cases
       runtime: reference_skills.skills:generate_test_cases
+  - id: skill-refine-user-story
+    type: skill
+    name: refine-user-story
+    version: 0.1.0
+    lifecycle_state: approved
+    trust_level: T2
+    eval_suite: deterministic-reference-skills
+    eval_scores: {quality: 1.0, safety: 1.0, cost: 1.0, latency: 1.0}
+    source: {format: agentskills.io/v1, path: agent-skills/refine-user-story, runtime: reference_skills.skills:refine_user_story}
+  - id: skill-generate-acceptance-criteria
+    type: skill
+    name: generate-acceptance-criteria
+    version: 0.1.0
+    lifecycle_state: approved
+    trust_level: T2
+    eval_suite: deterministic-reference-skills
+    eval_scores: {quality: 1.0, safety: 1.0, cost: 1.0, latency: 1.0}
+    source: {format: agentskills.io/v1, path: agent-skills/generate-acceptance-criteria, runtime: reference_skills.skills:generate_acceptance_criteria}
+  - id: skill-prioritize-backlog
+    type: skill
+    name: prioritize-backlog
+    version: 0.1.0
+    lifecycle_state: approved
+    trust_level: T2
+    eval_suite: deterministic-reference-skills
+    eval_scores: {quality: 1.0, safety: 1.0, cost: 1.0, latency: 1.0}
+    source: {format: agentskills.io/v1, path: agent-skills/prioritize-backlog, runtime: reference_skills.skills:prioritize_backlog}
+  - id: skill-propose-adr
+    type: skill
+    name: propose-adr
+    version: 0.1.0
+    lifecycle_state: approved
+    trust_level: T2
+    eval_suite: deterministic-reference-skills
+    eval_scores: {quality: 1.0, safety: 1.0, cost: 1.0, latency: 1.0}
+    source: {format: agentskills.io/v1, path: agent-skills/propose-adr, runtime: reference_skills.skills:propose_adr}
+  - id: skill-evaluate-options
+    type: skill
+    name: evaluate-options
+    version: 0.1.0
+    lifecycle_state: approved
+    trust_level: T2
+    eval_suite: deterministic-reference-skills
+    eval_scores: {quality: 1.0, safety: 1.0, cost: 1.0, latency: 1.0}
+    source: {format: agentskills.io/v1, path: agent-skills/evaluate-options, runtime: reference_skills.skills:evaluate_options}
+  - id: skill-check-openspec-alignment
+    type: skill
+    name: check-openspec-alignment
+    version: 0.1.0
+    lifecycle_state: approved
+    trust_level: T2
+    eval_suite: deterministic-reference-skills
+    eval_scores: {quality: 1.0, safety: 1.0, cost: 1.0, latency: 1.0}
+    source: {format: agentskills.io/v1, path: agent-skills/check-openspec-alignment, runtime: reference_skills.skills:check_openspec_alignment}
+  - id: skill-generate-api-contract
+    type: skill
+    name: generate-api-contract
+    version: 0.1.0
+    lifecycle_state: approved
+    trust_level: T2
+    eval_suite: deterministic-reference-skills
+    eval_scores: {quality: 1.0, safety: 1.0, cost: 1.0, latency: 1.0}
+    source: {format: agentskills.io/v1, path: agent-skills/generate-api-contract, runtime: reference_skills.skills:generate_api_contract}
+  - id: skill-propose-data-model
+    type: skill
+    name: propose-data-model
+    version: 0.1.0
+    lifecycle_state: approved
+    trust_level: T2
+    eval_suite: deterministic-reference-skills
+    eval_scores: {quality: 1.0, safety: 1.0, cost: 1.0, latency: 1.0}
+    source: {format: agentskills.io/v1, path: agent-skills/propose-data-model, runtime: reference_skills.skills:propose_data_model}
+  - id: skill-lightweight-threat-model
+    type: skill
+    name: lightweight-threat-model
+    version: 0.1.0
+    lifecycle_state: approved
+    trust_level: T2
+    eval_suite: deterministic-reference-skills
+    eval_scores: {quality: 1.0, safety: 1.0, cost: 1.0, latency: 1.0}
+    source: {format: agentskills.io/v1, path: agent-skills/lightweight-threat-model, runtime: reference_skills.skills:lightweight_threat_model}
+  - id: skill-implement-feature-tests-first
+    type: skill
+    name: implement-feature-tests-first
+    version: 0.1.0
+    lifecycle_state: approved
+    trust_level: T2
+    eval_suite: deterministic-reference-skills
+    eval_scores: {quality: 1.0, safety: 1.0, cost: 1.0, latency: 1.0}
+    source: {format: agentskills.io/v1, path: agent-skills/implement-feature-tests-first, runtime: reference_skills.skills:implement_feature_tests_first}
+  - id: skill-refactor-with-safety-net
+    type: skill
+    name: refactor-with-safety-net
+    version: 0.1.0
+    lifecycle_state: approved
+    trust_level: T2
+    eval_suite: deterministic-reference-skills
+    eval_scores: {quality: 1.0, safety: 1.0, cost: 1.0, latency: 1.0}
+    source: {format: agentskills.io/v1, path: agent-skills/refactor-with-safety-net, runtime: reference_skills.skills:refactor_with_safety_net}
+  - id: skill-apply-code-review-feedback
+    type: skill
+    name: apply-code-review-feedback
+    version: 0.1.0
+    lifecycle_state: approved
+    trust_level: T2
+    eval_suite: deterministic-reference-skills
+    eval_scores: {quality: 1.0, safety: 1.0, cost: 1.0, latency: 1.0}
+    source: {format: agentskills.io/v1, path: agent-skills/apply-code-review-feedback, runtime: reference_skills.skills:apply_code_review_feedback}
+  - id: skill-generate-test-plan
+    type: skill
+    name: generate-test-plan
+    version: 0.1.0
+    lifecycle_state: approved
+    trust_level: T2
+    eval_suite: deterministic-reference-skills
+    eval_scores: {quality: 1.0, safety: 1.0, cost: 1.0, latency: 1.0}
+    source: {format: agentskills.io/v1, path: agent-skills/generate-test-plan, runtime: reference_skills.skills:generate_test_plan}
+  - id: skill-generate-e2e-tests
+    type: skill
+    name: generate-e2e-tests
+    version: 0.1.0
+    lifecycle_state: approved
+    trust_level: T2
+    eval_suite: deterministic-reference-skills
+    eval_scores: {quality: 1.0, safety: 1.0, cost: 1.0, latency: 1.0}
+    source: {format: agentskills.io/v1, path: agent-skills/generate-e2e-tests, runtime: reference_skills.skills:generate_e2e_tests}
+  - id: skill-triage-test-failures
+    type: skill
+    name: triage-test-failures
+    version: 0.1.0
+    lifecycle_state: approved
+    trust_level: T2
+    eval_suite: deterministic-reference-skills
+    eval_scores: {quality: 1.0, safety: 1.0, cost: 1.0, latency: 1.0}
+    source: {format: agentskills.io/v1, path: agent-skills/triage-test-failures, runtime: reference_skills.skills:triage_test_failures}
+  - id: skill-triage-vuln
+    type: skill
+    name: triage-vuln
+    version: 0.1.0
+    lifecycle_state: approved
+    trust_level: T2
+    eval_suite: deterministic-reference-skills
+    eval_scores: {quality: 1.0, safety: 1.0, cost: 1.0, latency: 1.0}
+    source: {format: agentskills.io/v1, path: agent-skills/triage-vuln, runtime: reference_skills.skills:triage_vuln}
+  - id: skill-propose-fix-for-finding
+    type: skill
+    name: propose-fix-for-finding
+    version: 0.1.0
+    lifecycle_state: approved
+    trust_level: T2
+    eval_suite: deterministic-reference-skills
+    eval_scores: {quality: 1.0, safety: 1.0, cost: 1.0, latency: 1.0}
+    source: {format: agentskills.io/v1, path: agent-skills/propose-fix-for-finding, runtime: reference_skills.skills:propose_fix_for_finding}
+  - id: skill-update-threat-model
+    type: skill
+    name: update-threat-model
+    version: 0.1.0
+    lifecycle_state: approved
+    trust_level: T2
+    eval_suite: deterministic-reference-skills
+    eval_scores: {quality: 1.0, safety: 1.0, cost: 1.0, latency: 1.0}
+    source: {format: agentskills.io/v1, path: agent-skills/update-threat-model, runtime: reference_skills.skills:update_threat_model}
+  - id: skill-prepare-release-notes
+    type: skill
+    name: prepare-release-notes
+    version: 0.1.0
+    lifecycle_state: approved
+    trust_level: T2
+    eval_suite: deterministic-reference-skills
+    eval_scores: {quality: 1.0, safety: 1.0, cost: 1.0, latency: 1.0}
+    source: {format: agentskills.io/v1, path: agent-skills/prepare-release-notes, runtime: reference_skills.skills:prepare_release_notes}
+  - id: skill-validate-rollback-plan
+    type: skill
+    name: validate-rollback-plan
+    version: 0.1.0
+    lifecycle_state: approved
+    trust_level: T2
+    eval_suite: deterministic-reference-skills
+    eval_scores: {quality: 1.0, safety: 1.0, cost: 1.0, latency: 1.0}
+    source: {format: agentskills.io/v1, path: agent-skills/validate-rollback-plan, runtime: reference_skills.skills:validate_rollback_plan}
+  - id: skill-update-pipeline
+    type: skill
+    name: update-pipeline
+    version: 0.1.0
+    lifecycle_state: approved
+    trust_level: T2
+    eval_suite: deterministic-reference-skills
+    eval_scores: {quality: 1.0, safety: 1.0, cost: 1.0, latency: 1.0}
+    source: {format: agentskills.io/v1, path: agent-skills/update-pipeline, runtime: reference_skills.skills:update_pipeline}
+  - id: skill-define-slos-from-spec
+    type: skill
+    name: define-slos-from-spec
+    version: 0.1.0
+    lifecycle_state: approved
+    trust_level: T2
+    eval_suite: deterministic-reference-skills
+    eval_scores: {quality: 1.0, safety: 1.0, cost: 1.0, latency: 1.0}
+    source: {format: agentskills.io/v1, path: agent-skills/define-slos-from-spec, runtime: reference_skills.skills:define_slos_from_spec}
+  - id: skill-generate-runbook
+    type: skill
+    name: generate-runbook
+    version: 0.1.0
+    lifecycle_state: approved
+    trust_level: T2
+    eval_suite: deterministic-reference-skills
+    eval_scores: {quality: 1.0, safety: 1.0, cost: 1.0, latency: 1.0}
+    source: {format: agentskills.io/v1, path: agent-skills/generate-runbook, runtime: reference_skills.skills:generate_runbook}
+  - id: skill-tune-alerts
+    type: skill
+    name: tune-alerts
+    version: 0.1.0
+    lifecycle_state: approved
+    trust_level: T2
+    eval_suite: deterministic-reference-skills
+    eval_scores: {quality: 1.0, safety: 1.0, cost: 1.0, latency: 1.0}
+    source: {format: agentskills.io/v1, path: agent-skills/tune-alerts, runtime: reference_skills.skills:tune_alerts}
+  - id: skill-estimate-cost-from-spec
+    type: skill
+    name: estimate-cost-from-spec
+    version: 0.1.0
+    lifecycle_state: approved
+    trust_level: T2
+    eval_suite: deterministic-reference-skills
+    eval_scores: {quality: 1.0, safety: 1.0, cost: 1.0, latency: 1.0}
+    source: {format: agentskills.io/v1, path: agent-skills/estimate-cost-from-spec, runtime: reference_skills.skills:estimate_cost_from_spec}
+  - id: skill-monitor-budget
+    type: skill
+    name: monitor-budget
+    version: 0.1.0
+    lifecycle_state: approved
+    trust_level: T2
+    eval_suite: deterministic-reference-skills
+    eval_scores: {quality: 1.0, safety: 1.0, cost: 1.0, latency: 1.0}
+    source: {format: agentskills.io/v1, path: agent-skills/monitor-budget, runtime: reference_skills.skills:monitor_budget}
+  - id: skill-propose-cost-reduction
+    type: skill
+    name: propose-cost-reduction
+    version: 0.1.0
+    lifecycle_state: approved
+    trust_level: T2
+    eval_suite: deterministic-reference-skills
+    eval_scores: {quality: 1.0, safety: 1.0, cost: 1.0, latency: 1.0}
+    source: {format: agentskills.io/v1, path: agent-skills/propose-cost-reduction, runtime: reference_skills.skills:propose_cost_reduction}

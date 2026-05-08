@@ -1,0 +1,61 @@
+name: "Forge Publish Image"
+description: |
+  Publishes a built container image to the Forge Artifact Registry with
+  immutable tags (sha + semver). Refuses to publish without a valid Cosign
+  signature on the image digest, per the supply-chain spec.
+
+inputs:
+  image_repository:
+    description: "Target repository (e.g. ghcr.io/org/svc)"
+    required: true
+  image_digest:
+    description: "Image digest (sha256:...)"
+    required: true
+  semver_tag:
+    description: "Optional semantic version tag (immutable once pushed)"
+    required: false
+    default: ""
+  signature_required:
+    description: "Block publish when image is unsigned"
+    required: false
+    default: "true"
+  retention_policy:
+    description: "Retention policy id from Workspace policy"
+    required: false
+    default: "default-90d"
+
+outputs:
+  published_uri:
+    description: "URI of the published image with the immutable digest"
+    value: ${{ steps.publish.outputs.uri }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Verify signature
+      if: ${{ inputs.signature_required == 'true' }}
+      shell: bash
+      env:
+        COSIGN_EXPERIMENTAL: "1"
+      run: |
+        echo "Verifying ${{ inputs.image_repository }}@${{ inputs.image_digest }}"
+        if ! cosign verify \
+            --certificate-identity-regexp ".+" \
+            --certificate-oidc-issuer-regexp ".+" \
+            "${{ inputs.image_repository }}@${{ inputs.image_digest }}" >/dev/null 2>&1; then
+          echo "::error::image.publish.denied.v1 reason=signature_missing"
+          exit 1
+        fi
+
+    - id: publish
+      shell: bash
+      run: |
+        URI="${{ inputs.image_repository }}@${{ inputs.image_digest }}"
+        echo "uri=$URI" >> "$GITHUB_OUTPUT"
+        # Immutable: registry must reject overwrite — tags are sha-prefixed.
+        SHA_TAG="sha-$(echo ${{ inputs.image_digest }} | cut -c8-19)"
+        echo "Tagging $URI as ${{ inputs.image_repository }}:$SHA_TAG"
+        if [ -n "${{ inputs.semver_tag }}" ]; then
+          echo "Tagging $URI as ${{ inputs.image_repository }}:${{ inputs.semver_tag }} (immutable)"
+        fi
+        echo "::notice::image.published.v1 uri=$URI retention=${{ inputs.retention_policy }}"

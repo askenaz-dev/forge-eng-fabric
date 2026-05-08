@@ -1,0 +1,11 @@
+nameOverride: ""
+image:
+  repository: ""
+  digest: ""
+replicaCount: 2
+strategy: rolling
+revisionId: ""
+service:
+  port: 80
+health:
+  path: /healthz

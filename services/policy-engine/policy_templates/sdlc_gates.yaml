@@ -1,0 +1,183 @@
+sdlc_gates:
+  - id: product-acceptance-criteria-present
+    type: sdlc-gate
+    phase: product
+    gate: acceptance_criteria_present
+    condition: 'evidence["acceptance_criteria_present"] == true'
+    rationale: linked Jira issues must include acceptance criteria
+  - id: product-story-size-estimated
+    type: sdlc-gate
+    phase: product
+    gate: story_size_estimated
+    condition: 'evidence["story_size_estimated"] == true'
+    rationale: story size must be estimated before architecture
+  - id: require-architecture-review
+    type: sdlc-gate
+    phase: architecture
+    gate: adrs_published
+    condition: 'evidence["adrs_published"] == true'
+    rationale: ADRs must be published before design
+  - id: architecture-security-review
+    type: sdlc-gate
+    phase: architecture
+    gate: security_review_passed
+    condition: 'evidence["security_review_passed"] == true'
+    rationale: architecture security review must pass
+  - id: architecture-openspec-updated
+    type: sdlc-gate
+    phase: architecture
+    gate: openspec_updated
+    condition: 'evidence["openspec_updated"] == true'
+    rationale: OpenSpec must reflect architecture decisions
+  - id: design-api-contracts-defined
+    type: sdlc-gate
+    phase: design
+    gate: api_contracts_defined
+    condition: 'evidence["api_contracts_defined"] == true'
+    rationale: API contracts must be defined before development
+  - id: require-threat-model
+    type: sdlc-gate
+    phase: design
+    gate: threat_model_present
+    min_criticality: medium
+    condition: 'evidence["threat_model_present"] == true'
+    rationale: threat model is required for medium or higher criticality
+  - id: design-data-model-documented
+    type: sdlc-gate
+    phase: design
+    gate: data_model_documented
+    condition: 'evidence["data_model_documented"] == true'
+    rationale: data model must be documented before development
+  - id: development-code-complete
+    type: sdlc-gate
+    phase: development
+    gate: code_complete
+    condition: 'evidence["code_complete"] == true'
+    rationale: implementation must be complete before QA
+  - id: development-lint-clean
+    type: sdlc-gate
+    phase: development
+    gate: lint_clean
+    condition: 'evidence["lint_clean"] == true'
+    rationale: lint must pass before QA
+  - id: development-unit-tests-passing
+    type: sdlc-gate
+    phase: development
+    gate: unit_tests_passing
+    condition: 'evidence["unit_tests_passing"] == true'
+    rationale: unit tests must pass before QA
+  - id: require-test-coverage
+    type: sdlc-gate
+    phase: development
+    gate: coverage
+    condition: 'evidence["coverage_percent"] >= thresholds["coverage_percent"]'
+    rationale: coverage is below criticality threshold
+    thresholds:
+      low: {coverage_percent: 70}
+      medium: {coverage_percent: 75}
+      high: {coverage_percent: 80}
+      critical: {coverage_percent: 85}
+  - id: qa-integration-tests-passing
+    type: sdlc-gate
+    phase: qa
+    gate: integration_tests_passing
+    condition: 'evidence["integration_tests_passing"] == true'
+    rationale: integration tests must pass before security
+  - id: qa-e2e-tests-passing
+    type: sdlc-gate
+    phase: qa
+    gate: e2e_tests_passing
+    condition: 'evidence["e2e_tests_passing"] == true'
+    rationale: E2E tests must pass before security
+  - id: require-perf-budget
+    type: sdlc-gate
+    phase: qa
+    gate: perf_budget_met
+    min_criticality: high
+    condition: 'evidence["perf_budget_met"] == true'
+    rationale: performance budget must pass for high criticality
+  - id: security-sast-clean
+    type: sdlc-gate
+    phase: security
+    gate: sast_clean
+    condition: 'evidence["sast_clean"] == true'
+    rationale: SAST findings must be clean
+  - id: security-sca-clean
+    type: sdlc-gate
+    phase: security
+    gate: sca_clean
+    condition: 'evidence["sca_clean"] == true'
+    rationale: dependency findings must be clean
+  - id: security-dast-passed
+    type: sdlc-gate
+    phase: security
+    gate: dast_passed
+    min_criticality: high
+    condition: 'evidence["dast_passed"] == true'
+    rationale: DAST must pass for high criticality
+  - id: require-security-clean
+    type: sdlc-gate
+    phase: security
+    gate: secrets_clean
+    condition: 'evidence["secrets_clean"] == true'
+    rationale: secrets hygiene must be clean
+  - id: devops-pipelines-green
+    type: sdlc-gate
+    phase: devops
+    gate: pipelines_green
+    condition: 'evidence["pipelines_green"] == true'
+    rationale: release pipelines must be green
+  - id: devops-image-signed
+    type: sdlc-gate
+    phase: devops
+    gate: image_signed
+    condition: 'evidence["image_signed"] == true'
+    rationale: deployable image must be signed
+  - id: devops-stage-deploy-successful
+    type: sdlc-gate
+    phase: devops
+    gate: deploy_to_stage_successful
+    condition: 'evidence["deploy_to_stage_successful"] == true'
+    rationale: stage deployment must succeed
+  - id: devops-rollback-plan-present
+    type: sdlc-gate
+    phase: devops
+    gate: rollback_plan_present
+    condition: 'evidence["rollback_plan_present"] == true'
+    rationale: rollback plan must be present
+  - id: require-slo-defined
+    type: sdlc-gate
+    phase: sre
+    gate: slos_defined
+    condition: 'evidence["slos_defined"] == true'
+    rationale: SLOs must be defined
+  - id: require-runbook
+    type: sdlc-gate
+    phase: sre
+    gate: runbook_published
+    condition: 'evidence["runbook_published"] == true'
+    rationale: runbook must be published
+  - id: sre-alerts-configured
+    type: sdlc-gate
+    phase: sre
+    gate: alerts_configured
+    condition: 'evidence["alerts_configured"] == true'
+    rationale: alerts must be configured
+  - id: require-on-call
+    type: sdlc-gate
+    phase: sre
+    gate: on_call_assigned
+    condition: 'evidence["on_call_assigned"] == true'
+    rationale: on-call ownership must be assigned
+  - id: require-cost-estimate
+    type: sdlc-gate
+    phase: finops
+    gate: cost_estimate_within_budget
+    condition: 'evidence["cost_estimate_within_budget"] == true'
+    rationale: cost estimate must fit the initiative budget
+  - id: finops-llm-budget-within-limit
+    type: sdlc-gate
+    phase: finops
+    gate: llm_budget_within_limit
+    condition: 'evidence["llm_budget_within_limit"] == true'
+    rationale: LLM spend must fit the initiative budget

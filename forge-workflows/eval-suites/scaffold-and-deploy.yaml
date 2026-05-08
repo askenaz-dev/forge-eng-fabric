@@ -1,0 +1,25 @@
+apiVersion: forge.eval/v1
+kind: EvalDataset
+metadata:
+  asset_id: eval-scaffold-and-deploy
+  version: 1.0.0
+  description: Golden cases for scaffold-and-deploy onboarding workflow
+  trust_level: forge-certified
+items:
+  - id: go-microservice-happy-path
+    input:
+      workspace_id: ws-1
+      app_name: orders-api
+      template_ref: registry:repo_template/go-microservice@1.0.0
+    expected:
+      app_created: true
+      runtime_registered: true
+      deployment_status: deployed
+  - id: missing-template-rejected
+    input:
+      workspace_id: ws-1
+      app_name: orders-api
+      template_ref: registry:repo_template/does-not-exist@1.0.0
+    expected:
+      app_created: false
+      error: template_not_found

@@ -1,13 +1,74 @@
 name: "Forge OpenSpec Link"
-description: "Validate that PR description includes an OpenSpec ID and report a check status."
+description: |
+  Validate that the PR description includes one or more `OpenSpec: <id>`
+  references and that each id resolves in the OpenSpec service. Reports a
+  GitHub check `forge/openspec-link` with conclusion derived from criticality.
+
 inputs:
-  token:
-    description: 'GitHub token for API (optional for local stub)'
+  openspec_url:
+    description: "OpenSpec service base URL (e.g. https://openspec.internal.forge)"
+    required: true
+  workspace_id:
+    description: "Workspace UUID; the link target must belong to this workspace"
+    required: true
+  criticality:
+    description: "Repo criticality: low | medium | high | critical"
     required: false
+    default: "medium"
+  pr_number:
+    description: "PR number; defaults to the current github.event.pull_request.number"
+    required: false
+    default: ""
+
+outputs:
+  status:
+    description: "linked | missing | warning | invalid"
+    value: ${{ steps.check.outputs.status }}
+
 runs:
   using: "composite"
   steps:
-    - run: |
-        echo "Checking PR body for OpenSpec: <id>"
-        # This is a stub action; real implementation would query OpenSpec service.
-        echo "::notice::forge/openspec-link ran (stub)"
+    - id: check
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ env.GITHUB_TOKEN }}
+        OPENSPEC_URL: ${{ inputs.openspec_url }}
+        WORKSPACE_ID: ${{ inputs.workspace_id }}
+        CRITICALITY: ${{ inputs.criticality }}
+      run: |
+        set -euo pipefail
+        PR_BODY=$(jq -r '.pull_request.body // ""' "$GITHUB_EVENT_PATH")
+        IDS=$(echo "$PR_BODY" | grep -oE 'OpenSpec:[[:space:]]*[A-Za-z0-9_-]+' | awk '{print $2}' | sort -u || true)
+
+        if [ -z "$IDS" ]; then
+          if [ "$CRITICALITY" = "low" ]; then
+            echo "::warning::pr.openspec_link.warning.v1 reason=missing_openspec_link criticality=low"
+            echo "status=warning" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "::error::pr.openspec_link.missing.v1 reason=missing_openspec_link criticality=$CRITICALITY"
+          echo "status=missing" >> "$GITHUB_OUTPUT"
+          exit 1
+        fi
+
+        FAILED=0
+        for id in $IDS; do
+          RESP=$(curl -fsS -H "X-Workspace-Id: $WORKSPACE_ID" "$OPENSPEC_URL/v1/openspecs/$id" || echo '{"error":"not_found"}')
+          STATE=$(echo "$RESP" | jq -r '.lifecycle_state // "unknown"')
+          OWNER_WS=$(echo "$RESP" | jq -r '.workspace_id // ""')
+          if [ "$OWNER_WS" != "$WORKSPACE_ID" ]; then
+            echo "::error::reason=openspec_workspace_mismatch id=$id owner=$OWNER_WS"
+            FAILED=1
+          fi
+          case "$STATE" in
+            approved|in_review) ;;
+            *) echo "::error::reason=openspec_not_active id=$id state=$STATE"; FAILED=1 ;;
+          esac
+        done
+
+        if [ "$FAILED" -ne 0 ]; then
+          echo "status=invalid" >> "$GITHUB_OUTPUT"
+          exit 1
+        fi
+        echo "status=linked" >> "$GITHUB_OUTPUT"
+        echo "::notice::pr.linked-to-openspec.v1 ids=$IDS"

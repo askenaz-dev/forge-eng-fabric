@@ -86,8 +86,12 @@ func main() {
 			r.Get("/workspaces/{workspaceID}/assets", srv.listAssets)
 			r.Post("/workspaces/{workspaceID}/assets", srv.createAsset)
 			r.Get("/assets/{assetID}", srv.getAssetLatest)
+			r.Get("/assets/{assetID}/deployments", srv.listAssetDeployments)
+			r.Post("/assets/{assetID}/deployments", srv.recordAssetDeployment)
 			r.Get("/assets/{assetID}/versions/{version}", srv.getAssetVersion)
 			r.Post("/assets/{assetID}/versions/{version}/transition", srv.transitionAsset)
+			r.Post("/assets/{assetID}/versions/{version}/lifecycle-hooks/pipeline-green", srv.pipelineGreenHook)
+			r.Post("/assets/{assetID}/versions/{version}/lifecycle-hooks/workspace-owner-approval", srv.workspaceOwnerApprovalHook)
 			r.Post("/assets/{assetID}/versions/{version}/invoke-check", srv.checkAssetInvocation)
 		})
 	})
@@ -319,8 +323,40 @@ type assetCreate struct {
 	Metadata       map[string]any `json:"metadata"`
 }
 
+type AssetDeployment struct {
+	ID                  string    `json:"id"`
+	AssetID             string    `json:"asset_id"`
+	Env                 string    `json:"env"`
+	RevisionID          string    `json:"revision_id"`
+	ImageDigest         string    `json:"image_digest"`
+	RuntimeID           string    `json:"runtime_id"`
+	VerifiedStatus      string    `json:"verified_status"`
+	SignatureVerified   bool      `json:"signature_verified"`
+	AttestationVerified bool      `json:"attestation_verified"`
+	OpenSpecIDs         []string  `json:"openspec_ids"`
+	PRSHA               string    `json:"pr_sha,omitempty"`
+	Actor               string    `json:"actor,omitempty"`
+	CreatedAt           time.Time `json:"created_at"`
+}
+
+type recordAssetDeploymentRequest struct {
+	ID                  string   `json:"id"`
+	Env                 string   `json:"env"`
+	RevisionID          string   `json:"revision_id"`
+	ImageDigest         string   `json:"image_digest"`
+	RuntimeID           string   `json:"runtime_id"`
+	VerifiedStatus      string   `json:"verified_status"`
+	SignatureVerified   bool     `json:"signature_verified"`
+	AttestationVerified bool     `json:"attestation_verified"`
+	OpenSpecIDs         []string `json:"openspec_ids"`
+	PRSHA               string   `json:"pr_sha"`
+	Actor               string   `json:"actor"`
+}
+
 var validTypes = map[string]struct{}{
 	"mcp": {}, "skill": {}, "agent": {}, "workflow": {}, "prompt_template": {},
+	"application": {}, "repo_template": {}, "eval_dataset": {},
+	"healing_action": {},
 }
 
 var validVisibility = map[string]struct{}{"workspace": {}, "tenant": {}}
@@ -467,7 +503,7 @@ func (s *server) createAsset(w http.ResponseWriter, r *http.Request) {
 	metaBytes, _ := json.Marshal(req.Metadata)
 	inputsBytes, _ := json.Marshal(req.InputsSchema)
 	outputsBytes, _ := json.Marshal(req.OutputsSchema)
-	evalBytes, _ := json.Marshal(req.EvalScores)
+	evalBytes, _ := json.Marshal(normalizeEvalScores(req.EvalScores))
 	var a Asset
 	err = s.pool.QueryRow(r.Context(),
 		`INSERT INTO asset(id,version,type,name,description,owner_team,inputs_schema,outputs_schema,workspace_id,tenant_id,visibility,lifecycle_state,trust_level,eval_scores,owners,metadata,created_by)
@@ -568,6 +604,86 @@ func (s *server) getAssetLatest(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, 200, a)
 }
 
+func (s *server) recordAssetDeployment(w http.ResponseWriter, r *http.Request) {
+	assetID := chi.URLParam(r, "assetID")
+	var req recordAssetDeploymentRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid body", 400)
+		return
+	}
+	if req.ID == "" {
+		req.ID = uuid.NewString()
+	}
+	if req.VerifiedStatus == "" {
+		req.VerifiedStatus = "unknown"
+	}
+	openSpecBytes, _ := json.Marshal(req.OpenSpecIDs)
+	var d AssetDeployment
+	err := s.pool.QueryRow(r.Context(),
+		`INSERT INTO asset_deployment(id, asset_id, env, revision_id, image_digest, runtime_id, verified_status, signature_verified, attestation_verified, openspec_ids, pr_sha, actor)
+		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb,$11,$12)
+		 RETURNING id, asset_id, env, revision_id, image_digest, runtime_id, verified_status, signature_verified, attestation_verified, openspec_ids, COALESCE(pr_sha,''), COALESCE(actor,''), created_at`,
+		req.ID, assetID, req.Env, req.RevisionID, req.ImageDigest, req.RuntimeID, req.VerifiedStatus, req.SignatureVerified, req.AttestationVerified, string(openSpecBytes), req.PRSHA, req.Actor).
+		Scan(&d.ID, &d.AssetID, &d.Env, &d.RevisionID, &d.ImageDigest, &d.RuntimeID, &d.VerifiedStatus, &d.SignatureVerified, &d.AttestationVerified, &d.OpenSpecIDs, &d.PRSHA, &d.Actor, &d.CreatedAt)
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			writeJSON(w, 409, map[string]string{"code": "conflict", "message": "deployment revision already recorded"})
+			return
+		}
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	writeJSON(w, 201, d)
+}
+
+func (s *server) listAssetDeployments(w http.ResponseWriter, r *http.Request) {
+	assetID := chi.URLParam(r, "assetID")
+	env := r.URL.Query().Get("env")
+	limit := 20
+	if raw := r.URL.Query().Get("limit"); raw != "" {
+		_, _ = fmt.Sscanf(raw, "%d", &limit)
+	}
+	if limit <= 0 || limit > 100 {
+		limit = 20
+	}
+	cursor := r.URL.Query().Get("cursor")
+	q := `SELECT id, asset_id, env, revision_id, image_digest, runtime_id, verified_status, signature_verified, attestation_verified, openspec_ids, COALESCE(pr_sha,''), COALESCE(actor,''), created_at
+	      FROM asset_deployment WHERE asset_id=$1`
+	args := []any{assetID}
+	if env != "" {
+		q += fmt.Sprintf(" AND env=$%d", len(args)+1)
+		args = append(args, env)
+	}
+	if cursor != "" {
+		q += fmt.Sprintf(" AND created_at < (SELECT created_at FROM asset_deployment WHERE id=$%d)", len(args)+1)
+		args = append(args, cursor)
+	}
+	q += fmt.Sprintf(" ORDER BY created_at DESC LIMIT $%d", len(args)+1)
+	args = append(args, limit+1)
+	rows, err := s.pool.Query(r.Context(), q, args...)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	defer rows.Close()
+	out := []AssetDeployment{}
+	for rows.Next() {
+		var d AssetDeployment
+		if err := rows.Scan(&d.ID, &d.AssetID, &d.Env, &d.RevisionID, &d.ImageDigest, &d.RuntimeID, &d.VerifiedStatus, &d.SignatureVerified, &d.AttestationVerified, &d.OpenSpecIDs, &d.PRSHA, &d.Actor, &d.CreatedAt); err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		out = append(out, d)
+	}
+	next := ""
+	if len(out) > limit {
+		next = out[limit].ID
+		out = out[:limit]
+	}
+	writeJSON(w, 200, map[string]any{"deployments": out, "next_cursor": next})
+}
+
 func (s *server) getAssetVersion(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "assetID")
 	v := chi.URLParam(r, "version")
@@ -641,6 +757,171 @@ func (s *server) transitionAsset(w http.ResponseWriter, r *http.Request) {
 	}
 	s.publishAssetLifecycleEvent(r, a, current, req.LifecycleState)
 	writeJSON(w, 200, a)
+}
+
+type pipelineGreenHookRequest struct {
+	PipelineRunID       string         `json:"pipeline_run_id"`
+	CommitSHA           string         `json:"commit_sha"`
+	ImageDigest         string         `json:"image_digest"`
+	ImageSigned         bool           `json:"image_signed"`
+	SignatureVerified   bool           `json:"signature_verified"`
+	AttestationVerified bool           `json:"attestation_verified"`
+	SBOMPublished       bool           `json:"sbom_published"`
+	GateResults         []hookGate     `json:"gate_results"`
+	TrustLevel          string         `json:"trust_level"`
+	EvalScores          map[string]any `json:"eval_scores"`
+}
+
+type hookGate struct {
+	Stage     string `json:"stage"`
+	Outcome   string `json:"outcome"`
+	ReportURL string `json:"report_url"`
+}
+
+func (s *server) pipelineGreenHook(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "assetID")
+	v := chi.URLParam(r, "version")
+	var req pipelineGreenHookRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid body", 400)
+		return
+	}
+	if ok, reason := pipelineHookReady(req); !ok {
+		writeJSON(w, 202, map[string]any{"decision": "waiting", "reason": reason})
+		return
+	}
+	if req.TrustLevel == "" {
+		req.TrustLevel = "T1"
+	}
+	patch := map[string]any{
+		"phase2_pipeline": map[string]any{
+			"pipeline_run_id":         req.PipelineRunID,
+			"commit_sha":              req.CommitSHA,
+			"image_digest":            req.ImageDigest,
+			"image_signed":            req.ImageSigned,
+			"signature_verified":      req.SignatureVerified,
+			"attestation_verified":    req.AttestationVerified,
+			"sbom_published":          req.SBOMPublished,
+			"first_green_pipeline_at": time.Now().UTC().Format(time.RFC3339Nano),
+		},
+	}
+	a, from, err := s.transitionAssetWithPatch(r, id, v, "in_review", req.TrustLevel, req.EvalScores, patch)
+	if err != nil {
+		http.Error(w, err.Error(), statusForLifecycleError(err))
+		return
+	}
+	s.publishAssetLifecycleEvent(r, a, from, "in_review")
+	writeJSON(w, 200, a)
+}
+
+type workspaceOwnerApprovalHookRequest struct {
+	ApprovalID string         `json:"approval_id"`
+	ApprovedBy string         `json:"approved_by"`
+	Comment    string         `json:"comment"`
+	TrustLevel string         `json:"trust_level"`
+	EvalScores map[string]any `json:"eval_scores"`
+}
+
+func (s *server) workspaceOwnerApprovalHook(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "assetID")
+	v := chi.URLParam(r, "version")
+	var req workspaceOwnerApprovalHookRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid body", 400)
+		return
+	}
+	if req.ApprovalID == "" || req.ApprovedBy == "" {
+		writeJSON(w, 202, map[string]any{"decision": "requires_approval", "required_approvers": []string{"workspace-owner"}})
+		return
+	}
+	if req.TrustLevel == "" {
+		req.TrustLevel = "T3"
+	}
+	if failing := failingEvalScores(req.TrustLevel, req.EvalScores); len(failing) > 0 {
+		writeJSON(w, 400, map[string]any{"code": "eval_threshold_failed", "failing": failing})
+		return
+	}
+	patch := map[string]any{
+		"phase2_approval": map[string]any{
+			"approval_id": req.ApprovalID,
+			"approved_by": req.ApprovedBy,
+			"approved_at": time.Now().UTC().Format(time.RFC3339Nano),
+			"comment":     req.Comment,
+		},
+	}
+	a, from, err := s.transitionAssetWithPatch(r, id, v, "approved", req.TrustLevel, req.EvalScores, patch)
+	if err != nil {
+		http.Error(w, err.Error(), statusForLifecycleError(err))
+		return
+	}
+	s.publishAssetLifecycleEvent(r, a, from, "approved")
+	writeJSON(w, 200, a)
+}
+
+func pipelineHookReady(req pipelineGreenHookRequest) (bool, string) {
+	if !req.ImageSigned || !req.SignatureVerified || !req.AttestationVerified {
+		return false, "image signature and attestation must be verified"
+	}
+	if !req.SBOMPublished {
+		return false, "sbom must be published"
+	}
+	if len(req.GateResults) == 0 {
+		return false, "pipeline gates are missing"
+	}
+	for _, gate := range req.GateResults {
+		if gate.Outcome != "pass" && gate.Outcome != "warn" {
+			return false, "pipeline gate " + gate.Stage + " is not green"
+		}
+	}
+	return true, "ready"
+}
+
+func (s *server) transitionAssetWithPatch(r *http.Request, id, version, nextState, trustLevel string, evalScores map[string]any, metadataPatch map[string]any) (Asset, string, error) {
+	if _, ok := validLifecycle[nextState]; !ok {
+		return Asset{}, "", fmt.Errorf("invalid lifecycle_state")
+	}
+	if trustLevel == "" {
+		trustLevel = "T0"
+	}
+	if _, ok := validTrustLevels[trustLevel]; !ok {
+		return Asset{}, "", fmt.Errorf("invalid trust_level")
+	}
+	var current string
+	if err := s.pool.QueryRow(r.Context(), `SELECT lifecycle_state FROM asset WHERE id=$1 AND version=$2`, id, version).Scan(&current); err != nil {
+		return Asset{}, "", fmt.Errorf("not found")
+	}
+	if !canTransition(current, nextState) {
+		return Asset{}, current, fmt.Errorf("invalid_transition")
+	}
+	evalBytes, _ := json.Marshal(normalizeEvalScores(evalScores))
+	patchBytes, _ := json.Marshal(metadataPatch)
+	var a Asset
+	err := s.pool.QueryRow(r.Context(),
+		`UPDATE asset SET lifecycle_state=$3, trust_level=$4, eval_scores=$5::jsonb, metadata=metadata || $6::jsonb WHERE id=$1 AND version=$2
+		 RETURNING id,version,type,name,COALESCE(description,''),owner_team,inputs_schema,outputs_schema,workspace_id,tenant_id,visibility,lifecycle_state,COALESCE(trust_level,'T0'),COALESCE(eval_scores,'{}'::jsonb),owners,metadata,created_at,COALESCE(created_by,'')`,
+		id, version, nextState, trustLevel, string(evalBytes), string(patchBytes)).
+		Scan(&a.ID, &a.Version, &a.Type, &a.Name, &a.Description, &a.OwnerTeam, &a.InputsSchema, &a.OutputsSchema, &a.WorkspaceID, &a.TenantID, &a.Visibility, &a.LifecycleState, &a.TrustLevel, &a.EvalScores, &a.Owners, &a.Metadata, &a.CreatedAt, &a.CreatedBy)
+	if err != nil {
+		return Asset{}, current, err
+	}
+	return a, current, nil
+}
+
+func statusForLifecycleError(err error) int {
+	if strings.Contains(err.Error(), "not found") {
+		return http.StatusNotFound
+	}
+	if strings.Contains(err.Error(), "invalid_transition") {
+		return http.StatusConflict
+	}
+	return http.StatusBadRequest
+}
+
+func normalizeEvalScores(scores map[string]any) map[string]any {
+	if scores == nil {
+		return map[string]any{}
+	}
+	return scores
 }
 
 type invokeCheck struct {
@@ -731,6 +1012,11 @@ func invocationAllowed(lifecycleState, environment string) (bool, string) {
 func (s *server) publishAssetLifecycleEvent(r *http.Request, a Asset, from, to string) {
 	cid, _ := r.Context().Value(cidKey).(string)
 	sub, _ := r.Context().Value(subjectKey).(string)
+	evalBytes, _ := json.Marshal(a.EvalScores)
+	_, _ = s.pool.Exec(r.Context(),
+		`INSERT INTO asset_lifecycle_event(asset_id, version, from_state, to_state, trust_level, eval_scores, actor)
+		 VALUES ($1,$2,$3,$4,$5,$6::jsonb,$7)`,
+		a.ID, a.Version, from, to, a.TrustLevel, string(evalBytes), "user:"+sub)
 	envelope := map[string]any{
 		"specversion":        "1.0",
 		"id":                 uuid.NewString(),

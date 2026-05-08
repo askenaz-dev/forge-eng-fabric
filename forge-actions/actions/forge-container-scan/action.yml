@@ -1,0 +1,24 @@
+name: "Forge Container Scan"
+description: "Container image vulnerability scan using Trivy."
+
+inputs:
+  image:
+    description: "Image to scan"
+    required: true
+  fail_on_severity:
+    description: "MEDIUM | HIGH | CRITICAL (used as floor — CRITICAL always reported)"
+    required: false
+    default: "HIGH"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Trivy image scan
+      uses: aquasecurity/trivy-action@0.20.0
+      with:
+        scan-type: 'image'
+        image-ref: ${{ inputs.image }}
+        severity: ${{ inputs.fail_on_severity }},CRITICAL
+        exit-code: '1'
+    - shell: bash
+      run: echo "::notice::pipeline.gate.evaluated.v1 stage=container-scan outcome=pass"

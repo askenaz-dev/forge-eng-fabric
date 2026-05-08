@@ -1,0 +1,45 @@
+apiVersion: forge.workflows/v1
+kind: Workflow
+metadata:
+  id: wf-refresh-cache
+  name: Refresh cache healing action
+  version: 1.0.0
+  visibility: forge-certified
+  criticality: low
+  owners:
+    - sre-platform
+  description: |
+    Healing action workflow to invalidate a cache key/prefix when the diagnosis
+    points to stale cached entries causing 5xx responses. Inherently reversible
+    (the cache will repopulate on subsequent reads).
+  tags:
+    - healing
+    - cache
+    - reversible
+    - safe-default
+spec:
+  inputs:
+    - name: cache_id
+      type: string
+      required: true
+    - name: key_prefix
+      type: string
+      required: true
+  outputs:
+    - name: invalidated_count
+      type: integer
+  steps:
+    - id: invalidate
+      type: mcp
+      ref: registry:mcp/cache@write
+      tool: invalidate_prefix
+      inputs:
+        cache_id: $inputs.cache_id
+        prefix: $inputs.key_prefix
+    - id: verify
+      type: skill
+      ref: registry:skill/sre-platform/verify-cache-cleared@1.0.0
+      depends_on: [invalidate]
+      inputs:
+        cache_id: $inputs.cache_id
+        prefix: $inputs.key_prefix

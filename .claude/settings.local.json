@@ -1,7 +1,24 @@
 {
   "permissions": {
     "allow": [
-      "Bash(openspec status *)"
+      "Bash(openspec status *)",
+      "Bash(openspec instructions *)",
+      "Bash(python -m pytest tests/test_github_write.py -x)",
+      "Bash(python -c \"import sys; print\\(sys.executable\\)\")",
+      "Bash(uv run *)",
+      "Bash(go mod *)",
+      "Bash(go test *)",
+      "Bash(go build *)",
+      "Bash(git stash *)",
+      "Bash(git checkout *)",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('eval_harness_adv/service.py'\\).read\\(\\)\\); ast.parse\\(open\\('eval_harness_adv/app.py'\\).read\\(\\)\\); ast.parse\\(open\\('eval_harness_adv/models.py'\\).read\\(\\)\\); ast.parse\\(open\\('eval_harness_adv/store.py'\\).read\\(\\)\\); ast.parse\\(open\\('eval_harness_adv/events.py'\\).read\\(\\)\\); print\\('OK'\\)\")",
+      "Bash(python -m pytest tests/ -q)",
+      "Bash(/c/forge-eng-fabric/.venv/Scripts/python.exe -m pytest tests/ -q)",
+      "Bash(/c/forge-eng-fabric/.venv/Scripts/python.exe -m pytest services/openspec/tests -q)",
+      "Bash(/c/forge-eng-fabric/.venv/Scripts/python.exe scripts/phase6_synthetic_incidents.py)",
+      "Bash(/c/forge-eng-fabric/.venv/Scripts/python.exe -m pytest services/diagnosis/tests services/incidents-kb/tests services/postmortem/tests services/finops-advisor/tests services/openspec/tests -q)",
+      "Bash(/c/forge-eng-fabric/.venv/Scripts/python.exe -m pytest tests -q)",
+      "Bash(openspec list *)"
     ]
   }
 }

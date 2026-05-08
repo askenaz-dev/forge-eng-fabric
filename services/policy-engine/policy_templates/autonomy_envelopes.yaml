@@ -1,0 +1,110 @@
+# Healing autonomy envelope policy templates (Phase 6).
+#
+# Each template declares the autonomy boundary applied to a (capability,
+# environment, criticality) tuple. The healing-engine reads these via the
+# policy-engine before executing any healing action.
+
+templates:
+  - id: autonomy-envelope
+    description: |
+      Default per-(capability, env, criticality) autonomy envelope. Caps the
+      level the engine may apply (L1..L5), bounds invocations per hour, and
+      defines time windows where higher levels are allowed.
+    action: healing.action.invoke
+    target: healing_envelope
+    required_role: platform-admin
+    max_ttl_seconds: 0
+    requires_reason: false
+    parameters:
+      capability: {type: string, required: true}
+      environment: {type: string, required: true}
+      criticality: {type: string, required: true}
+      default_level: {type: string, required: true, enum: [L1, L2, L3, L4, L5]}
+      allowed_levels: {type: array, required: true, items: {type: string, enum: [L1, L2, L3, L4, L5]}}
+      max_actions_per_hour: {type: integer, required: false, default: 0}
+      time_windows: {type: array, required: false}
+    events_on_grant: [policy.autonomy_envelope.granted.v1]
+    events_on_revoke: [policy.autonomy_envelope.revoked.v1]
+
+  - id: kill-switch
+    description: |
+      Activates the kill switch globally or for a specific Workspace. While
+      active, the healing-engine degrades all actions to L1 (Notify only).
+    action: healing.kill_switch.toggle
+    target: workspace
+    required_role: platform-admin
+    max_ttl_seconds: 0
+    requires_reason: true
+    parameters:
+      workspace_id: {type: string, required: false}
+      active: {type: boolean, required: true}
+    events_on_grant: [healing.kill_switch.toggled.v1]
+    audit_payload:
+      include: [actor, workspace_id, active, reason]
+
+  - id: level-by-env
+    description: |
+      Restricts the maximum healing level allowed in a given environment.
+      Default: prod ≤ L3, stage ≤ L4, dev ≤ L5.
+    action: healing.action.invoke
+    target: healing_envelope
+    required_role: platform-admin
+    max_ttl_seconds: 0
+    requires_reason: false
+    defaults:
+      prod: [L1, L2, L3]
+      stage: [L1, L2, L3, L4]
+      dev: [L1, L2, L3, L4, L5]
+    events_on_grant: [policy.autonomy_envelope.granted.v1]
+
+  - id: level-by-criticality
+    description: |
+      Caps the autonomy level by asset criticality. Critical assets stop at
+      L3 in prod regardless of env-level caps; only `low` assets may reach L5.
+    action: healing.action.invoke
+    target: healing_envelope
+    required_role: platform-admin
+    max_ttl_seconds: 0
+    requires_reason: false
+    defaults:
+      critical: [L1, L2, L3]
+      high: [L1, L2, L3, L4]
+      medium: [L1, L2, L3, L4]
+      low: [L1, L2, L3, L4, L5]
+    events_on_grant: [policy.autonomy_envelope.granted.v1]
+
+  - id: require-reversible-for-l5
+    description: |
+      L5 (act-and-rollback) actions MUST be marked `reversible: true` in the
+      healing-action catalog. Non-reversible actions cannot be promoted to L5.
+    action: healing.action.promote
+    target: healing_action
+    required_role: security-approver
+    max_ttl_seconds: 0
+    requires_reason: false
+    constraints:
+      reversible_required_for_levels: [L5]
+    events_on_grant: [healing.action.promoted.v1]
+
+  - id: promotion-of-action
+    description: |
+      Promote a healing action to L4 / L5 in a given env. Enforces the D6.10
+      prerequisites: eval suite ≥95% pass on last 50 runs, ≥20 successful L3
+      dry-runs, 30-day postmortem-free window, and dual approval.
+    action: healing.action.promote
+    target: healing_action
+    required_role: platform-admin
+    additional_required_roles: [security-approver]
+    max_ttl_seconds: 0
+    requires_reason: true
+    parameters:
+      action_id: {type: string, required: true}
+      environment: {type: string, required: true}
+      target_level: {type: string, required: true, enum: [L4, L5]}
+    prerequisites:
+      eval_pass_rate_last_50: {gte: 0.95}
+      successful_l3_runs: {gte: 20}
+      days_since_last_postmortem: {gte: 30}
+    events_on_grant: [healing.action.promoted.v1]
+    audit_payload:
+      include: [actor, action_id, environment, target_level, reason, prerequisites_snapshot]

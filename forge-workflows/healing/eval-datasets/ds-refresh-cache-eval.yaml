@@ -1,0 +1,29 @@
+apiVersion: forge.eval/v1
+kind: EvalDataset
+metadata:
+  id: ds-refresh-cache-eval
+  version: 1.0.0
+  category: healing-action
+  owners:
+    - sre-platform
+  description: Golden dataset for refresh-cache healing action.
+spec:
+  threshold:
+    pass_rate: 0.95
+    last_n_runs: 50
+  cases:
+    - id: stale-prefix
+      input: {cache_id: redis-main, key_prefix: products:listing}
+      expected: {outcome: succeeded, verify: keys_invalidated_gt_zero}
+    - id: empty-prefix
+      input: {cache_id: redis-main, key_prefix: nothing-here}
+      expected: {outcome: skipped, rationale: no_keys_matched}
+    - id: cache-down
+      input: {cache_id: redis-degraded, key_prefix: anything}
+      expected: {outcome: escalated, rationale: cache_unavailable}
+    - id: prod-prefix
+      input: {cache_id: redis-prod, key_prefix: user:profile}
+      expected: {outcome: succeeded, verify: keys_invalidated_gt_zero}
+    - id: forbidden-prefix
+      input: {cache_id: redis-main, key_prefix: "*"}
+      expected: {outcome: blocked, rationale: prefix_too_broad}

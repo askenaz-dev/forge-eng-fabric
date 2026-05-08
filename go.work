@@ -1,9 +1,28 @@
 go 1.22
 
 use (
+	./pkg/cosign
+	./pkg/deployers
 	./pkg/llmclient
+	./pkg/runtimes
+	./pkg/workflow
+	./services/app-onboarding
+	./services/asset-observability
 	./services/audit
 	./services/control-plane
+	./services/deploy-orchestrator
+	./services/evolution
+	./services/healing-engine
+	./services/iac-drift
+	./services/incident-detection
+	./services/marketplace
 	./services/policy-engine
 	./services/registry
+	./services/runtime-registry
+	./services/scaffolder
+	./services/sdlc-orchestrator
+	./services/traceability
+	./services/webhooks/github
+	./services/workflow-registry
+	./services/workflow-runtime
 )

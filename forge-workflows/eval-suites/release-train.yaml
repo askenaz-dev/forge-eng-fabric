@@ -1,0 +1,34 @@
+apiVersion: forge.eval/v1
+kind: EvalDataset
+metadata:
+  asset_id: eval-release-train
+  version: 1.0.0
+  description: Golden cases for the release-train workflow
+  trust_level: forge-certified
+items:
+  - id: small-low-risk-release
+    input:
+      release_train_id: rt-001
+      candidate_revision: abc1234
+      target_env: stage
+    expected:
+      release_status: deployed
+      gate_outcomes:
+        quality: pass
+        security: pass
+  - id: blocked-by-security
+    input:
+      release_train_id: rt-002
+      candidate_revision: def5678
+      target_env: prod
+    expected:
+      release_status: blocked
+      blocked_by: security
+  - id: timeout-on-approval
+    input:
+      release_train_id: rt-003
+      candidate_revision: aaa1111
+      target_env: prod
+    expected:
+      release_status: escalated
+      escalated_to: engineering-manager

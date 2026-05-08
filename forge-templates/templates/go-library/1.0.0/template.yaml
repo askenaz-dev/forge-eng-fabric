@@ -1,0 +1,45 @@
+id: go-library
+version: 1.0.0
+description: Minimal Go library template (no service) for Forge
+category: library
+parameters:
+  name:
+    type: string
+    description: Module short name (e.g. forgeutil)
+    required: true
+    pattern: "^[a-z][a-z0-9-]{1,40}$"
+  module_path:
+    type: string
+    description: Full Go module path, e.g. github.com/org/forgeutil
+    required: true
+  owner:
+    type: string
+    required: true
+  criticality:
+    type: string
+    required: false
+    default: low
+    enum: [low, medium, high, critical]
+  data_classification:
+    type: string
+    required: false
+    default: internal
+    enum: [public, internal, confidential, restricted]
+pre_hooks: []
+post_hooks: []
+files:
+  - path: go.mod
+    template: |
+      module {{ .module_path }}
+
+      go 1.22
+  - path: lib.go
+    template: |
+      // Package {{ .name }} is a Forge-managed library.
+      package {{ .name }}
+
+      func Hello() string { return "hello from {{ .name }}" }
+  - path: CODEOWNERS
+    template: |
+      * {{ .owner }}
+required_capabilities: ["ci-pipeline-baseline"]

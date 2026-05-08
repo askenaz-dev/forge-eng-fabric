@@ -1,0 +1,110 @@
+name: "Forge Cosign Sign + Attest"
+description: |
+  Keyless image signing and SLSA provenance attestation using Cosign with the
+  GitHub Actions OIDC identity. Routes signatures to the public or private
+  Rekor instance based on the repo's `data_classification`.
+
+inputs:
+  image:
+    description: "Image reference including digest (e.g. ghcr.io/org/svc@sha256:...)"
+    required: true
+  data_classification:
+    description: "Repo data classification: public | internal | confidential | restricted"
+    required: false
+    default: "internal"
+  rekor_private_url:
+    description: "Internal private Rekor URL (used when classification is confidential or restricted)"
+    required: false
+    default: "https://rekor.internal.forge"
+  fulcio_url:
+    description: "Fulcio CA URL (defaults to public Sigstore)"
+    required: false
+    default: "https://fulcio.sigstore.dev"
+  sbom_path:
+    description: "Optional path to SBOM file to attach as predicate"
+    required: false
+    default: ""
+
+outputs:
+  signature_ref:
+    description: "Signature reference written to the registry"
+    value: ${{ steps.sign.outputs.signature_ref }}
+  rekor_url:
+    description: "Rekor entry URL"
+    value: ${{ steps.sign.outputs.rekor_url }}
+  rekor_log:
+    description: "public | private"
+    value: ${{ steps.route.outputs.rekor_log }}
+
+runs:
+  using: "composite"
+  steps:
+    - id: route
+      shell: bash
+      run: |
+        case "${{ inputs.data_classification }}" in
+          confidential|restricted)
+            echo "rekor_log=private" >> "$GITHUB_OUTPUT"
+            echo "rekor_url=${{ inputs.rekor_private_url }}" >> "$GITHUB_OUTPUT"
+            ;;
+          *)
+            echo "rekor_log=public" >> "$GITHUB_OUTPUT"
+            echo "rekor_url=https://rekor.sigstore.dev" >> "$GITHUB_OUTPUT"
+            ;;
+        esac
+        echo "Selected Rekor log: $(grep rekor_log $GITHUB_OUTPUT | cut -d= -f2)"
+
+    - name: Install cosign
+      uses: sigstore/cosign-installer@v3
+      with:
+        cosign-release: 'v2.4.0'
+
+    - id: sign
+      shell: bash
+      env:
+        COSIGN_EXPERIMENTAL: "1"
+        REKOR_URL: ${{ steps.route.outputs.rekor_url }}
+        FULCIO_URL: ${{ inputs.fulcio_url }}
+      run: |
+        cosign sign --yes \
+          --rekor-url "$REKOR_URL" \
+          --fulcio-url "$FULCIO_URL" \
+          "${{ inputs.image }}"
+        echo "signature_ref=${{ inputs.image }}.sig" >> "$GITHUB_OUTPUT"
+        # Best-effort capture of the rekor log entry URL for downstream record.
+        echo "rekor_url=$REKOR_URL" >> "$GITHUB_OUTPUT"
+
+    - name: Attest SLSA provenance
+      shell: bash
+      env:
+        COSIGN_EXPERIMENTAL: "1"
+        REKOR_URL: ${{ steps.route.outputs.rekor_url }}
+      run: |
+        PROVENANCE=$(cat <<EOF
+        {
+          "buildType": "https://forge.dev/ci/v1",
+          "builder": {"id": "https://github.com/${{ github.repository_owner }}/${{ github.event.repository.name }}/actions"},
+          "invocation": {
+            "configSource": {"uri": "git+${{ github.server_url }}/${{ github.repository }}", "digest": {"sha1": "${{ github.sha }}"}}
+          }
+        }
+        EOF
+        )
+        echo "$PROVENANCE" > /tmp/provenance.json
+        cosign attest --yes --predicate /tmp/provenance.json --type slsaprovenance \
+          --rekor-url "$REKOR_URL" "${{ inputs.image }}"
+
+    - name: Attach SBOM (optional)
+      if: ${{ inputs.sbom_path != '' }}
+      shell: bash
+      env:
+        COSIGN_EXPERIMENTAL: "1"
+        REKOR_URL: ${{ steps.route.outputs.rekor_url }}
+      run: |
+        cosign attest --yes --predicate "${{ inputs.sbom_path }}" --type spdxjson \
+          --rekor-url "$REKOR_URL" "${{ inputs.image }}"
+
+    - name: Emit forge event
+      shell: bash
+      run: |
+        echo "::notice::image.signed.v1 image=${{ inputs.image }} rekor_log=${{ steps.route.outputs.rekor_log }}"

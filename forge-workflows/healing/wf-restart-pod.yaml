@@ -1,0 +1,60 @@
+apiVersion: forge.workflows/v1
+kind: Workflow
+metadata:
+  id: wf-restart-pod
+  name: Restart pod healing action
+  version: 1.0.0
+  visibility: forge-certified
+  criticality: medium
+  owners:
+    - sre-platform
+  description: |
+    Healing action workflow to restart a pod. Used by the healing engine when
+    a pod is failing health checks but the underlying deployment is healthy.
+  tags:
+    - healing
+    - kubernetes
+    - reversible
+spec:
+  inputs:
+    - name: namespace
+      type: string
+      required: true
+    - name: pod_name
+      type: string
+      required: true
+    - name: cluster
+      type: string
+      required: true
+  outputs:
+    - name: restarted
+      type: boolean
+    - name: pod_uid
+      type: string
+  steps:
+    - id: snapshot
+      type: mcp
+      ref: registry:mcp/kubernetes@read
+      tool: get_pod
+      inputs:
+        namespace: $inputs.namespace
+        name: $inputs.pod_name
+        cluster: $inputs.cluster
+    - id: delete-pod
+      type: mcp
+      ref: registry:mcp/kubernetes@write
+      tool: delete_pod
+      depends_on: [snapshot]
+      inputs:
+        namespace: $inputs.namespace
+        name: $inputs.pod_name
+        cluster: $inputs.cluster
+    - id: verify
+      type: skill
+      ref: registry:skill/sre-platform/verify-pod-healthy@1.0.0
+      depends_on: [delete-pod]
+      inputs:
+        namespace: $inputs.namespace
+        name_prefix: $inputs.pod_name
+        cluster: $inputs.cluster
+        timeout_seconds: 120

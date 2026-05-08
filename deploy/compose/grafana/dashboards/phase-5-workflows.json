@@ -1,0 +1,118 @@
+{
+  "title": "Phase 5 — Workflows & Marketplace",
+  "uid": "phase5-workflows",
+  "schemaVersion": 38,
+  "version": 1,
+  "tags": ["phase-5", "workflows", "marketplace"],
+  "timezone": "browser",
+  "time": { "from": "now-24h", "to": "now" },
+  "refresh": "1m",
+  "templating": {
+    "list": [
+      {
+        "name": "workflow_id",
+        "label": "Workflow",
+        "type": "query",
+        "datasource": "Prometheus",
+        "query": "label_values(workflow_executions_started_total, workflow_id)",
+        "includeAll": true,
+        "multi": true,
+        "current": { "text": "All", "value": "$__all" }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "title": "Executions started",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum(rate(workflow_executions_started_total{workflow_id=~\"$workflow_id\"}[5m])) by (workflow_id)",
+          "legendFormat": "{{workflow_id}}"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 }
+    },
+    {
+      "title": "Execution outcomes",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum(rate(workflow_executions_completed_total{workflow_id=~\"$workflow_id\"}[5m])) by (status)",
+          "legendFormat": "{{status}}"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 }
+    },
+    {
+      "title": "Step failure rate by type",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum(rate(workflow_step_failure_total[5m])) by (type)",
+          "legendFormat": "{{type}}"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 }
+    },
+    {
+      "title": "Execution duration p95",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(workflow_execution_duration_seconds_bucket{workflow_id=~\"$workflow_id\"}[5m])) by (le, workflow_id))",
+          "legendFormat": "{{workflow_id}}"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 }
+    },
+    {
+      "title": "Marketplace installs / hour",
+      "type": "stat",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "increase(marketplace_install_count_total[1h])"
+        }
+      ],
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 16 }
+    },
+    {
+      "title": "Eval regression blocks (24h)",
+      "type": "stat",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "increase(eval_regression_blocks_total[24h])"
+        }
+      ],
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 16 }
+    },
+    {
+      "title": "HITL timeouts (24h)",
+      "type": "stat",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "increase(human_in_loop_timeout_total[24h])"
+        }
+      ],
+      "gridPos": { "h": 6, "w": 6, "x": 12, "y": 16 }
+    },
+    {
+      "title": "Drift alerts (24h)",
+      "type": "stat",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "increase(asset_eval_drift_detected_total[24h])"
+        }
+      ],
+      "gridPos": { "h": 6, "w": 6, "x": 18, "y": 16 }
+    }
+  ]
+}

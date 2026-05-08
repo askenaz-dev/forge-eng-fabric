@@ -1,0 +1,13 @@
+{
+  "title": "Phase 4 SDLC Workspace",
+  "schemaVersion": 39,
+  "templating": {"list": [{"name": "workspace", "type": "query", "query": "label_values(sdlc_phase_duration_seconds, workspace)"}]},
+  "panels": [
+    {"title": "Phase Duration", "type": "timeseries", "targets": [{"expr": "sdlc_phase_duration_seconds{workspace=\"$workspace\"}"}]},
+    {"title": "Gate Pass Rate", "type": "stat", "targets": [{"expr": "gate_pass_rate"}]},
+    {"title": "Phase Block Rate", "type": "stat", "targets": [{"expr": "phase_block_rate"}]},
+    {"title": "Traceability Coverage", "type": "stat", "targets": [{"expr": "traceability_coverage"}]},
+    {"title": "Traceability Query p95", "type": "stat", "targets": [{"expr": "traceability_query_latency_p95"}]},
+    {"title": "Jira/Confluence Sync Lag", "type": "timeseries", "targets": [{"expr": "jira_sync_lag_seconds"}, {"expr": "confluence_sync_lag_seconds"}]}
+  ]
+}

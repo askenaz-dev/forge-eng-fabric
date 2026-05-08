@@ -1,0 +1,34 @@
+name: "Forge SAST"
+description: "Static analysis with Semgrep; CodeQL added on top for criticality≥high (delegated to caller)."
+
+inputs:
+  config:
+    description: "Semgrep config (auto, p/ci, custom path)"
+    required: false
+    default: "auto"
+  fail_on_severity:
+    description: "Lowest severity that causes a non-zero exit (info|warning|error)"
+    required: false
+    default: "warning"
+
+outputs:
+  report_path:
+    description: "Path to JSON report"
+    value: ${{ steps.run.outputs.report }}
+
+runs:
+  using: "composite"
+  steps:
+    - id: run
+      shell: bash
+      run: |
+        pip install --quiet semgrep
+        semgrep --error --severity ${{ inputs.fail_on_severity }} \
+          --config ${{ inputs.config }} \
+          --json --output semgrep-report.json || RC=$?
+        echo "report=semgrep-report.json" >> "$GITHUB_OUTPUT"
+        if [ "${RC:-0}" -ne 0 ]; then
+          echo "::error::pipeline.gate.failed.v1 stage=sast"
+          exit "$RC"
+        fi
+        echo "::notice::pipeline.gate.evaluated.v1 stage=sast outcome=pass"

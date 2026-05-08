@@ -1,0 +1,11 @@
+{
+  "title": "Forge Phase 3 Deployments",
+  "panels": [
+    { "title": "Deploy Duration", "type": "timeseries", "targets": [{ "expr": "histogram_quantile(0.95, sum(rate(deploy_duration_seconds_bucket[5m])) by (le, workspace_id, env))" }] },
+    { "title": "Deploy Success Rate", "type": "stat", "targets": [{ "expr": "deploy_success_rate" }] },
+    { "title": "Image Verification Failures", "type": "timeseries", "targets": [{ "expr": "image_verification_failure_rate" }] },
+    { "title": "Drift Findings", "type": "barchart", "targets": [{ "expr": "sum by (severity, workspace_id) (drift_findings_total)" }] },
+    { "title": "Rollback Rate", "type": "stat", "targets": [{ "expr": "rollback_rate" }] },
+    { "title": "Time To Recover", "type": "timeseries", "targets": [{ "expr": "histogram_quantile(0.95, sum(rate(time_to_recover_seconds_bucket[5m])) by (le, workspace_id, env))" }] }
+  ]
+}

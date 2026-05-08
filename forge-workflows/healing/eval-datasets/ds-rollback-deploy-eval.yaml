@@ -1,0 +1,29 @@
+apiVersion: forge.eval/v1
+kind: EvalDataset
+metadata:
+  id: ds-rollback-deploy-eval
+  version: 1.0.0
+  category: healing-action
+  owners:
+    - sre-platform
+  description: Golden dataset for rollback-deploy healing action.
+spec:
+  threshold:
+    pass_rate: 0.95
+    last_n_runs: 50
+  cases:
+    - id: rollback-after-bad-release
+      input: {namespace: default, deployment: api, cluster: prod-1}
+      expected: {outcome: succeeded, verify: deployment_ready_within_600s}
+    - id: rollback-no-previous-revision
+      input: {namespace: default, deployment: never-deployed, cluster: prod-1}
+      expected: {outcome: blocked, rationale: no_previous_revision}
+    - id: rollback-still-failing
+      input: {namespace: default, deployment: chronically-broken, cluster: prod-1}
+      expected: {outcome: escalated, rationale: still_unhealthy_after_rollback}
+    - id: rollback-during-active-rollout
+      input: {namespace: default, deployment: api-rolling, cluster: prod-1}
+      expected: {outcome: succeeded, verify: rollout_paused_and_reverted}
+    - id: rollback-noop
+      input: {namespace: default, deployment: stable, cluster: prod-1}
+      expected: {outcome: skipped, rationale: at_target_revision}

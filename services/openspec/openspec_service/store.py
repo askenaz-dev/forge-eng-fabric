@@ -66,6 +66,9 @@ class FilesystemOpenSpecStore:
         openspec_id = request.openspec_id or _slug(request.title)
         if self.get(openspec_id):
             raise ValueError(f"openspec {openspec_id!r} already exists")
+        # Autonomous-loop changes start as `pending`; humans default to
+        # `approved` (the existing implicit behaviour).
+        review_status = "pending" if request.source == "autonomous-loop" else "approved"
         document = OpenSpecDocument(
             openspec_id=openspec_id,
             workspace_id=request.workspace_id,
@@ -79,9 +82,58 @@ class FilesystemOpenSpecStore:
             autonomy_policy=request.autonomy_policy,
             linked_artifacts=request.linked_artifacts,
             audit=AuditInfo(created_by=request.created_by),
+            source=request.source,
+            review_status=review_status,
         )
         self._write(document)
         return document
+
+    def review(
+        self,
+        openspec_id: str,
+        *,
+        approved: bool,
+        reviewer: str,
+        comment: str | None = None,
+    ) -> OpenSpecDocument | None:
+        document = self.get(openspec_id)
+        if not document:
+            return None
+        if document.source != "autonomous-loop":
+            raise ValueError("review is only valid for autonomous-loop documents")
+        if document.review_status != "pending":
+            raise ValueError(f"document already reviewed: {document.review_status}")
+        updated = document.model_copy(deep=True)
+        updated.review_status = "approved" if approved else "rejected"
+        updated.reviewed_by = reviewer
+        updated.review_comment = comment
+        updated.version += 1
+        updated.audit.updated_by = reviewer
+        updated.audit.updated_at = _utcnow()
+        self._write(updated)
+        return updated
+
+    def evolution_stats(self) -> dict[str, float | int]:
+        total = pending = approved = rejected = 0
+        for doc in self.index.rows.values():
+            if doc.source != "autonomous-loop":
+                continue
+            total += 1
+            if doc.review_status == "pending":
+                pending += 1
+            elif doc.review_status == "approved":
+                approved += 1
+            elif doc.review_status == "rejected":
+                rejected += 1
+        decided = approved + rejected
+        ratio = (approved / decided) if decided else 0.0
+        return {
+            "total": total,
+            "pending": pending,
+            "approved": approved,
+            "rejected": rejected,
+            "acceptance_ratio": ratio,
+        }
 
     def patch(self, openspec_id: str, request: OpenSpecPatch) -> OpenSpecDocument | None:
         document = self.get(openspec_id)

@@ -1,0 +1,118 @@
+{
+  "title": "Phase 6 — Autonomous Ops",
+  "uid": "forge-phase-6-healing",
+  "tags": ["forge", "phase-6", "healing", "autonomous-ops"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "panels": [
+    {
+      "type": "stat",
+      "title": "MTTR p95",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(mttr_seconds_bucket[1h])) by (le))",
+          "legendFormat": "MTTR p95"
+        }
+      ],
+      "gridPos": {"x": 0, "y": 0, "w": 6, "h": 4}
+    },
+    {
+      "type": "stat",
+      "title": "Auto-rollback rate (L5)",
+      "targets": [
+        {
+          "expr": "sum(rate(healing_rolled_back_total[1h])) / sum(rate(healing_invocations_total{level=\"L5\"}[1h]))",
+          "legendFormat": "rollback %"
+        }
+      ],
+      "gridPos": {"x": 6, "y": 0, "w": 6, "h": 4}
+    },
+    {
+      "type": "stat",
+      "title": "Kill switch activations (24h)",
+      "targets": [
+        {
+          "expr": "increase(healing_kill_switch_activation_count_total[24h])",
+          "legendFormat": "activations"
+        }
+      ],
+      "gridPos": {"x": 12, "y": 0, "w": 6, "h": 4}
+    },
+    {
+      "type": "timeseries",
+      "title": "Incidents detected vs. diagnosed",
+      "targets": [
+        {"expr": "sum(rate(incident_detected_total[5m]))", "legendFormat": "detected"},
+        {"expr": "sum(rate(incident_diagnosed_total[5m]))", "legendFormat": "diagnosed"}
+      ],
+      "gridPos": {"x": 0, "y": 4, "w": 12, "h": 6}
+    },
+    {
+      "type": "timeseries",
+      "title": "Healing invocations by level",
+      "targets": [
+        {"expr": "sum(rate(healing_invocations_total[5m])) by (level)", "legendFormat": "{{level}}"}
+      ],
+      "gridPos": {"x": 12, "y": 4, "w": 12, "h": 6}
+    },
+    {
+      "type": "timeseries",
+      "title": "Healing success rate by level",
+      "targets": [
+        {
+          "expr": "sum(rate(healing_invocations_outcome_total{outcome=\"executed\"}[5m])) by (level) / sum(rate(healing_invocations_total[5m])) by (level)",
+          "legendFormat": "{{level}}"
+        }
+      ],
+      "gridPos": {"x": 0, "y": 10, "w": 12, "h": 6}
+    },
+    {
+      "type": "timeseries",
+      "title": "Incident count by severity",
+      "targets": [
+        {"expr": "sum(rate(incident_count_by_severity_total[1h])) by (severity)", "legendFormat": "{{severity}}"}
+      ],
+      "gridPos": {"x": 12, "y": 10, "w": 12, "h": 6}
+    },
+    {
+      "type": "timeseries",
+      "title": "Funnel — detect → diagnose → act → resolve",
+      "targets": [
+        {"expr": "sum(rate(incident_detected_total[5m]))", "legendFormat": "detected"},
+        {"expr": "sum(rate(incident_diagnosed_total[5m]))", "legendFormat": "diagnosed"},
+        {"expr": "sum(rate(healing_invocations_total[5m]))", "legendFormat": "acted"},
+        {"expr": "sum(rate(incident_resolved_total[5m]))", "legendFormat": "resolved"}
+      ],
+      "gridPos": {"x": 0, "y": 16, "w": 24, "h": 7}
+    },
+    {
+      "type": "timeseries",
+      "title": "Evolution proposals (inbox / accepted / rejected / converted)",
+      "targets": [
+        {"expr": "sum(evolution_proposal_status) by (status)", "legendFormat": "{{status}}"}
+      ],
+      "gridPos": {"x": 0, "y": 23, "w": 12, "h": 6}
+    },
+    {
+      "type": "timeseries",
+      "title": "FinOps recommendations savings ($/mo)",
+      "targets": [
+        {"expr": "sum(finops_expected_savings_usd_monthly)", "legendFormat": "expected savings"}
+      ],
+      "gridPos": {"x": 12, "y": 23, "w": 12, "h": 6}
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "workspace",
+        "type": "query",
+        "query": "label_values(healing_invocations_total, workspace)",
+        "refresh": 1,
+        "includeAll": true,
+        "multi": true
+      }
+    ]
+  }
+}

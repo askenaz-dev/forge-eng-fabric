@@ -16,6 +16,9 @@ jobs:
           - services/control-plane
           - services/registry
           - services/audit
+          - services/scaffolder
+          - services/app-onboarding
+          - services/policy-engine
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -53,6 +56,12 @@ jobs:
       - name: Build portal
         working-directory: portal
         run: pnpm build
+      - name: Install Playwright browsers
+        working-directory: portal
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Run portal E2E
+        working-directory: portal
+        run: pnpm test:e2e
 
   contracts:
     name: contracts

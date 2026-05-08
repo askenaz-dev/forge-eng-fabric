@@ -1,0 +1,64 @@
+apiVersion: forge.workflows/v1
+kind: Workflow
+metadata:
+  id: wf-scale-up
+  name: Scale up deployment healing action
+  version: 1.0.0
+  visibility: forge-certified
+  criticality: high
+  owners:
+    - sre-platform
+  description: |
+    Healing action workflow to scale up replicas of a deployment when the
+    diagnosis indicates capacity exhaustion. Reversible via wf-scale-down.
+  tags:
+    - healing
+    - kubernetes
+    - reversible
+spec:
+  inputs:
+    - name: namespace
+      type: string
+      required: true
+    - name: deployment
+      type: string
+      required: true
+    - name: replicas
+      type: integer
+      required: true
+    - name: cluster
+      type: string
+      required: true
+  outputs:
+    - name: previous_replicas
+      type: integer
+    - name: new_replicas
+      type: integer
+  steps:
+    - id: get-current
+      type: mcp
+      ref: registry:mcp/kubernetes@read
+      tool: get_deployment
+      inputs:
+        namespace: $inputs.namespace
+        name: $inputs.deployment
+        cluster: $inputs.cluster
+    - id: scale
+      type: mcp
+      ref: registry:mcp/kubernetes@write
+      tool: scale_deployment
+      depends_on: [get-current]
+      inputs:
+        namespace: $inputs.namespace
+        name: $inputs.deployment
+        replicas: $inputs.replicas
+        cluster: $inputs.cluster
+    - id: verify-rolled-out
+      type: skill
+      ref: registry:skill/sre-platform/verify-deployment-ready@1.0.0
+      depends_on: [scale]
+      inputs:
+        namespace: $inputs.namespace
+        name: $inputs.deployment
+        cluster: $inputs.cluster
+        timeout_seconds: 300

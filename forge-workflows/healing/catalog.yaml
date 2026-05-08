@@ -1,0 +1,150 @@
+# Healing action catalog (Phase 6).
+#
+# Each action is a registry asset of type=healing_action. The healing engine
+# resolves these manifests to (a) discover available actions per
+# incident.signature_hash, (b) determine `allowed_levels_by_env`, and (c)
+# locate the workflow implementation that the engine invokes.
+#
+# Promotion of an action to L4/L5 requires the prerequisites in D6.10 of the
+# phase-6-autonomous-ops design:
+#   - eval_suite >=95% pass rate on last 50 runs
+#   - >=20 successful L3 dry-run executions
+#   - 30-day postmortem-free window
+#   - approval by platform-admin and security-approver
+apiVersion: forge.healing/v1
+kind: HealingActionCatalog
+metadata:
+  version: 1.0.0
+  owners:
+    - sre-platform
+spec:
+  actions:
+    - id: restart-pod
+      runbook_url: confluence://forge/sre-runbooks/restart-pod
+      parameters:
+        - name: namespace
+          type: string
+          required: true
+        - name: pod_name
+          type: string
+          required: true
+        - name: cluster
+          type: string
+          required: true
+      risk: low
+      reversible: true
+      blast_radius: pod
+      allowed_levels_by_env:
+        dev: [L1, L2, L3, L4, L5]
+        stage: [L1, L2, L3, L4]
+        prod: [L1, L2, L3]
+      eval_suite: ds-restart-pod-eval@1.0.0
+      implementation:
+        kind: workflow
+        ref: registry:workflow/sre-platform/wf-restart-pod@1.0.0
+      tags: [kubernetes, reversible]
+
+    - id: scale-up
+      runbook_url: confluence://forge/sre-runbooks/scale-up-deployment
+      parameters:
+        - name: namespace
+          type: string
+          required: true
+        - name: deployment
+          type: string
+          required: true
+        - name: replicas
+          type: integer
+          required: true
+        - name: cluster
+          type: string
+          required: true
+      risk: medium
+      reversible: true
+      reverse_action: scale-down
+      blast_radius: deployment
+      allowed_levels_by_env:
+        dev: [L1, L2, L3, L4, L5]
+        stage: [L1, L2, L3, L4]
+        prod: [L1, L2, L3]
+      eval_suite: ds-scale-up-eval@1.0.0
+      implementation:
+        kind: workflow
+        ref: registry:workflow/sre-platform/wf-scale-up@1.0.0
+      tags: [kubernetes, capacity, reversible]
+
+    - id: rollback-deploy
+      runbook_url: confluence://forge/sre-runbooks/rollback-deployment
+      parameters:
+        - name: namespace
+          type: string
+          required: true
+        - name: deployment
+          type: string
+          required: true
+        - name: cluster
+          type: string
+          required: true
+      risk: high
+      reversible: true
+      blast_radius: deployment
+      allowed_levels_by_env:
+        dev: [L1, L2, L3, L4, L5]
+        stage: [L1, L2, L3, L4]
+        prod: [L1, L2, L3]
+      eval_suite: ds-rollback-deploy-eval@1.0.0
+      implementation:
+        kind: workflow
+        ref: registry:workflow/sre-platform/wf-rollback-deploy@1.0.0
+      tags: [kubernetes, deployment, reversible, destructive]
+
+    - id: increase-rate-limit
+      runbook_url: confluence://forge/sre-runbooks/increase-rate-limit
+      parameters:
+        - name: tenant_id
+          type: string
+          required: true
+        - name: limit_key
+          type: string
+          required: true
+        - name: new_limit
+          type: integer
+          required: true
+        - name: ttl_minutes
+          type: integer
+          required: true
+      risk: medium
+      reversible: true
+      reverse_action: restore-rate-limit
+      blast_radius: tenant
+      allowed_levels_by_env:
+        dev: [L1, L2, L3, L4, L5]
+        stage: [L1, L2, L3, L4]
+        prod: [L1, L2, L3]
+      eval_suite: ds-increase-rate-limit-eval@1.0.0
+      implementation:
+        kind: workflow
+        ref: registry:workflow/sre-platform/wf-increase-rate-limit@1.0.0
+      tags: [rate-limit, tenant, reversible]
+
+    - id: refresh-cache
+      runbook_url: confluence://forge/sre-runbooks/refresh-cache
+      parameters:
+        - name: cache_id
+          type: string
+          required: true
+        - name: key_prefix
+          type: string
+          required: true
+      risk: low
+      reversible: true
+      blast_radius: cache
+      allowed_levels_by_env:
+        dev: [L1, L2, L3, L4, L5]
+        stage: [L1, L2, L3, L4, L5]
+        prod: [L1, L2, L3, L4, L5]
+      eval_suite: ds-refresh-cache-eval@1.0.0
+      implementation:
+        kind: workflow
+        ref: registry:workflow/sre-platform/wf-refresh-cache@1.0.0
+      tags: [cache, reversible, safe-default]

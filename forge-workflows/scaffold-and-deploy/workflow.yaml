@@ -1,0 +1,84 @@
+apiVersion: forge.workflows/v1
+kind: Workflow
+metadata:
+  id: scaffold-and-deploy
+  name: Scaffold and deploy to dev
+  version: 1.0.0
+  visibility: forge-certified
+  criticality: medium
+  owners:
+    - platform-engineering
+  description: |
+    End-to-end onboarding (Phase 2) followed by deploy to dev (Phase 3).
+    Designed as the canonical "happy path" for a Workspace's first app.
+  tags:
+    - onboarding
+    - scaffold
+    - certified
+  success_metric: time_to_first_deploy
+spec:
+  inputs:
+    - name: workspace_id
+      type: string
+      required: true
+    - name: app_name
+      type: string
+      required: true
+    - name: template_ref
+      type: string
+      required: true
+  outputs:
+    - name: app_id
+      type: string
+    - name: deployment_id
+      type: string
+  steps:
+    - id: create-app
+      type: mcp
+      ref: registry:mcp/app-onboarding@write
+      tool: create_app
+      inputs:
+        workspace_id: $inputs.workspace_id
+        app_name: $inputs.app_name
+        template_ref: $inputs.template_ref
+      outputs:
+        - app_id
+
+    - id: scaffold-repo
+      type: mcp
+      ref: registry:mcp/scaffolder@write
+      tool: render_template
+      depends_on:
+        - create-app
+      inputs:
+        app_id: $steps.create-app.outputs.app_id
+        template_ref: $inputs.template_ref
+
+    - id: register-runtime
+      type: mcp
+      ref: registry:mcp/runtime-registry@write
+      tool: register
+      depends_on:
+        - scaffold-repo
+      inputs:
+        app_id: $steps.create-app.outputs.app_id
+
+    - id: workspace-owner-approval
+      type: human-in-the-loop
+      depends_on:
+        - register-runtime
+      approver_role: workspace-owner
+      timeout: 24h
+      on_timeout: fail
+
+    - id: deploy-dev
+      type: mcp
+      ref: registry:mcp/deploy-orchestrator@write
+      tool: deploy
+      depends_on:
+        - workspace-owner-approval
+      inputs:
+        app_id: $steps.create-app.outputs.app_id
+        env: dev
+      outputs:
+        - deployment_id

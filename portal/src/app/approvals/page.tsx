@@ -17,6 +17,15 @@ type Approval = {
   expires_at: string;
   decided_by?: string;
   decision_comment?: string;
+  workflow_context?: {
+    workflow_id?: string;
+    workflow_version?: string;
+    execution_id?: string;
+    step_id?: string;
+    previous_steps?: { id: string; outputs?: Record<string, unknown> }[];
+    next_steps?: { id: string; type?: string; inputs?: Record<string, unknown> }[];
+    proposed_inputs?: Record<string, unknown>;
+  };
 };
 
 type SearchParams = { approver?: string; status?: string; decided?: string; error?: string };
@@ -108,6 +117,9 @@ export default async function ApprovalsPage({ searchParams }: { searchParams: Se
               <p><span className="font-medium">Criticality:</span> {approval.criticality}</p>
               <p><span className="font-medium">Expires:</span> {new Date(approval.expires_at).toLocaleString()}</p>
             </div>
+            {approval.workflow_context && (
+              <WorkflowContext context={approval.workflow_context} />
+            )}
             {approval.status === "pending" && (
               <form action={decideApproval} className="mt-4 flex flex-col gap-2 md:flex-row">
                 <input type="hidden" name="approval_id" value={approval.id} />
@@ -129,4 +141,48 @@ function required(formData: FormData, key: string) {
   const value = String(formData.get(key) ?? "").trim();
   if (!value) throw new Error(`${key} is required`);
   return value;
+}
+
+function WorkflowContext({ context }: { context: NonNullable<Approval["workflow_context"]> }) {
+  return (
+    <section className="mt-4 rounded border border-blue-300 bg-blue-50 p-3 text-sm dark:border-blue-800 dark:bg-blue-950">
+      <p className="font-medium">Workflow context</p>
+      <p className="text-xs opacity-70">
+        {context.workflow_id ? `${context.workflow_id}@${context.workflow_version ?? ""}` : ""}
+        {context.step_id ? ` · step ${context.step_id}` : ""}
+      </p>
+      {context.previous_steps && context.previous_steps.length > 0 && (
+        <div className="mt-2">
+          <p className="text-xs uppercase opacity-60">Previous steps</p>
+          <ul className="text-xs">
+            {context.previous_steps.map((s) => (
+              <li key={s.id}>
+                <code>{s.id}</code> {s.outputs ? `→ ${JSON.stringify(s.outputs)}` : ""}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {context.next_steps && context.next_steps.length > 0 && (
+        <div className="mt-2">
+          <p className="text-xs uppercase opacity-60">Next step</p>
+          <ul className="text-xs">
+            {context.next_steps.map((s) => (
+              <li key={s.id}>
+                <code>{s.id}</code> ({s.type ?? "?"}){s.inputs ? ` ← ${JSON.stringify(s.inputs)}` : ""}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {context.proposed_inputs && (
+        <div className="mt-2">
+          <p className="text-xs uppercase opacity-60">Proposed inputs (you can modify before approving)</p>
+          <pre className="mt-1 overflow-auto rounded bg-neutral-950 p-2 font-mono text-xs text-neutral-100">
+            {JSON.stringify(context.proposed_inputs, null, 2)}
+          </pre>
+        </div>
+      )}
+    </section>
+  );
 }

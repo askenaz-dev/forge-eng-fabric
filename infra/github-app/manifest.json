@@ -11,13 +11,22 @@
   "public": false,
   "default_permissions": {
     "metadata": "read",
-    "contents": "read",
-    "pull_requests": "read"
+    "members": "read",
+    "contents": "write",
+    "pull_requests": "write",
+    "administration": "write",
+    "actions": "write",
+    "checks": "write"
   },
   "default_events": [
     "installation",
     "installation_repositories",
-    "repository"
+    "repository",
+    "pull_request",
+    "push",
+    "check_run",
+    "check_suite",
+    "workflow_run"
   ],
   "request_oauth_on_install": true,
   "setup_url": "http://localhost:3000/settings/github",

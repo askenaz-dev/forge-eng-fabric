@@ -1,0 +1,16 @@
+{
+  "title": "Phase 4 FinOps",
+  "schemaVersion": 39,
+  "panels": [
+    {
+      "title": "Cost by initiative",
+      "type": "timeseries",
+      "targets": [{"expr": "sum by (workspace, initiative_openspec) (finops_cost_usd_total)"}]
+    },
+    {
+      "title": "Budget threshold events",
+      "type": "stat",
+      "targets": [{"expr": "sum by (workspace, threshold) (finops_budget_threshold_reached_total)"}]
+    }
+  ]
+}

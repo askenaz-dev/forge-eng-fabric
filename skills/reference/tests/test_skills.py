@@ -4,7 +4,7 @@ from fastapi.testclient import TestClient
 
 from reference_skills.evals import run_eval_suite
 from reference_skills.runner import create_app
-from reference_skills.skills import create_user_stories, generate_test_cases, scaffold_service
+from reference_skills.skills import SDLC_SKILL_DEFS, SDLC_SKILL_FUNCTIONS, create_user_stories, generate_test_cases, scaffold_service
 
 OPENSPEC = {
     "openspec_id": "os-payments",
@@ -46,3 +46,26 @@ def test_skill_runner_invokes_reference_skills() -> None:
     assert body["tool_id"] == "skill:create-user-stories"
     assert body["ok"] is True
     assert body["result"]["stories"][0]["links"]["openspec_id"] == "os-payments"
+
+
+def test_sdlc_skills_are_deterministic_and_eval() -> None:
+    assert len(SDLC_SKILL_DEFS) == 27
+    for skill_name, fn in SDLC_SKILL_FUNCTIONS.items():
+        first = fn({"openspec": OPENSPEC})
+        second = fn({"openspec": OPENSPEC})
+        assert first == second
+        assert first["links"] == {"openspec_id": "os-payments", "direction": "bidirectional"}
+        assert run_eval_suite(skill_name, fn, {"openspec": OPENSPEC})["passed"] is True
+
+
+def test_skill_runner_invokes_sdlc_skill() -> None:
+    client = TestClient(create_app())
+    response = client.post(
+        "/v1/invoke",
+        json={"tool_id": "skill:generate-api-contract", "params": {"openspec": OPENSPEC}},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["result"]["skill"] == "generate-api-contract"
+    assert body["result"]["capability"] == "sdlc-design"

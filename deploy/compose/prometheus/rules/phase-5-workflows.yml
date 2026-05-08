@@ -1,0 +1,71 @@
+groups:
+  - name: phase5-workflow-slos
+    rules:
+      - alert: WorkflowExecutionP95AboveSixtySeconds
+        expr: histogram_quantile(0.95, sum(rate(workflow_execution_duration_seconds_bucket[5m])) by (le, workflow_id)) > 60
+        for: 10m
+        labels:
+          severity: warning
+          phase: phase-5
+        annotations:
+          summary: Workflow execution p95 is above 60 seconds
+          description: Per-workflow p95 latency exceeds the certified-workflow SLO.
+
+      - alert: WorkflowStepFailureRateAboveFivePercent
+        expr: |
+          sum(rate(workflow_step_failure_total[5m])) by (workflow_id, type)
+          /
+          ignoring(type) group_left
+          sum(rate(workflow_executions_started_total[5m])) by (workflow_id)
+          > 0.05
+        for: 10m
+        labels:
+          severity: warning
+          phase: phase-5
+        annotations:
+          summary: Workflow step failure rate above 5%
+          description: A workflow step type is failing in more than 5% of executions.
+
+      - alert: HumanInLoopTimeoutRateAboveTwentyPercent
+        expr: |
+          sum(rate(human_in_loop_timeout_total[1h])) by (workflow_id)
+          /
+          sum(rate(workflow_step_started_total{step_type="human-in-the-loop"}[1h])) by (workflow_id)
+          > 0.20
+        for: 30m
+        labels:
+          severity: warning
+          phase: phase-5
+        annotations:
+          summary: Human-in-the-loop timeout rate is high
+          description: More than 20% of HITL steps are timing out — investigate approver capacity.
+
+      - alert: EvalRegressionBlocksSpiking
+        expr: increase(eval_regression_blocks_total[1h]) > 5
+        for: 30m
+        labels:
+          severity: warning
+          phase: phase-5
+        annotations:
+          summary: Eval regression blocks are spiking
+          description: More than 5 publish attempts blocked by regression in the last hour.
+
+      - alert: MarketplaceInstallSpike
+        expr: increase(marketplace_install_count_total[1h]) > 100
+        for: 30m
+        labels:
+          severity: info
+          phase: phase-5
+        annotations:
+          summary: Marketplace installs spiking
+          description: More than 100 installs/hour — useful signal of viral adoption or anomaly.
+
+      - alert: AssetEvalDriftDetected
+        expr: increase(asset_eval_drift_detected_total[24h]) > 0
+        for: 5m
+        labels:
+          severity: warning
+          phase: phase-5
+        annotations:
+          summary: Asset eval drift detected
+          description: An asset's recent eval scores trended below baseline by the configured delta.

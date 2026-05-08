@@ -1,0 +1,70 @@
+# Onboarding override policy templates (Phase 2). Each template declares the
+# action it covers, the role required to approve, the maximum TTL, and the
+# audit event types that must be emitted on grant / consume / expire.
+templates:
+  - id: bypass-gate
+    description: |
+      Allow merging a PR despite a failing pipeline gate (SAST, SCA,
+      coverage, container scan). High-risk; default TTL is short.
+    action: pipeline.gate.bypass
+    target: pull_request
+    required_role: security-approver
+    max_ttl_seconds: 14400          # 4h
+    requires_reason: true
+    events_on_grant: [policy.override.granted.v1]
+    events_on_consume: [policy.override.consumed.v1]
+    events_on_expire: [policy.override.expired.v1]
+    audit_payload:
+      include: [actor, target, reason, original_failure]
+
+  - id: merge-without-openspec
+    description: |
+      Allow a PR on `criticality≥medium` to merge without an OpenSpec link.
+      Common for hot-fix backports and incident remediations.
+    action: pull_request.merge.unlinked
+    target: pull_request
+    required_role: release-manager
+    max_ttl_seconds: 7200           # 2h
+    requires_reason: true
+    events_on_grant: [policy.override.granted.v1]
+    events_on_consume: [policy.override.consumed.v1]
+    events_on_expire: [policy.override.expired.v1]
+
+  - id: relax-branch-protection
+    description: |
+      Temporarily relax standard branch protections (e.g. allow force push or
+      single review on `main`) for a remediation window. Auto-reverted by the
+      reconciler at TTL.
+    action: github.branch_protection.relax
+    target: branch
+    required_role: security-approver
+    max_ttl_seconds: 86400          # 24h max per spec D2.7
+    requires_reason: true
+    revert_to: standard
+    events_on_grant: [policy.override.granted.v1]
+    events_on_expire: [policy.override.expired.v1]
+
+  - id: allow-force-push
+    description: |
+      Permit a single force-push to a protected branch. Strict TTL.
+    action: github.force_push
+    target: branch
+    required_role: release-manager
+    max_ttl_seconds: 1800           # 30m
+    requires_reason: true
+    events_on_grant: [policy.override.granted.v1]
+    events_on_consume: [policy.override.consumed.v1]
+    events_on_expire: [policy.override.expired.v1]
+
+  - id: phase-progression-bypass
+    description: |
+      Allow a single SDLC phase progression despite failed gates. Requires a
+      release-manager approval, mandatory rationale, and TTL ≤ 24h.
+    action: sdlc.phase.progression.bypass
+    target: sdlc_phase
+    required_role: release-manager
+    max_ttl_seconds: 86400
+    requires_reason: true
+    events_on_grant: [policy.override.granted.v1]
+    events_on_consume: [policy.override.consumed.v1]
+    events_on_expire: [policy.override.expired.v1]

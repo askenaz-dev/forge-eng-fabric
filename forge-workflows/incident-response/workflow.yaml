@@ -1,0 +1,79 @@
+apiVersion: forge.workflows/v1
+kind: Workflow
+metadata:
+  id: incident-response
+  name: Incident response
+  version: 1.0.0
+  visibility: forge-certified
+  criticality: critical
+  owners:
+    - sre-platform
+  description: |
+    Triage + comms + initial mitigation skeleton. Pulls related signals,
+    drafts a status page update for human review, and queues a mitigation
+    runbook for the on-call engineer.
+  tags:
+    - sre
+    - incident
+    - certified
+  success_metric: incident_resolved_within_15m
+spec:
+  inputs:
+    - name: alert_id
+      type: string
+      required: true
+    - name: severity
+      type: string
+      required: true
+  outputs:
+    - name: incident_id
+      type: string
+  steps:
+    - id: triage
+      type: skill
+      ref: registry:skill/sre-platform/triage-alert@1.0.0
+      inputs:
+        alert_id: $inputs.alert_id
+      outputs:
+        - service
+        - blast_radius
+        - related_traces
+
+    - id: draft-status-update
+      type: skill
+      ref: registry:skill/sre-platform/draft-status-update@1.0.0
+      depends_on:
+        - triage
+      inputs:
+        service: $steps.triage.outputs.service
+        severity: $inputs.severity
+      outputs:
+        - draft_message
+
+    - id: oncall-review
+      type: human-in-the-loop
+      depends_on:
+        - draft-status-update
+      approver_role: oncall-engineer
+      timeout: 15m
+      on_timeout: escalate
+      escalation_role: incident-commander
+
+    - id: post-status-update
+      type: mcp
+      ref: registry:mcp/comms@write
+      tool: post_status_update
+      depends_on:
+        - oncall-review
+      inputs:
+        message: $steps.draft-status-update.outputs.draft_message
+
+    - id: kickoff-mitigation
+      type: skill
+      ref: registry:skill/sre-platform/kickoff-mitigation@1.0.0
+      depends_on:
+        - oncall-review
+      inputs:
+        service: $steps.triage.outputs.service
+      outputs:
+        - incident_id

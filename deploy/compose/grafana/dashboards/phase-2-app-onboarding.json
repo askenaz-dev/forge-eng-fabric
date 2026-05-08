@@ -1,0 +1,71 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "links": [],
+  "panels": [
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "id": 1,
+      "options": { "legend": { "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "single" } },
+      "targets": [
+        { "expr": "histogram_quantile(0.95, sum(rate(onboarding_duration_seconds_bucket[15m])) by (le))", "legendFormat": "p95", "refId": "A" },
+        { "expr": "histogram_quantile(0.99, sum(rate(onboarding_duration_seconds_bucket[15m])) by (le))", "legendFormat": "p99", "refId": "B" }
+      ],
+      "title": "Onboarding Duration",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1 }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "id": 2,
+      "options": { "legend": { "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "single" } },
+      "targets": [
+        { "expr": "onboarding_success_rate", "legendFormat": "onboarding success", "refId": "A" },
+        { "expr": "image_signing_rate", "legendFormat": "image signing", "refId": "B" },
+        { "expr": "pr_openspec_link_coverage", "legendFormat": "OpenSpec link coverage", "refId": "C" }
+      ],
+      "title": "Phase 2 SLO Rates",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1 }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "id": 3,
+      "options": { "legend": { "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "single" } },
+      "targets": [
+        { "expr": "pipeline_gate_failure_rate", "legendFormat": "gate failure rate", "refId": "A" }
+      ],
+      "title": "Pipeline Gate Failure Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "id": 4,
+      "options": { "legend": { "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "single" } },
+      "targets": [
+        { "expr": "override_count", "legendFormat": "overrides", "refId": "A" }
+      ],
+      "title": "Override Count",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["forge", "phase-2", "app-onboarding"],
+  "templating": { "list": [] },
+  "time": { "from": "now-6h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Phase 2 App Onboarding",
+  "uid": "phase-2-app-onboarding",
+  "version": 1,
+  "weekStart": ""
+}

@@ -1,0 +1,52 @@
+id: iac-terraform-module
+version: 1.0.0
+description: Minimal Terraform module template for Forge IaC catalog
+category: iac
+parameters:
+  name:
+    type: string
+    description: Module name
+    required: true
+    pattern: "^[a-z][a-z0-9-]{1,40}$"
+  owner:
+    type: string
+    required: true
+  criticality:
+    type: string
+    required: false
+    default: medium
+    enum: [low, medium, high, critical]
+  data_classification:
+    type: string
+    required: false
+    default: internal
+    enum: [public, internal, confidential, restricted]
+pre_hooks: []
+post_hooks: []
+files:
+  - path: main.tf
+    template: |
+      // Forge IaC module: {{ .name }}
+      // Owner: {{ .owner }}
+      terraform {
+        required_version = ">= 1.5.0"
+      }
+
+      variable "environment" {
+        type = string
+      }
+  - path: variables.tf
+    template: |
+      variable "name" {
+        type    = string
+        default = "{{ .name }}"
+      }
+  - path: outputs.tf
+    template: |
+      output "module_name" {
+        value = var.name
+      }
+  - path: CODEOWNERS
+    template: |
+      * {{ .owner }}
+required_capabilities: ["ci-pipeline-baseline"]

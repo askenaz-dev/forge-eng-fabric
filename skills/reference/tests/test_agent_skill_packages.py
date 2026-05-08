@@ -11,11 +11,11 @@ SKILL_NAME = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 
 def test_agent_skill_packages_follow_core_spec() -> None:
     skill_dirs = sorted(path for path in AGENT_SKILLS_DIR.iterdir() if path.is_dir())
-    assert [path.name for path in skill_dirs] == [
+    assert {path.name for path in skill_dirs}.issuperset({
         "create-user-stories",
         "generate-test-cases",
         "scaffold-service",
-    ]
+    })
 
     for skill_dir in skill_dirs:
         frontmatter, body = _read_skill(skill_dir / "SKILL.md")

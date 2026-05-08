@@ -1,0 +1,51 @@
+name: "Forge Test With Coverage"
+description: "Run unit tests and enforce a minimum coverage threshold (criticality-derived)."
+
+inputs:
+  language:
+    description: "go | python | node"
+    required: true
+  coverage_min:
+    description: "Minimum coverage percentage as integer (0-100)"
+    required: true
+  coverage_file:
+    description: "Path to coverage report (cobertura/coverage.out)"
+    required: false
+    default: ""
+
+outputs:
+  coverage_pct:
+    description: "Measured coverage percentage"
+    value: ${{ steps.run.outputs.coverage }}
+
+runs:
+  using: "composite"
+  steps:
+    - id: run
+      shell: bash
+      run: |
+        case "${{ inputs.language }}" in
+          go)
+            go test ./... -coverprofile=coverage.out
+            COV=$(go tool cover -func=coverage.out | awk '/^total/ {print int($3)}')
+            ;;
+          python)
+            pip install --quiet coverage pytest
+            coverage run -m pytest
+            COV=$(coverage report | awk '/TOTAL/ {gsub("%",""); print int($4)}')
+            ;;
+          node)
+            npm test -- --coverage --coverageReporters=text-summary
+            COV=$(grep -E '^Lines' coverage/coverage-summary.txt | awk '{gsub("%","",$3); print int($3)}' || echo 0)
+            ;;
+          *)
+            echo "::error::unsupported language ${{ inputs.language }}"
+            exit 2
+            ;;
+        esac
+        echo "coverage=${COV}" >> "$GITHUB_OUTPUT"
+        if [ "$COV" -lt "${{ inputs.coverage_min }}" ]; then
+          echo "::error::pipeline.gate.failed.v1 stage=coverage measured=${COV} min=${{ inputs.coverage_min }}"
+          exit 1
+        fi
+        echo "::notice::pipeline.gate.evaluated.v1 stage=coverage outcome=pass measured=${COV}"

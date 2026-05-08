@@ -1,0 +1,53 @@
+id: nextjs-frontend
+version: 1.0.0
+description: Minimal Next.js frontend template for Forge onboarding
+category: frontend
+parameters:
+  name:
+    type: string
+    description: App name
+    required: true
+    pattern: "^[a-z][a-z0-9-]{1,40}$"
+  owner:
+    type: string
+    description: Default CODEOWNERS entry
+    required: true
+  criticality:
+    type: string
+    required: false
+    default: medium
+    enum: [low, medium, high, critical]
+  data_classification:
+    type: string
+    required: false
+    default: internal
+    enum: [public, internal, confidential, restricted]
+pre_hooks: []
+post_hooks: []
+files:
+  - path: package.json
+    template: |
+      {
+        "name": "{{ .name }}",
+        "version": "0.1.0",
+        "private": true,
+        "scripts": {
+          "dev": "next dev",
+          "build": "next build",
+          "start": "next start"
+        },
+        "dependencies": {
+          "next": "^14.2.0",
+          "react": "^18.3.0",
+          "react-dom": "^18.3.0"
+        }
+      }
+  - path: app/page.tsx
+    template: |
+      export default function Page() {
+        return <main>Hello from {{ .name }}</main>;
+      }
+  - path: CODEOWNERS
+    template: |
+      * {{ .owner }}
+required_capabilities: ["ci-pipeline-baseline", "mcp-and-skills"]

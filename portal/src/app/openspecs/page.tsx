@@ -13,7 +13,7 @@ type OpenSpec = {
   requirements: { functional: string[]; non_functional: string[] };
   constraints: string[];
   autonomy_policy: { default_mode: string; approvals_required: string[] };
-  linked_artifacts: { kind: string; ref: string; direction: string; metadata?: Record<string, unknown> }[];
+  linked_artifacts: { kind: string; ref: string; namespace?: string; direction: string; metadata?: Record<string, unknown> }[];
   decision_log: { actor: string; decision: string; rationale: string; timestamp: string; correlation_id?: string }[];
   audit: { created_by: string; created_at: string; updated_by?: string; updated_at?: string };
   version: number;
@@ -257,16 +257,28 @@ function MarkdownPreview({ spec }: { spec: OpenSpec }) {
 }
 
 function LinkedArtifacts({ spec }: { spec: OpenSpec }) {
+  const namespaces = ["jira", "confluence", "test", "slo", "cost", "incident"];
   return (
     <div className="rounded border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
       <h3 className="font-medium">Linked artifacts</h3>
-      <div className="mt-3 grid gap-2 text-sm">
-        {spec.linked_artifacts.map((link) => (
-          <a key={`${link.kind}:${link.ref}`} href={link.ref.startsWith("http") ? link.ref : "#"} className="rounded border border-neutral-200 px-3 py-2 dark:border-neutral-800">
-            <span className="font-medium">{link.kind}</span> <code>{link.ref}</code>
-            <span className="ml-2 text-xs opacity-60">{link.direction}</span>
-          </a>
-        ))}
+      <div className="mt-3 grid gap-3 text-sm md:grid-cols-2">
+        {namespaces.map((namespace) => {
+          const links = spec.linked_artifacts.filter((link) => (link.namespace ?? link.kind).replace(":", "") === namespace);
+          return (
+            <section key={namespace} className="rounded border border-neutral-200 p-3 dark:border-neutral-800">
+              <h4 className="font-medium capitalize">{namespace === "slo" ? "SLOs" : namespace}</h4>
+              <div className="mt-2 grid gap-2">
+                {links.map((link) => (
+                  <a key={`${link.kind}:${link.ref}`} href={link.ref.startsWith("http") ? link.ref : "#"} className="rounded bg-neutral-50 px-3 py-2 dark:bg-neutral-950">
+                    <span className="font-medium">{link.kind}</span> <code>{link.ref}</code>
+                    <span className="ml-2 text-xs opacity-60">{link.direction}</span>
+                  </a>
+                ))}
+                {links.length === 0 && <p className="text-xs opacity-60">No {namespace} links.</p>}
+              </div>
+            </section>
+          );
+        })}
         {spec.linked_artifacts.length === 0 && <p className="opacity-70">No linked artifacts yet.</p>}
       </div>
     </div>

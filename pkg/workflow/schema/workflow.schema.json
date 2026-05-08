@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://forge.eng/schemas/workflow.schema.json",
+  "title": "ForgeWorkflow",
+  "type": "object",
+  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "properties": {
+    "apiVersion": { "const": "forge.workflows/v1" },
+    "kind": { "const": "Workflow" },
+    "metadata": {
+      "type": "object",
+      "required": ["id", "name", "version"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
+        },
+        "owners": { "type": "array", "items": { "type": "string" } },
+        "visibility": {
+          "type": "string",
+          "enum": ["private", "workspace", "tenant", "forge-certified"]
+        },
+        "criticality": {
+          "type": "string",
+          "enum": ["low", "medium", "high", "critical"]
+        },
+        "openspec_ids": { "type": "array", "items": { "type": "string" } },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "description": { "type": "string" },
+        "success_metric": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "spec": {
+      "type": "object",
+      "required": ["steps"],
+      "properties": {
+        "inputs": { "type": "array", "items": { "$ref": "#/$defs/io" } },
+        "outputs": { "type": "array", "items": { "$ref": "#/$defs/io" } },
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/step" }
+        },
+        "on_failure": { "type": "array", "items": { "$ref": "#/$defs/step" } }
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "io": {
+      "type": "object",
+      "required": ["name", "type"],
+      "properties": {
+        "name": { "type": "string" },
+        "type": { "type": "string" },
+        "required": { "type": "boolean" },
+        "default": {},
+        "description": { "type": "string" },
+        "validations": { "type": "object" }
+      }
+    },
+    "retry": {
+      "type": "object",
+      "required": ["max"],
+      "properties": {
+        "max": { "type": "integer", "minimum": 0 },
+        "backoff": { "type": "string", "enum": ["exponential", "linear", "fixed"] },
+        "initial_ms": { "type": "integer", "minimum": 0 },
+        "max_ms": { "type": "integer", "minimum": 0 },
+        "non_retryable": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "step": {
+      "type": "object",
+      "required": ["id", "type"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "type": {
+          "type": "string",
+          "enum": [
+            "skill",
+            "mcp",
+            "prompt",
+            "branch",
+            "loop",
+            "human-in-the-loop",
+            "sub-workflow",
+            "event-trigger"
+          ]
+        },
+        "ref": { "type": "string" },
+        "tool": { "type": "string" },
+        "depends_on": { "type": "array", "items": { "type": "string" } },
+        "inputs": { "type": "object" },
+        "outputs": { "type": "array", "items": { "type": "string" } },
+        "retries": { "$ref": "#/$defs/retry" },
+        "timeout": { "type": "string" },
+        "compensate_with": { "type": "string" },
+        "branches": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["when"],
+            "properties": {
+              "when": { "type": "string" },
+              "goto": { "type": "string" },
+              "steps": { "type": "array", "items": { "$ref": "#/$defs/step" } }
+            }
+          }
+        },
+        "for_each": { "type": "string" },
+        "max_parallel": { "type": "integer", "minimum": 1 },
+        "body_ref": { "type": "string" },
+        "body": { "type": "array", "items": { "$ref": "#/$defs/step" } },
+        "approver_role": { "type": "string" },
+        "on_timeout": { "type": "string", "enum": ["fail", "proceed", "escalate"] },
+        "escalation_role": { "type": "string" },
+        "expected_outputs": { "type": "object" },
+        "workflow_ref": { "type": "string" },
+        "workflow_version": { "type": "string" },
+        "event_pattern": {
+          "type": "object",
+          "required": ["type"],
+          "properties": {
+            "type": { "type": "string" },
+            "source": { "type": "string" },
+            "filter": { "type": "object" }
+          }
+        }
+      }
+    }
+  }
+}

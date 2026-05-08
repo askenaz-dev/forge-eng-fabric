@@ -1,0 +1,119 @@
+name: Forge Baseline CI
+on:
+  workflow_call:
+    inputs:
+      language:
+        type: string
+        required: true
+      criticality:
+        type: string
+        required: false
+        default: medium
+      data_classification:
+        type: string
+        required: false
+        default: internal
+      coverage_min:
+        type: number
+        required: false
+        default: 70
+      image_repository:
+        type: string
+        required: false
+        default: ""
+      workspace_id:
+        type: string
+        required: true
+      openspec_url:
+        type: string
+        required: true
+
+permissions:
+  contents: read
+  id-token: write   # required for cosign keyless OIDC
+  packages: write
+  checks: write
+  pull-requests: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./forge-actions/actions/forge-lint
+        with:
+          paths: "."
+
+  test:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./forge-actions/actions/forge-test-with-coverage
+        with:
+          language: ${{ inputs.language }}
+          coverage_min: ${{ inputs.coverage_min }}
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: gitleaks/gitleaks-action@v2
+
+  sast:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./forge-actions/actions/forge-sast
+
+  sca:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./forge-actions/actions/forge-sca
+        with:
+          fail_on_severity: ${{ inputs.criticality == 'critical' && 'MEDIUM' || 'HIGH' }}
+
+  build_and_publish:
+    if: github.ref == 'refs/heads/main' && inputs.image_repository != ''
+    runs-on: ubuntu-latest
+    needs: [test, secrets, sast, sca]
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: build
+        run: |
+          echo "TODO: language-specific image build"
+          echo "digest=sha256:$(echo ${{ github.sha }} | sha256sum | cut -c1-64)" >> "$GITHUB_OUTPUT"
+      - uses: ./forge-actions/actions/forge-sbom
+        with:
+          image: "${{ inputs.image_repository }}@${{ steps.build.outputs.digest }}"
+      - uses: ./forge-actions/actions/forge-container-scan
+        with:
+          image: "${{ inputs.image_repository }}@${{ steps.build.outputs.digest }}"
+          fail_on_severity: ${{ inputs.criticality == 'critical' && 'MEDIUM' || 'HIGH' }}
+      - uses: ./forge-actions/actions/forge-cosign-sign-attest
+        with:
+          image: "${{ inputs.image_repository }}@${{ steps.build.outputs.digest }}"
+          data_classification: ${{ inputs.data_classification }}
+          sbom_path: "./sbom/sbom.spdx.json"
+      - uses: ./forge-actions/actions/forge-publish-image
+        with:
+          image_repository: ${{ inputs.image_repository }}
+          image_digest: ${{ steps.build.outputs.digest }}
+          signature_required: "true"
+
+  openspec_link:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./forge-actions/actions/forge-openspec-link
+        with:
+          openspec_url: ${{ inputs.openspec_url }}
+          workspace_id: ${{ inputs.workspace_id }}
+          criticality: ${{ inputs.criticality }}

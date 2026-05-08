@@ -1,0 +1,63 @@
+apiVersion: forge.workflows/v1
+kind: Workflow
+metadata:
+  id: wf-increase-rate-limit
+  name: Increase rate limit healing action
+  version: 1.0.0
+  visibility: forge-certified
+  criticality: medium
+  owners:
+    - sre-platform
+  description: |
+    Healing action workflow to temporarily increase a rate limit budget when the
+    incident is `quota_exceeded` rather than a true regression. Reversible by
+    wf-restore-rate-limit, which the engine schedules after a TTL.
+  tags:
+    - healing
+    - rate-limit
+    - reversible
+spec:
+  inputs:
+    - name: tenant_id
+      type: string
+      required: true
+    - name: limit_key
+      type: string
+      required: true
+    - name: new_limit
+      type: integer
+      required: true
+    - name: ttl_minutes
+      type: integer
+      required: true
+  outputs:
+    - name: previous_limit
+      type: integer
+    - name: applied_limit
+      type: integer
+  steps:
+    - id: lookup-current
+      type: mcp
+      ref: registry:mcp/rate-limit@read
+      tool: get_limit
+      inputs:
+        tenant_id: $inputs.tenant_id
+        key: $inputs.limit_key
+    - id: apply
+      type: mcp
+      ref: registry:mcp/rate-limit@write
+      tool: set_limit
+      depends_on: [lookup-current]
+      inputs:
+        tenant_id: $inputs.tenant_id
+        key: $inputs.limit_key
+        limit: $inputs.new_limit
+        ttl_minutes: $inputs.ttl_minutes
+    - id: verify-applied
+      type: skill
+      ref: registry:skill/sre-platform/verify-rate-limit-applied@1.0.0
+      depends_on: [apply]
+      inputs:
+        tenant_id: $inputs.tenant_id
+        key: $inputs.limit_key
+        expected: $inputs.new_limit

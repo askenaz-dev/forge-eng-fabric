@@ -1,15 +1,27 @@
 id: go-microservice
 version: 1.0.0
 description: Minimal Go microservice template for Forge onboarding (seed)
+category: microservice
 parameters:
   name:
     type: string
     description: Service name
     required: true
+    pattern: "^[a-z][a-z0-9-]{1,40}$"
   owner:
     type: string
-    description: Default owner (GitHub team or user)
+    description: Default CODEOWNERS entry (GitHub team or user)
     required: true
+  criticality:
+    type: string
+    required: false
+    default: medium
+    enum: [low, medium, high, critical]
+  data_classification:
+    type: string
+    required: false
+    default: internal
+    enum: [public, internal, confidential, restricted]
 pre_hooks: []
 post_hooks: []
 files:
@@ -22,4 +34,13 @@ files:
       func main() {
           fmt.Println("hello from {{ .name }}")
       }
+  - path: CODEOWNERS
+    template: |
+      * {{ .owner }}
+  - path: README.md
+    template: |
+      # {{ .name }}
+
+      Criticality: {{ .criticality }}
+      Data classification: {{ .data_classification }}
 required_capabilities: ["ci-pipeline-baseline", "mcp-and-skills"]

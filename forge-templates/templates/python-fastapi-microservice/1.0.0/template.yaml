@@ -1,0 +1,54 @@
+id: python-fastapi-microservice
+version: 1.0.0
+description: Minimal Python FastAPI microservice template for Forge onboarding
+category: microservice
+parameters:
+  name:
+    type: string
+    description: Service name
+    required: true
+    pattern: "^[a-z][a-z0-9-]{1,40}$"
+  owner:
+    type: string
+    description: Default CODEOWNERS entry (GitHub team or user)
+    required: true
+  criticality:
+    type: string
+    description: Application criticality level
+    required: false
+    default: medium
+    enum: [low, medium, high, critical]
+  data_classification:
+    type: string
+    required: false
+    default: internal
+    enum: [public, internal, confidential, restricted]
+pre_hooks: []
+post_hooks: []
+files:
+  - path: pyproject.toml
+    template: |
+      [project]
+      name = "{{ .name }}"
+      version = "0.1.0"
+      requires-python = ">=3.12"
+      dependencies = ["fastapi>=0.115", "uvicorn[standard]>=0.30"]
+  - path: app/main.py
+    template: |
+      from fastapi import FastAPI
+
+      app = FastAPI(title="{{ .name }}")
+
+      @app.get("/healthz")
+      def healthz() -> dict[str, str]:
+          return {"status": "ok"}
+  - path: CODEOWNERS
+    template: |
+      * {{ .owner }}
+  - path: README.md
+    template: |
+      # {{ .name }}
+
+      Criticality: {{ .criticality }}
+      Data classification: {{ .data_classification }}
+required_capabilities: ["ci-pipeline-baseline", "mcp-and-skills"]
