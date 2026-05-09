@@ -123,13 +123,11 @@ class EvalHarness:
             raise ValueError("run_not_found")
         if run.completed_at is not None:
             raise ValueError("run_already_completed")
-        # Update aggregates incrementally.
-        completed = (run.metric_value * (run.items - run.failures)) + (1 if success else 0)
+        # Update aggregates incrementally until all dataset items report an outcome.
+        run.observations += 1
         run.failures += 0 if success else 1
-        # We use items as a fixed denominator from the dataset; recompute
-        # success_rate from failures so far.
-        observed = run.items - run.failures if run.items else 0
-        run.metric_value = (observed / run.items) if run.items else 0.0
+        successes = run.observations - run.failures
+        run.metric_value = (successes / run.observations) if run.observations else 0.0
         if cost_usd is not None:
             run.cost_usd = (run.cost_usd or 0.0) + cost_usd
         if latency_ms is not None:
@@ -140,11 +138,7 @@ class EvalHarness:
                 if run.business_metric_value is None
                 else (run.business_metric_value + business_metric_value) / 2
             )
-        # Quick mark-completion heuristic: when we receive equivalent of
-        # all items, finalize.
-        observed_total = (run.items - run.failures) + run.failures
-        del completed
-        if observed_total >= run.items:
+        if run.observations >= run.items:
             self._finalize(run)
         self.store.update_run(run)
         return run

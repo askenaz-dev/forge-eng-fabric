@@ -1,0 +1,60 @@
+{
+  "run_id": "local-20260509T005131Z",
+  "phase": "phase-4",
+  "generated_at": "2026-05-09T00:51:41.760875+00:00",
+  "mode": "local-deterministic-validation",
+  "passed": true,
+  "task_coverage": [
+    {
+      "task": "5.5",
+      "evidence": "Confluence MCP local E2E covers create/update/attach/label/search plus OpenSpec header, forge-managed label and webhook event behavior."
+    },
+    {
+      "task": "11.1",
+      "evidence": "SDLC orchestrator tests cover phase progression, gate blocking/override and metrics; traceability tests cover graph materialization from events."
+    }
+  ],
+  "commands": [
+    {
+      "name": "sdlc-orchestrator",
+      "command": [
+        "go",
+        "test",
+        "./..."
+      ],
+      "cwd": "services\\sdlc-orchestrator",
+      "started_at": "2026-05-09T00:51:33.047007+00:00",
+      "finished_at": "2026-05-09T00:51:33.550587+00:00",
+      "exit_code": 0,
+      "output": "?   \tgithub.com/forge-eng-fabric/services/sdlc-orchestrator/cmd\t[no test files]\nok  \tgithub.com/forge-eng-fabric/services/sdlc-orchestrator/internal/sdlc\t(cached)\n"
+    },
+    {
+      "name": "traceability-graph",
+      "command": [
+        "go",
+        "test",
+        "./..."
+      ],
+      "cwd": "services\\traceability",
+      "started_at": "2026-05-09T00:51:33.550587+00:00",
+      "finished_at": "2026-05-09T00:51:33.984857+00:00",
+      "exit_code": 0,
+      "output": "?   \tgithub.com/forge-eng-fabric/services/traceability/cmd\t[no test files]\nok  \tgithub.com/forge-eng-fabric/services/traceability/internal/traceability\t(cached)\n"
+    },
+    {
+      "name": "confluence-mcp-local",
+      "command": [
+        "uv",
+        "run",
+        "pytest",
+        "-q",
+        "services/mcp/tests/test_confluence.py"
+      ],
+      "cwd": ".",
+      "started_at": "2026-05-09T00:51:33.984857+00:00",
+      "finished_at": "2026-05-09T00:51:35.305156+00:00",
+      "exit_code": 0,
+      "output": "...                                                                      [100%]\n3 passed in 0.46s\n"
+    }
+  ]
+}

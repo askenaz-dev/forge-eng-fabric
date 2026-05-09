@@ -1,0 +1,32 @@
+{
+  "run_id": "local-20260509T005131Z",
+  "phase": "phase-1",
+  "generated_at": "2026-05-09T00:51:41.758875+00:00",
+  "mode": "local-deterministic-validation",
+  "passed": true,
+  "task_coverage": [
+    {
+      "task": "13.5",
+      "evidence": "Registry lifecycle tests cover failed promotion with low eval scores and successful T1 approval when thresholds pass."
+    },
+    {
+      "task": "13.6",
+      "evidence": "Registry invocation tests cover prod-relevant blocking for in_review assets and the audit event com.forge.asset.invocation.checked.v1."
+    }
+  ],
+  "commands": [
+    {
+      "name": "registry-lifecycle-and-invocation",
+      "command": [
+        "go",
+        "test",
+        "./..."
+      ],
+      "cwd": "services\\registry\\cmd\\server",
+      "started_at": "2026-05-09T00:51:31.778570+00:00",
+      "finished_at": "2026-05-09T00:51:32.534436+00:00",
+      "exit_code": 0,
+      "output": "ok  \tgithub.com/forge-eng-fabric/services/registry/cmd/server\t(cached)\n"
+    }
+  ]
+}

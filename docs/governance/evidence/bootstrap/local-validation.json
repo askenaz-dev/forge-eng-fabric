@@ -1,0 +1,23 @@
+{
+  "run_id": "local-20260509T005131Z",
+  "phase": "bootstrap",
+  "generated_at": "2026-05-09T00:51:41.764224+00:00",
+  "mode": "meta-change-reconciliation",
+  "passed": true,
+  "evidence_refs": {
+    "phase-1": "docs/governance/evidence/phase-1/local-validation.json",
+    "phase-2": "docs/governance/evidence/phase-2/local-validation.json",
+    "phase-4": "docs/governance/evidence/phase-4/local-validation.json",
+    "phase-5": "docs/governance/evidence/phase-5/local-validation.json"
+  },
+  "completed_phase_changes": [
+    "phase-0-foundations (archived)",
+    "phase-1-agentic-core",
+    "phase-2-app-onboarding",
+    "phase-3-deployable-apps",
+    "phase-4-sdlc-orchestration",
+    "phase-5-workflow-marketplace",
+    "phase-6-autonomous-ops"
+  ],
+  "note": "bootstrap-forge-platform is a meta/umbrella change; concrete implementation evidence lives in the phase changes and referenced evidence files."
+}

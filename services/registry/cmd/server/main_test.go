@@ -23,13 +23,13 @@ func TestSemVerPattern(t *testing.T) {
 	}
 }
 
-func TestPhase2AssetTypes(t *testing.T) {
-	for _, assetType := range []string{"mcp", "skill", "agent", "workflow", "prompt_template", "application", "repo_template"} {
+func TestSupportedAssetTypes(t *testing.T) {
+	for _, assetType := range []string{"mcp", "skill", "agent", "workflow", "prompt_template", "application", "repo_template", "eval_dataset", "healing_action"} {
 		if _, ok := validTypes[assetType]; !ok {
 			t.Fatalf("expected %q to be a valid asset type", assetType)
 		}
 	}
-	for _, assetType := range []string{"prompt", "eval_dataset", "healing_action"} {
+	for _, assetType := range []string{"prompt"} {
 		if _, ok := validTypes[assetType]; ok {
 			t.Fatalf("did not expect legacy asset type %q to be valid", assetType)
 		}

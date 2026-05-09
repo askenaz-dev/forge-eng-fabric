@@ -1,0 +1,88 @@
+{
+  "run_id": "local-20260509T005131Z",
+  "phase": "phase-5",
+  "generated_at": "2026-05-09T00:51:41.761880+00:00",
+  "mode": "local-deterministic-validation",
+  "passed": true,
+  "task_coverage": [
+    {
+      "task": "13.1",
+      "evidence": "Workflow registry, marketplace and eval harness tests cover publish, eval pass, tenant approval/install, exact version pinning and install event emission."
+    },
+    {
+      "task": "13.2",
+      "evidence": "Workflow registry/runtime/marketplace/eval/observability tests cover forge-certified workflow contracts, runtime behavior and asset metrics surfaces."
+    }
+  ],
+  "commands": [
+    {
+      "name": "workflow-registry",
+      "command": [
+        "go",
+        "test",
+        "./..."
+      ],
+      "cwd": "services\\workflow-registry",
+      "started_at": "2026-05-09T00:51:35.305156+00:00",
+      "finished_at": "2026-05-09T00:51:35.787030+00:00",
+      "exit_code": 0,
+      "output": "?   \tgithub.com/forge-eng-fabric/services/workflow-registry/cmd\t[no test files]\nok  \tgithub.com/forge-eng-fabric/services/workflow-registry/internal/registry\t(cached)\n"
+    },
+    {
+      "name": "marketplace",
+      "command": [
+        "go",
+        "test",
+        "./..."
+      ],
+      "cwd": "services\\marketplace",
+      "started_at": "2026-05-09T00:51:35.787030+00:00",
+      "finished_at": "2026-05-09T00:51:36.230948+00:00",
+      "exit_code": 0,
+      "output": "?   \tgithub.com/forge-eng-fabric/services/marketplace/cmd\t[no test files]\nok  \tgithub.com/forge-eng-fabric/services/marketplace/internal/marketplace\t(cached)\n"
+    },
+    {
+      "name": "workflow-runtime",
+      "command": [
+        "go",
+        "test",
+        "./..."
+      ],
+      "cwd": "services\\workflow-runtime",
+      "started_at": "2026-05-09T00:51:36.230948+00:00",
+      "finished_at": "2026-05-09T00:51:36.697332+00:00",
+      "exit_code": 0,
+      "output": "?   \tgithub.com/forge-eng-fabric/services/workflow-runtime/cmd\t[no test files]\nok  \tgithub.com/forge-eng-fabric/services/workflow-runtime/internal/runtime\t(cached)\n"
+    },
+    {
+      "name": "asset-observability",
+      "command": [
+        "go",
+        "test",
+        "./..."
+      ],
+      "cwd": "services\\asset-observability",
+      "started_at": "2026-05-09T00:51:36.698329+00:00",
+      "finished_at": "2026-05-09T00:51:37.342104+00:00",
+      "exit_code": 0,
+      "output": "?   \tgithub.com/forge-eng-fabric/services/asset-observability/cmd\t[no test files]\nok  \tgithub.com/forge-eng-fabric/services/asset-observability/internal/observability\t(cached)\n"
+    },
+    {
+      "name": "advanced-eval-harness",
+      "command": [
+        "uv",
+        "run",
+        "--extra",
+        "dev",
+        "pytest",
+        "-q",
+        "tests/test_harness.py"
+      ],
+      "cwd": "services\\eval-harness-adv",
+      "started_at": "2026-05-09T00:51:37.343093+00:00",
+      "finished_at": "2026-05-09T00:51:41.757881+00:00",
+      "exit_code": 0,
+      "output": "Installed 9 packages in 1.52s\n.....                                                                    [100%]\n5 passed in 0.49s\n"
+    }
+  ]
+}

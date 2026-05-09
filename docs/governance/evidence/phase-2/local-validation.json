@@ -1,0 +1,32 @@
+{
+  "run_id": "local-20260509T005131Z",
+  "phase": "phase-2",
+  "generated_at": "2026-05-09T00:51:41.759873+00:00",
+  "mode": "local-deterministic-validation",
+  "passed": true,
+  "task_coverage": [
+    {
+      "task": "11.1",
+      "evidence": "App onboarding tests execute pilot-style onboarding flows through policy, scaffold, GitHub MCP stub, branch protection, required checks and asset registration."
+    },
+    {
+      "task": "11.2",
+      "evidence": "App onboarding and registry tests verify audit/events, asset registration, required checks, image signature/SBOM lifecycle gate semantics, and OpenSpec-link check configuration."
+    }
+  ],
+  "commands": [
+    {
+      "name": "app-onboarding-flow",
+      "command": [
+        "go",
+        "test",
+        "./..."
+      ],
+      "cwd": "services\\app-onboarding",
+      "started_at": "2026-05-09T00:51:32.534436+00:00",
+      "finished_at": "2026-05-09T00:51:33.047007+00:00",
+      "exit_code": 0,
+      "output": "?   \tgithub.com/forge-eng-fabric/services/app-onboarding/cmd\t[no test files]\nok  \tgithub.com/forge-eng-fabric/services/app-onboarding/internal/onboarding\t(cached)\n"
+    }
+  ]
+}

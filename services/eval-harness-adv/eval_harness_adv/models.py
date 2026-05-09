@@ -62,6 +62,7 @@ class EvalRun(BaseModel):
     baseline_value: float | None = None
     delta_threshold: float = 0.03
     items: int = 0
+    observations: int = 0
     failures: int = 0
     cost_usd: float | None = None
     latency_p95_ms: float | None = None
