@@ -1,0 +1,4 @@
+# Local overlay for healing-engine.
+replicaCount: 1
+image:
+  tag: local

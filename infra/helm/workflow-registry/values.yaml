@@ -1,0 +1,4 @@
+image:
+  repository: forge/workflow-registry
+service:
+  port: 8117

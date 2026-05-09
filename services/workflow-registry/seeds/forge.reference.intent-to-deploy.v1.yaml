@@ -1,0 +1,106 @@
+apiVersion: forge.workflows/v1
+kind: Workflow
+metadata:
+  id: forge.reference.intent-to-deploy
+  name: Intent to Deploy (Reference)
+  version: 1.0.0
+  visibility: tenant
+  criticality: high
+  description: >-
+    Reference end-to-end orchestration that demonstrates a complete intent-to-deploy
+    traversal across alfred → sdlc-orchestrator → scaffolder → app-onboarding → ci →
+    deploy-orchestrator. Production deploy is gated by a HITL approval.
+  tags:
+    - reference
+    - forge
+  owners:
+    - platform-architecture
+spec:
+  inputs:
+    - name: openspec_id
+      type: string
+      required: true
+    - name: workspace_id
+      type: string
+      required: true
+    - name: target_runtime_id
+      type: string
+      required: true
+    - name: target_env
+      type: string
+      required: false
+      default: staging
+  steps:
+    - id: scaffold
+      type: skill
+      ref: registry:skill/sdlc-platform/scaffold-from-openspec@1.0.0
+      inputs:
+        openspec_id: $inputs.openspec_id
+        workspace_id: $inputs.workspace_id
+      retries:
+        max: 2
+        backoff: exponential
+      timeout: 120s
+
+    - id: open-pr
+      type: mcp
+      ref: registry:mcp/github@write
+      tool: open_pull_request
+      depends_on: [scaffold]
+      inputs:
+        repo: $steps.scaffold.outputs.repo_full_name
+        branch: $steps.scaffold.outputs.branch
+        title: "feat: scaffold from $inputs.openspec_id"
+        openspec_id: $inputs.openspec_id
+
+    - id: ci-build
+      type: skill
+      ref: registry:skill/sdlc-devops/run-ci-pipeline@1.0.0
+      depends_on: [open-pr]
+      inputs:
+        pr_number: $steps.open-pr.outputs.pr_number
+        repo: $steps.scaffold.outputs.repo_full_name
+        require_security_gates: true
+      retries:
+        max: 1
+      timeout: 600s
+
+    - id: prod-approval-gate
+      type: human-in-the-loop
+      depends_on: [ci-build]
+      approver_role: workspace-admin
+      on_timeout: escalate
+      escalation_role: tenant-admin
+      inputs:
+        openspec_id: $inputs.openspec_id
+        target_env: prod
+        artifact_digest: $steps.ci-build.outputs.image_digest
+        runtime_id: $inputs.target_runtime_id
+
+    - id: deploy
+      type: skill
+      ref: registry:skill/sdlc-devops/deploy-to-runtime@1.0.0
+      depends_on: [prod-approval-gate]
+      inputs:
+        runtime_id: $inputs.target_runtime_id
+        env: prod
+        image_digest: $steps.ci-build.outputs.image_digest
+        approval_id: $steps.prod-approval-gate.outputs.approval_id
+      timeout: 900s
+
+  on_failure:
+    - id: notify-on-failure
+      type: skill
+      ref: registry:skill/sdlc-devops/post-incident-note@1.0.0
+      inputs:
+        correlation_id: $context.correlation_id
+        severity: medium
+        summary: "Reference flow failed for $inputs.openspec_id"
+
+  outputs:
+    - name: deploy_url
+      from: $steps.deploy.outputs.url
+    - name: image_digest
+      from: $steps.ci-build.outputs.image_digest
+    - name: pr_number
+      from: $steps.open-pr.outputs.pr_number

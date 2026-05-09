@@ -1,0 +1,4 @@
+# Local overlay for control-plane.
+replicaCount: 1
+image:
+  tag: local

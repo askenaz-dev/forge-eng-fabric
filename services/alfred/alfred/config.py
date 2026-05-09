@@ -56,6 +56,10 @@ class Settings(BaseSettings):
     max_loop_iterations: int = Field(default=8, alias="ALFRED_MAX_LOOP")
     rag_top_k: int = Field(default=8, alias="ALFRED_RAG_TOPK")
 
+    # Wizard / dialogue API (platform-gaps-closure 3.x). `disabled` by default;
+    # flip to `enabled` to surface the /v1/intent/* routes.
+    alfred_dialogue_api: str = Field(default="disabled", alias="ALFRED_DIALOGUE_API")
+
 
 def load_settings() -> Settings:
     return Settings()

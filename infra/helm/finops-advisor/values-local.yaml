@@ -1,0 +1,4 @@
+# Local overlay for finops-advisor.
+replicaCount: 1
+image:
+  tag: local

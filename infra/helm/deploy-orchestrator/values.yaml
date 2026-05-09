@@ -1,0 +1,4 @@
+image:
+  repository: forge/deploy-orchestrator
+service:
+  port: 8112

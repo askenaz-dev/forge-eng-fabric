@@ -1,0 +1,4 @@
+# Local overlay for openspec.
+replicaCount: 1
+image:
+  tag: local

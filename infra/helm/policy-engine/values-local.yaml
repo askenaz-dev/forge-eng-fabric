@@ -1,0 +1,4 @@
+# Local overlay for policy-engine.
+replicaCount: 1
+image:
+  tag: local

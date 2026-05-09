@@ -1,0 +1,4 @@
+image:
+  repository: forge/runtime-registry
+service:
+  port: 8110

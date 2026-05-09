@@ -1,0 +1,7 @@
+image:
+  repository: forge/alfred
+service:
+  port: 8085
+env:
+  ADDR: :8085
+  ALFRED_DIALOGUE_API: disabled

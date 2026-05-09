@@ -1,0 +1,20 @@
+# Observability stack values for production tier — derived from
+# docs/governance/data-retention.md.
+
+loki:
+  retention:
+    internal_days: 30
+    confidential_days: 90
+  storage_class: ssd
+  persistence_size: 100Gi
+
+tempo:
+  retention:
+    internal_days: 14
+    confidential_days: 30
+  persistence_size: 100Gi
+
+prometheus:
+  retention:
+    internal_days: 90
+  persistence_size: 200Gi

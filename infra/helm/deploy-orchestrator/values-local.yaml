@@ -1,0 +1,4 @@
+# Local overlay for deploy-orchestrator.
+replicaCount: 1
+image:
+  tag: local

@@ -1,0 +1,4 @@
+# Local overlay for traceability.
+replicaCount: 1
+image:
+  tag: local

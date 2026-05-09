@@ -1,0 +1,4 @@
+image:
+  repository: forge/scaffolder
+service:
+  port: 8102

@@ -1,0 +1,4 @@
+# Local overlay for scaffolder.
+replicaCount: 1
+image:
+  tag: local

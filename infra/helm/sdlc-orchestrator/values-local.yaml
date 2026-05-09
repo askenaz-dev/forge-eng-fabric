@@ -1,0 +1,4 @@
+# Local overlay for sdlc-orchestrator.
+replicaCount: 1
+image:
+  tag: local

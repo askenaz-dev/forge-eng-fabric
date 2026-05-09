@@ -1,0 +1,4 @@
+# Local overlay for permissions.
+replicaCount: 1
+image:
+  tag: local

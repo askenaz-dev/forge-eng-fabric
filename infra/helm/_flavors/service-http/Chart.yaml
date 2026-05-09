@@ -1,0 +1,8 @@
+apiVersion: v2
+name: service-http
+description: Forge HTTP service flavor (Deployment + Service + HPA + PDB + NetworkPolicy + ServiceMonitor)
+type: library
+version: 0.1.0
+appVersion: "0.1.0"
+maintainers:
+  - name: Forge Platform Architecture

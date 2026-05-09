@@ -1,0 +1,4 @@
+image:
+  repository: forge/openspec
+service:
+  port: 8084

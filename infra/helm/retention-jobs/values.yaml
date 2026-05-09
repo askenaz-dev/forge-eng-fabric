@@ -1,0 +1,32 @@
+# Values for the retention-jobs chart. Each block configures one CronJob.
+
+audit-partition:
+  image:
+    repository: forge/audit-service
+    tag: local
+  schedule: "0 1 * * *"
+  env:
+    JOB: partition-audit
+    POSTGRES_URL: "postgres://forge:forge@postgres:5432/forge_audit?sslmode=disable"
+    ENFORCE_RETENTION: "false"
+
+audit-archival:
+  image:
+    repository: forge/audit-service
+    tag: local
+  schedule: "0 2 * * *"
+  env:
+    JOB: archive-audit
+    POSTGRES_URL: "postgres://forge:forge@postgres:5432/forge_audit?sslmode=disable"
+    GCS_BUCKET: "forge-audit-archive-local"
+    ENFORCE_RETENTION: "false"
+
+rag-reclassify:
+  image:
+    repository: forge/rag-ingest
+    tag: local
+  schedule: "0 3 * * *"
+  env:
+    JOB: reclassify
+    MILVUS_HOST: "milvus:19530"
+    ENFORCE_RETENTION: "false"

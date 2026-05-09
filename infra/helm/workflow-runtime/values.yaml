@@ -1,0 +1,5 @@
+image:
+  repository: forge/workflow-runtime
+service:
+  port: 8119
+replicaCount: 3

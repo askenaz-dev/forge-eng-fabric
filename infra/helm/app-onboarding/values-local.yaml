@@ -1,0 +1,4 @@
+# Local overlay for app-onboarding.
+replicaCount: 1
+image:
+  tag: local

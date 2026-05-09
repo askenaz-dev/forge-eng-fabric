@@ -1,0 +1,4 @@
+# Local overlay for iac-drift.
+replicaCount: 1
+image:
+  tag: local

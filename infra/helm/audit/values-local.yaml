@@ -1,0 +1,4 @@
+# Local overlay for audit.
+replicaCount: 1
+image:
+  tag: local

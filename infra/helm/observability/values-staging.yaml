@@ -1,0 +1,27 @@
+# Observability stack values for staging tier — derived from the Forge data
+# retention policy at docs/governance/data-retention.md.
+#
+# These values are the source-of-truth that the CI check
+# (scripts/check-retention-policy.py) compares against the policy document.
+# A divergence between the table in data-retention.md and these values fails CI.
+
+loki:
+  retention:
+    # docs/governance/data-retention.md staging row for Loki internal class
+    internal_days: 14
+    confidential_days: 14
+    # Confidential class also has a 90d archive in GCS — handled by the Loki
+    # ruler-based archival cron in infra/helm/retention-jobs/.
+  storage_class: standard
+  persistence_size: 30Gi
+
+tempo:
+  retention:
+    internal_days: 7
+    confidential_days: 7
+  persistence_size: 30Gi
+
+prometheus:
+  retention:
+    internal_days: 14
+  persistence_size: 30Gi

@@ -1,0 +1,4 @@
+# Local overlay for approvals.
+replicaCount: 1
+image:
+  tag: local

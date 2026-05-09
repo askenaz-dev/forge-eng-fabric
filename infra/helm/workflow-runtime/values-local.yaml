@@ -1,0 +1,4 @@
+# Local overlay for workflow-runtime.
+replicaCount: 1
+image:
+  tag: local

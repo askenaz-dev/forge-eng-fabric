@@ -119,12 +119,14 @@ type Store struct {
 	mu        sync.RWMutex
 	runtimes  map[string]*Runtime
 	preflight map[string][]*PreflightResult
+	verify    map[string][]*VerifyReport
 }
 
 func NewStore() *Store {
 	return &Store{
 		runtimes:  map[string]*Runtime{},
 		preflight: map[string][]*PreflightResult{},
+		verify:    map[string][]*VerifyReport{},
 	}
 }
 
@@ -198,4 +200,18 @@ func (s *Store) Delete(id string) {
 	defer s.mu.Unlock()
 	delete(s.runtimes, id)
 	delete(s.preflight, id)
+	delete(s.verify, id)
+}
+
+func (s *Store) AppendVerify(report *VerifyReport) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.verify[report.RuntimeID] = append(s.verify[report.RuntimeID], report)
+}
+
+func (s *Store) Verifications(runtimeID string) []*VerifyReport {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	out := append([]*VerifyReport(nil), s.verify[runtimeID]...)
+	return out
 }

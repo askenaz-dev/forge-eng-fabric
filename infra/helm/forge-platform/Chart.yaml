@@ -1,0 +1,143 @@
+apiVersion: v2
+name: forge-platform
+description: Umbrella chart that installs every Forge platform service
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+dependencies:
+  - name: alfred
+    version: 0.1.0
+    repository: file://../alfred
+    condition: alfred.enabled
+  - name: app-onboarding
+    version: 0.1.0
+    repository: file://../app-onboarding
+    condition: app-onboarding.enabled
+  - name: approvals
+    version: 0.1.0
+    repository: file://../approvals
+    condition: approvals.enabled
+  - name: asset-observability
+    version: 0.1.0
+    repository: file://../asset-observability
+    condition: asset-observability.enabled
+  - name: audit
+    version: 0.1.0
+    repository: file://../audit
+    condition: audit.enabled
+  - name: control-plane
+    version: 0.1.0
+    repository: file://../control-plane
+    condition: control-plane.enabled
+  - name: deploy-orchestrator
+    version: 0.1.0
+    repository: file://../deploy-orchestrator
+    condition: deploy-orchestrator.enabled
+  - name: diagnosis
+    version: 0.1.0
+    repository: file://../diagnosis
+    condition: diagnosis.enabled
+  - name: eval-harness-adv
+    version: 0.1.0
+    repository: file://../eval-harness-adv
+    condition: eval-harness-adv.enabled
+  - name: evolution
+    version: 0.1.0
+    repository: file://../evolution
+    condition: evolution.enabled
+  - name: finops
+    version: 0.1.0
+    repository: file://../finops
+    condition: finops.enabled
+  - name: finops-advisor
+    version: 0.1.0
+    repository: file://../finops-advisor
+    condition: finops-advisor.enabled
+  - name: healing-engine
+    version: 0.1.0
+    repository: file://../healing-engine
+    condition: healing-engine.enabled
+  - name: iac-drift
+    version: 0.1.0
+    repository: file://../iac-drift
+    condition: iac-drift.enabled
+  - name: incident-detection
+    version: 0.1.0
+    repository: file://../incident-detection
+    condition: incident-detection.enabled
+  - name: incidents-kb
+    version: 0.1.0
+    repository: file://../incidents-kb
+    condition: incidents-kb.enabled
+  - name: marketplace
+    version: 0.1.0
+    repository: file://../marketplace
+    condition: marketplace.enabled
+  - name: mcp
+    version: 0.1.0
+    repository: file://../mcp
+    condition: mcp.enabled
+  - name: openspec
+    version: 0.1.0
+    repository: file://../openspec
+    condition: openspec.enabled
+  - name: permissions
+    version: 0.1.0
+    repository: file://../permissions
+    condition: permissions.enabled
+  - name: policy-engine
+    version: 0.1.0
+    repository: file://../policy-engine
+    condition: policy-engine.enabled
+  - name: postmortem
+    version: 0.1.0
+    repository: file://../postmortem
+    condition: postmortem.enabled
+  - name: prompt-registry
+    version: 0.1.0
+    repository: file://../prompt-registry
+    condition: prompt-registry.enabled
+  - name: rag-ingest
+    version: 0.1.0
+    repository: file://../rag-ingest
+    condition: rag-ingest.enabled
+  - name: rag-query
+    version: 0.1.0
+    repository: file://../rag-query
+    condition: rag-query.enabled
+  - name: registry
+    version: 0.1.0
+    repository: file://../registry
+    condition: registry.enabled
+  - name: runtime-registry
+    version: 0.1.0
+    repository: file://../runtime-registry
+    condition: runtime-registry.enabled
+  - name: scaffolder
+    version: 0.1.0
+    repository: file://../scaffolder
+    condition: scaffolder.enabled
+  - name: sdlc-orchestrator
+    version: 0.1.0
+    repository: file://../sdlc-orchestrator
+    condition: sdlc-orchestrator.enabled
+  - name: traceability
+    version: 0.1.0
+    repository: file://../traceability
+    condition: traceability.enabled
+  - name: webhooks
+    version: 0.1.0
+    repository: file://../webhooks
+    condition: webhooks.enabled
+  - name: workflow-registry
+    version: 0.1.0
+    repository: file://../workflow-registry
+    condition: workflow-registry.enabled
+  - name: workflow-runtime
+    version: 0.1.0
+    repository: file://../workflow-runtime
+    condition: workflow-runtime.enabled
+  - name: retention-jobs
+    version: 0.1.0
+    repository: file://../retention-jobs
+    condition: retention-jobs.enabled

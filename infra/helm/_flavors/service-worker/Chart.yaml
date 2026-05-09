@@ -1,0 +1,8 @@
+apiVersion: v2
+name: service-worker
+description: Forge worker service flavor (Deployment + HPA + PDB + NetworkPolicy + ServiceMonitor for metrics-only port)
+type: library
+version: 0.1.0
+appVersion: "0.1.0"
+maintainers:
+  - name: Forge Platform Architecture

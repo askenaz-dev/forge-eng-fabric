@@ -1,0 +1,4 @@
+image:
+  repository: forge/asset-observability
+service:
+  port: 8113

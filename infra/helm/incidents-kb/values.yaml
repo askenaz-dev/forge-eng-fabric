@@ -1,0 +1,5 @@
+image:
+  repository: forge/incidents-kb
+service:
+  port: 8131
+replicaCount: 1

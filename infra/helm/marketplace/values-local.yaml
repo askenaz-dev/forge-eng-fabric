@@ -1,0 +1,4 @@
+# Local overlay for marketplace.
+replicaCount: 1
+image:
+  tag: local

@@ -162,3 +162,53 @@ class OpenSpecClient:
                 return r.status_code in (200, 201)
         except httpx.HTTPError:
             return False
+
+    async def start_intent(self, body: dict[str, Any]) -> dict[str, Any] | None:
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                r = await client.post(f"{self._base}/v1/intent/start", json=body)
+                if r.status_code != 201:
+                    return None
+                return r.json()
+        except httpx.HTTPError:
+            return None
+
+    async def get_draft(self, draft_id: str) -> dict[str, Any] | None:
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                r = await client.get(f"{self._base}/v1/intent/{draft_id}")
+                if r.status_code != 200:
+                    return None
+                return r.json()
+        except httpx.HTTPError:
+            return None
+
+    async def answer_intent(self, draft_id: str, body: dict[str, Any]) -> dict[str, Any] | None:
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                r = await client.post(f"{self._base}/v1/intent/{draft_id}/answer", json=body)
+                if r.status_code != 200:
+                    return None
+                return r.json()
+        except httpx.HTTPError:
+            return None
+
+    async def commit_intent(self, draft_id: str, body: dict[str, Any]) -> dict[str, Any] | None:
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                r = await client.post(f"{self._base}/v1/intent/{draft_id}/commit", json=body)
+                if r.status_code != 200:
+                    return None
+                return r.json()
+        except httpx.HTTPError:
+            return None
+
+    async def completeness(self, draft_or_openspec_id: str) -> dict[str, Any] | None:
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                r = await client.get(f"{self._base}/v1/openspecs/{draft_or_openspec_id}/completeness")
+                if r.status_code != 200:
+                    return None
+                return r.json()
+        except httpx.HTTPError:
+            return None

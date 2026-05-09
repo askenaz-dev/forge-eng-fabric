@@ -1,0 +1,4 @@
+image:
+  repository: forge/sdlc-orchestrator
+service:
+  port: 8120

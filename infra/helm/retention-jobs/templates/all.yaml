@@ -1,0 +1,31 @@
+{{- range $name, $cfg := .Values }}
+---
+{{- $ctx := dict "Chart" (dict "Name" $name "Version" "0.1.0") "Values" $cfg "Release" $.Release "Capabilities" $.Capabilities "Files" $.Files }}
+{{- $cfg = merge $cfg (dict "fullnameOverride" $name) }}
+{{- $_ := set $cfg "fullnameOverride" $name }}
+{{- $_ := set $cfg "concurrencyPolicy" (default "Forbid" $cfg.concurrencyPolicy) }}
+{{- $_ := set $cfg "successfulJobsHistoryLimit" (default 3 $cfg.successfulJobsHistoryLimit) }}
+{{- $_ := set $cfg "failedJobsHistoryLimit" (default 1 $cfg.failedJobsHistoryLimit) }}
+{{- $_ := set $cfg "restartPolicy" (default "OnFailure" $cfg.restartPolicy) }}
+{{- $_ := set $cfg "backoffLimit" (default 2 $cfg.backoffLimit) }}
+{{- if not $cfg.resources }}
+{{- $_ := set $cfg "resources" (dict "requests" (dict "cpu" "100m" "memory" "256Mi") "limits" (dict "cpu" "1000m" "memory" "1Gi")) }}
+{{- end }}
+{{- if not $cfg.serviceAccount }}
+{{- $_ := set $cfg "serviceAccount" (dict "create" true "annotations" (dict) "rbacRules" list) }}
+{{- end }}
+{{- if not $cfg.networkPolicy }}
+{{- $_ := set $cfg "networkPolicy" (dict "enabled" true) }}
+{{- end }}
+{{- if not $cfg.image }}
+{{- $_ := set $cfg "image" (dict "repository" "forge/CHANGE-ME" "tag" "local" "pullPolicy" "IfNotPresent") }}
+{{- end }}
+{{- if not $cfg.image.pullPolicy }}
+{{- $_ := set $cfg.image "pullPolicy" "IfNotPresent" }}
+{{- end }}
+{{- include "service-cron.cronjob" $ctx }}
+---
+{{- include "service-cron.serviceaccount" $ctx }}
+---
+{{- include "service-cron.networkpolicy" $ctx }}
+{{- end }}

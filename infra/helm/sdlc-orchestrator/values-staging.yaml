@@ -1,0 +1,4 @@
+# Staging overlay for sdlc-orchestrator. Tier: small.
+replicaCount: 2
+image:
+  tag: staging

@@ -1,0 +1,4 @@
+image:
+  repository: forge/eval-harness-adv
+service:
+  port: 8121

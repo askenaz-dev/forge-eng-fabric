@@ -1,0 +1,5 @@
+image:
+  repository: forge/finops
+service:
+  port: 8122
+replicaCount: 1

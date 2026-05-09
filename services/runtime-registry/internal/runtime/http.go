@@ -52,6 +52,10 @@ func (h *Handler) routeRuntimeID(w http.ResponseWriter, r *http.Request) {
 		h.preflight(w, r, id)
 	case "revoke":
 		h.revoke(w, r, id)
+	case "verify":
+		h.verify(w, r, id)
+	case "verifications":
+		h.verifications(w, r, id)
 	default:
 		http.NotFound(w, r)
 	}
@@ -126,6 +130,41 @@ func (h *Handler) revoke(w http.ResponseWriter, r *http.Request, id string) {
 		return
 	}
 	writeJSON(w, http.StatusOK, rt)
+}
+
+func (h *Handler) verify(w http.ResponseWriter, r *http.Request, id string) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	defer r.Body.Close()
+	var hints VerifyHints
+	if r.ContentLength > 0 {
+		if err := json.NewDecoder(r.Body).Decode(&hints); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+	}
+	principal := r.Header.Get("x-principal")
+	report, err := h.Service.RunVerify(r.Context(), id, principal, hints)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, report)
+}
+
+func (h *Handler) verifications(w http.ResponseWriter, r *http.Request, id string) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if _, err := h.Service.Get(id); err != nil {
+		writeError(w, err)
+		return
+	}
+	reports := h.Service.Store.Verifications(id)
+	writeJSON(w, http.StatusOK, map[string]any{"verifications": reports})
 }
 
 func (h *Handler) provision(w http.ResponseWriter, r *http.Request) {

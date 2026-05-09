@@ -1,0 +1,5 @@
+image:
+  repository: forge/finops-advisor
+service:
+  port: 8126
+replicaCount: 1

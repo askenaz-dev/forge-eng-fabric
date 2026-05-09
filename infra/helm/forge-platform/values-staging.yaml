@@ -1,0 +1,204 @@
+# Staging overlay: tier=small, autoscale enabled, single-zone.
+global:
+  tier: small
+
+alfred:
+  enabled: true
+  replicaCount: 2
+  image:
+    tag: staging
+
+app-onboarding:
+  enabled: true
+  replicaCount: 2
+  image:
+    tag: staging
+
+approvals:
+  enabled: true
+  replicaCount: 2
+  image:
+    tag: staging
+
+asset-observability:
+  enabled: true
+  replicaCount: 2
+  image:
+    tag: staging
+
+audit:
+  enabled: true
+  replicaCount: 2
+  image:
+    tag: staging
+
+control-plane:
+  enabled: true
+  replicaCount: 2
+  image:
+    tag: staging
+
+deploy-orchestrator:
+  enabled: true
+  replicaCount: 2
+  image:
+    tag: staging
+
+diagnosis:
+  enabled: true
+  replicaCount: 2
+  image:
+    tag: staging
+
+eval-harness-adv:
+  enabled: true
+  replicaCount: 2
+  image:
+    tag: staging
+
+evolution:
+  enabled: true
+  replicaCount: 2
+  image:
+    tag: staging
+
+finops:
+  enabled: true
+  replicaCount: 2
+  image:
+    tag: staging
+
+finops-advisor:
+  enabled: true
+  replicaCount: 2
+  image:
+    tag: staging
+
+healing-engine:
+  enabled: true
+  replicaCount: 2
+  image:
+    tag: staging
+
+iac-drift:
+  enabled: true
+  replicaCount: 2
+  image:
+    tag: staging
+
+incident-detection:
+  enabled: true
+  replicaCount: 2
+  image:
+    tag: staging
+
+incidents-kb:
+  enabled: true
+  replicaCount: 2
+  image:
+    tag: staging
+
+marketplace:
+  enabled: true
+  replicaCount: 2
+  image:
+    tag: staging
+
+mcp:
+  enabled: true
+  replicaCount: 2
+  image:
+    tag: staging
+
+openspec:
+  enabled: true
+  replicaCount: 2
+  image:
+    tag: staging
+
+permissions:
+  enabled: true
+  replicaCount: 2
+  image:
+    tag: staging
+
+policy-engine:
+  enabled: true
+  replicaCount: 2
+  image:
+    tag: staging
+
+postmortem:
+  enabled: true
+  replicaCount: 2
+  image:
+    tag: staging
+
+prompt-registry:
+  enabled: true
+  replicaCount: 2
+  image:
+    tag: staging
+
+rag-ingest:
+  enabled: true
+  replicaCount: 2
+  image:
+    tag: staging
+
+rag-query:
+  enabled: true
+  replicaCount: 2
+  image:
+    tag: staging
+
+registry:
+  enabled: true
+  replicaCount: 2
+  image:
+    tag: staging
+
+runtime-registry:
+  enabled: true
+  replicaCount: 2
+  image:
+    tag: staging
+
+scaffolder:
+  enabled: true
+  replicaCount: 2
+  image:
+    tag: staging
+
+sdlc-orchestrator:
+  enabled: true
+  replicaCount: 2
+  image:
+    tag: staging
+
+traceability:
+  enabled: true
+  replicaCount: 2
+  image:
+    tag: staging
+
+webhooks:
+  enabled: true
+  replicaCount: 2
+  image:
+    tag: staging
+
+workflow-registry:
+  enabled: true
+  replicaCount: 2
+  image:
+    tag: staging
+
+workflow-runtime:
+  enabled: true
+  replicaCount: 2
+  image:
+    tag: staging
+
+retention-jobs:
+  enabled: true

@@ -5,7 +5,7 @@
 SHELL := /bin/sh
 COMPOSE := docker compose -f deploy/compose/docker-compose.yaml
 
-.PHONY: help bootstrap lint test codegen up down logs ps smoke clean fmt
+.PHONY: help bootstrap lint test codegen up down logs ps smoke clean fmt sizing-check helm-lint verify-runtime demo-intent-to-deploy retention-policy-check
 
 help:
 	@echo "Forge — make targets:"
@@ -79,3 +79,18 @@ clean:
 	@find . -type d -name node_modules -prune -exec rm -rf {} \; 2>/dev/null || true
 	@find . -type d -name .next -prune -exec rm -rf {} \; 2>/dev/null || true
 	@find . -type d -name __pycache__ -prune -exec rm -rf {} \; 2>/dev/null || true
+
+sizing-check:
+	@python scripts/check-sizing.py
+
+helm-lint:
+	@bash scripts/helm-lint.sh
+
+verify-runtime:
+	@python scripts/verify_runtime.py $(if $(WORKSPACE),--workspace $(WORKSPACE)) $(if $(RUNTIME),--runtime $(RUNTIME))
+
+demo-intent-to-deploy:
+	@python scripts/demo_intent_to_deploy.py
+
+retention-policy-check:
+	@python scripts/check-retention-policy.py

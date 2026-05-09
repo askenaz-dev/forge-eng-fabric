@@ -1,0 +1,10 @@
+apiVersion: v2
+name: workflow-runtime
+description: Forge workflow-runtime service
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+dependencies:
+  - name: service-http
+    version: 0.1.0
+    repository: file://../_flavors/service-http

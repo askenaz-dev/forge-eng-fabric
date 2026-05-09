@@ -1,0 +1,44 @@
+# Default values for the service-cron flavor.
+
+image:
+  repository: forge/CHANGE-ME
+  tag: local
+  pullPolicy: IfNotPresent
+
+schedule: "0 2 * * *"
+concurrencyPolicy: Forbid
+successfulJobsHistoryLimit: 3
+failedJobsHistoryLimit: 1
+restartPolicy: OnFailure
+backoffLimit: 2
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+
+networkPolicy:
+  enabled: true
+  egressTo:
+    - ports:
+        - { port: 53, protocol: UDP }
+      to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+    - ports:
+        - { port: 5432, protocol: TCP }
+      to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: postgres
+
+serviceAccount:
+  create: true
+  annotations: {}
+  rbacRules: []
+
+env: {}

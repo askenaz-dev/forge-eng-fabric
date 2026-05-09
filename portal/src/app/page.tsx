@@ -80,6 +80,25 @@ export default async function HomePage() {
             <h3 className="font-medium">{w.name}</h3>
             {w.description && <p className="mt-1 text-sm opacity-70">{w.description}</p>}
             <p className="mt-2 text-xs opacity-50">id: {w.id}</p>
+            <details className="mt-3 text-xs">
+              <summary className="cursor-pointer opacity-70 hover:opacity-100">About this Workspace</summary>
+              <div className="mt-2 space-y-1 opacity-80">
+                <p>Tenant: <code>{w.tenant_id}</code></p>
+                <p>Business Unit: <code>{w.business_unit_id}</code></p>
+                <p>
+                  Learn how Tenants, Business Units, and Workspaces relate in the{" "}
+                  <a
+                    className="underline"
+                    href="https://github.com/forge-eng-fabric/forge-eng-fabric/blob/main/docs/concepts/tenancy-model.md"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Tenancy Model
+                  </a>
+                  .
+                </p>
+              </div>
+            </details>
           </li>
         ))}
         {workspaces.length === 0 && !error && (

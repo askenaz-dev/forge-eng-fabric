@@ -1,0 +1,4 @@
+# Local overlay for eval-harness-adv.
+replicaCount: 1
+image:
+  tag: local

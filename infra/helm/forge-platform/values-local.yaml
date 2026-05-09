@@ -1,0 +1,336 @@
+# Local overlay: minimal replicas, no autoscaling, no PDB.
+global:
+  tier: small
+
+alfred:
+  enabled: true
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+  podDisruptionBudget:
+    enabled: false
+  serviceMonitor:
+    enabled: false
+
+app-onboarding:
+  enabled: true
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+  podDisruptionBudget:
+    enabled: false
+  serviceMonitor:
+    enabled: false
+
+approvals:
+  enabled: true
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+  podDisruptionBudget:
+    enabled: false
+  serviceMonitor:
+    enabled: false
+
+asset-observability:
+  enabled: true
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+  podDisruptionBudget:
+    enabled: false
+  serviceMonitor:
+    enabled: false
+
+audit:
+  enabled: true
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+  podDisruptionBudget:
+    enabled: false
+  serviceMonitor:
+    enabled: false
+
+control-plane:
+  enabled: true
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+  podDisruptionBudget:
+    enabled: false
+  serviceMonitor:
+    enabled: false
+
+deploy-orchestrator:
+  enabled: true
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+  podDisruptionBudget:
+    enabled: false
+  serviceMonitor:
+    enabled: false
+
+diagnosis:
+  enabled: true
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+  podDisruptionBudget:
+    enabled: false
+  serviceMonitor:
+    enabled: false
+
+eval-harness-adv:
+  enabled: true
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+  podDisruptionBudget:
+    enabled: false
+  serviceMonitor:
+    enabled: false
+
+evolution:
+  enabled: true
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+  podDisruptionBudget:
+    enabled: false
+  serviceMonitor:
+    enabled: false
+
+finops:
+  enabled: true
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+  podDisruptionBudget:
+    enabled: false
+  serviceMonitor:
+    enabled: false
+
+finops-advisor:
+  enabled: true
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+  podDisruptionBudget:
+    enabled: false
+  serviceMonitor:
+    enabled: false
+
+healing-engine:
+  enabled: true
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+  podDisruptionBudget:
+    enabled: false
+  serviceMonitor:
+    enabled: false
+
+iac-drift:
+  enabled: true
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+  podDisruptionBudget:
+    enabled: false
+  serviceMonitor:
+    enabled: false
+
+incident-detection:
+  enabled: true
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+  podDisruptionBudget:
+    enabled: false
+  serviceMonitor:
+    enabled: false
+
+incidents-kb:
+  enabled: true
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+  podDisruptionBudget:
+    enabled: false
+  serviceMonitor:
+    enabled: false
+
+marketplace:
+  enabled: true
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+  podDisruptionBudget:
+    enabled: false
+  serviceMonitor:
+    enabled: false
+
+mcp:
+  enabled: true
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+  podDisruptionBudget:
+    enabled: false
+  serviceMonitor:
+    enabled: false
+
+openspec:
+  enabled: true
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+  podDisruptionBudget:
+    enabled: false
+  serviceMonitor:
+    enabled: false
+
+permissions:
+  enabled: true
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+  podDisruptionBudget:
+    enabled: false
+  serviceMonitor:
+    enabled: false
+
+policy-engine:
+  enabled: true
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+  podDisruptionBudget:
+    enabled: false
+  serviceMonitor:
+    enabled: false
+
+postmortem:
+  enabled: true
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+  podDisruptionBudget:
+    enabled: false
+  serviceMonitor:
+    enabled: false
+
+prompt-registry:
+  enabled: true
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+  podDisruptionBudget:
+    enabled: false
+  serviceMonitor:
+    enabled: false
+
+rag-ingest:
+  enabled: true
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+  podDisruptionBudget:
+    enabled: false
+  serviceMonitor:
+    enabled: false
+
+rag-query:
+  enabled: true
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+  podDisruptionBudget:
+    enabled: false
+  serviceMonitor:
+    enabled: false
+
+registry:
+  enabled: true
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+  podDisruptionBudget:
+    enabled: false
+  serviceMonitor:
+    enabled: false
+
+runtime-registry:
+  enabled: true
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+  podDisruptionBudget:
+    enabled: false
+  serviceMonitor:
+    enabled: false
+
+scaffolder:
+  enabled: true
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+  podDisruptionBudget:
+    enabled: false
+  serviceMonitor:
+    enabled: false
+
+sdlc-orchestrator:
+  enabled: true
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+  podDisruptionBudget:
+    enabled: false
+  serviceMonitor:
+    enabled: false
+
+traceability:
+  enabled: true
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+  podDisruptionBudget:
+    enabled: false
+  serviceMonitor:
+    enabled: false
+
+webhooks:
+  enabled: true
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+  podDisruptionBudget:
+    enabled: false
+  serviceMonitor:
+    enabled: false
+
+workflow-registry:
+  enabled: true
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+  podDisruptionBudget:
+    enabled: false
+  serviceMonitor:
+    enabled: false
+
+workflow-runtime:
+  enabled: true
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+  podDisruptionBudget:
+    enabled: false
+  serviceMonitor:
+    enabled: false
+
+retention-jobs:
+  enabled: true

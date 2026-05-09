@@ -1,0 +1,4 @@
+image:
+  repository: forge/mcp
+service:
+  port: 8089

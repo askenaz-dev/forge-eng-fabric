@@ -18,7 +18,17 @@
       "Bash(/c/forge-eng-fabric/.venv/Scripts/python.exe scripts/phase6_synthetic_incidents.py)",
       "Bash(/c/forge-eng-fabric/.venv/Scripts/python.exe -m pytest services/diagnosis/tests services/incidents-kb/tests services/postmortem/tests services/finops-advisor/tests services/openspec/tests -q)",
       "Bash(/c/forge-eng-fabric/.venv/Scripts/python.exe -m pytest tests -q)",
-      "Bash(openspec list *)"
+      "Bash(openspec list *)",
+      "Bash(openspec new *)",
+      "Bash(openspec validate *)",
+      "Read(//c/Users/guill/.claude/projects/C--forge-eng-fabric/memory//**)",
+      "Read(//c/Users/guill/.claude/projects/C--forge-eng-fabric//**)",
+      "Bash(chmod +x /c/forge-eng-fabric/scripts/helm-lint.sh /c/forge-eng-fabric/scripts/check-sizing.py)",
+      "Bash(python scripts/gen-helm-charts.py)",
+      "Bash(go run *)",
+      "Bash(python scripts/integration/smoke_intent_to_deploy.py)",
+      "Bash(python scripts/check-retention-policy.py)",
+      "Bash(openspec change *)"
     ]
   }
 }

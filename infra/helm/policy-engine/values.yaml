@@ -1,0 +1,4 @@
+image:
+  repository: forge/policy-engine
+service:
+  port: 8088

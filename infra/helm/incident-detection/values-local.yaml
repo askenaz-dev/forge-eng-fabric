@@ -1,0 +1,4 @@
+# Local overlay for incident-detection.
+replicaCount: 1
+image:
+  tag: local

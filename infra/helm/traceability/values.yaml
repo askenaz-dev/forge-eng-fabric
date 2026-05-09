@@ -1,0 +1,5 @@
+image:
+  repository: forge/traceability
+service:
+  port: 8123
+replicaCount: 1

@@ -1,0 +1,4 @@
+# Local overlay for runtime-registry.
+replicaCount: 1
+image:
+  tag: local

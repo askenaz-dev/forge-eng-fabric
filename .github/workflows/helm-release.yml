@@ -1,0 +1,69 @@
+name: helm-release
+
+on:
+  push:
+    tags:
+      - "helm-v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to use for the release (e.g., helm-v0.1.0)"
+        required: true
+        type: string
+
+permissions:
+  id-token: write   # Cosign keyless signing via GitHub OIDC
+  contents: write   # Upload release assets
+
+jobs:
+  package-and-sign:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: "3.14.0"
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Update flavor library deps
+        run: |
+          for chart in infra/helm/*/Chart.yaml; do
+            chart_dir="$(dirname "${chart}")"
+            if grep -q "type: library" "${chart}"; then continue; fi
+            if grep -q "dependencies:" "${chart}"; then
+              (cd "${chart_dir}" && helm dependency update)
+            fi
+          done
+
+      - name: Package every chart
+        run: |
+          mkdir -p build/helm
+          for chart in infra/helm/*/Chart.yaml; do
+            chart_dir="$(dirname "${chart}")"
+            chart_name="$(basename "${chart_dir}")"
+            if [[ "${chart_name}" == "_flavors" ]]; then continue; fi
+            helm package "${chart_dir}" -d build/helm/
+          done
+          ls -la build/helm/
+
+      - name: Sign every package with Cosign (keyless, OIDC)
+        env:
+          COSIGN_EXPERIMENTAL: "1"
+        run: |
+          for tgz in build/helm/*.tgz; do
+            cosign sign-blob --yes --output-signature "${tgz}.sig" --output-certificate "${tgz}.pem" "${tgz}"
+          done
+          ls -la build/helm/
+
+      - name: Upload signed packages to release
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/helm-v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            build/helm/*.tgz
+            build/helm/*.sig
+            build/helm/*.pem

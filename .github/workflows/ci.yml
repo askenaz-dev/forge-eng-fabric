@@ -85,3 +85,20 @@ jobs:
           for f in contracts/events/*.json; do python -m json.tool "$f" >/dev/null; done
       - name: Check OpenSpec change status
         run: npx -y @fission-ai/openspec status --change phase-0-foundations --json
+
+  reference-flow-smoke:
+    name: reference flow smoke
+    runs-on: ubuntu-latest
+    needs: [go, python]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run intent-to-deploy smoke test
+        run: python scripts/integration/smoke_intent_to_deploy.py
+        env:
+          # CI runs against ephemeral infrastructure when available; the script
+          # falls back to synthetic mode that still validates milestone ordering.
+          WORKSPACE_ID: ci-workspace
+          RUNTIME_ID: rt-ci-1

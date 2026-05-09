@@ -1,0 +1,5 @@
+image:
+  repository: forge/prompt-registry
+service:
+  port: 8124
+replicaCount: 1

@@ -1,0 +1,4 @@
+# Local overlay for rag-query.
+replicaCount: 1
+image:
+  tag: local

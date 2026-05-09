@@ -1,0 +1,4 @@
+# Staging overlay for permissions. Tier: small.
+replicaCount: 2
+image:
+  tag: staging

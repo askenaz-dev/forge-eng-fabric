@@ -1,0 +1,4 @@
+# Local overlay for workflow-registry.
+replicaCount: 1
+image:
+  tag: local

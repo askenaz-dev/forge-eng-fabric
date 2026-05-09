@@ -13,6 +13,7 @@ from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
 
 from alfred.auth import Principal, fga_check, verify_jwt
 from alfred.config import Settings, load_settings
+from alfred.dialogue import generate_followup
 from alfred.gateways import ApprovalsClient, OpenSpecClient, PermissionsClient, PolicyClient, RAGClient
 from alfred.guardrails import Guardrails, GuardrailTrip
 from alfred.llm import LiteLLMClient
@@ -152,6 +153,86 @@ def create_app(
             limit=limit,
         )
         return {"decisions": decisions}
+
+    # Wizard dialogue API. Disabled by default; flip ALFRED_DIALOGUE_API=enabled
+    # to surface the routes (per platform-gaps-closure task 3.11).
+    dialogue_enabled = getattr(settings, "alfred_dialogue_api", "disabled").lower() == "enabled"
+
+    @app.post("/v1/intent/start")
+    async def intent_start(
+        request: Request,
+        body: dict[str, Any],
+        principal: Annotated[Principal, Depends(_principal)],
+    ) -> dict[str, Any]:
+        if not dialogue_enabled:
+            raise HTTPException(status_code=404, detail="dialogue API disabled")
+        ws_id = body.get("workspace_id")
+        if not ws_id:
+            raise HTTPException(status_code=400, detail="workspace_id is required")
+        await _require_workspace(request, principal, uuid.UUID(ws_id), "can_edit")
+        body.setdefault("created_by", principal.sub)
+        body.setdefault("correlation_id", request.state.correlation_id)
+        draft = await deps.openspec.start_intent(body)
+        if not draft:
+            raise HTTPException(status_code=502, detail="openspec service unreachable")
+        # Compute the first question to display.
+        completeness = await deps.openspec.completeness(draft["draft_id"])
+        section, question = await generate_followup(
+            completeness=completeness,
+            turn_count=draft.get("turn_count", 0),
+            last_answer="",
+            correlation_id=draft.get("correlation_id"),
+            llm=deps.llm,
+        )
+        return {"draft": draft, "completeness": completeness, "next_question": question, "next_section": section}
+
+    @app.get("/v1/intent/{draft_id}")
+    async def intent_get(draft_id: str, principal: Annotated[Principal, Depends(_principal)]) -> dict[str, Any]:
+        if not dialogue_enabled:
+            raise HTTPException(status_code=404, detail="dialogue API disabled")
+        draft = await deps.openspec.get_draft(draft_id)
+        if not draft:
+            raise HTTPException(status_code=404, detail="draft not found")
+        completeness = await deps.openspec.completeness(draft_id)
+        return {"draft": draft, "completeness": completeness}
+
+    @app.post("/v1/intent/{draft_id}/answer")
+    async def intent_answer(
+        request: Request,
+        draft_id: str,
+        body: dict[str, Any],
+        principal: Annotated[Principal, Depends(_principal)],
+    ) -> dict[str, Any]:
+        if not dialogue_enabled:
+            raise HTTPException(status_code=404, detail="dialogue API disabled")
+        body.setdefault("actor", principal.sub)
+        updated = await deps.openspec.answer_intent(draft_id, body)
+        if not updated:
+            raise HTTPException(status_code=404, detail="draft not found or rejected")
+        completeness = await deps.openspec.completeness(draft_id)
+        section, question = await generate_followup(
+            completeness=completeness,
+            turn_count=updated.get("turn_count", 0),
+            last_answer=body.get("answer", ""),
+            correlation_id=updated.get("correlation_id"),
+            llm=deps.llm,
+        )
+        return {"draft": updated, "completeness": completeness, "next_question": question, "next_section": section}
+
+    @app.post("/v1/intent/{draft_id}/commit")
+    async def intent_commit(
+        draft_id: str,
+        body: dict[str, Any] | None,
+        principal: Annotated[Principal, Depends(_principal)],
+    ) -> dict[str, Any]:
+        if not dialogue_enabled:
+            raise HTTPException(status_code=404, detail="dialogue API disabled")
+        payload = dict(body or {})
+        payload.setdefault("actor", principal.sub)
+        document = await deps.openspec.commit_intent(draft_id, payload)
+        if not document:
+            raise HTTPException(status_code=400, detail="draft not commit-ready")
+        return {"openspec": document}
 
     return app
 

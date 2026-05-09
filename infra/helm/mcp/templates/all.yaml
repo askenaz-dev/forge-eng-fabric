@@ -1,0 +1,13 @@
+{{- include "service-http.deployment" . }}
+---
+{{- include "service-http.service" . }}
+---
+{{- include "service-http.serviceaccount" . }}
+---
+{{- include "service-http.hpa" . }}
+---
+{{- include "service-http.pdb" . }}
+---
+{{- include "service-http.networkpolicy" . }}
+---
+{{- include "service-http.servicemonitor" . }}

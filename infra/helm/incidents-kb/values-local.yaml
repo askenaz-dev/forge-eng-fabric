@@ -1,0 +1,4 @@
+# Local overlay for incidents-kb.
+replicaCount: 1
+image:
+  tag: local

@@ -1,20 +1,4 @@
-replicaCount: 1
 image:
   repository: forge/registry
-  tag: local
-  pullPolicy: IfNotPresent
 service:
   port: 8082
-probes:
-  enabled: true
-  readinessPath: /readyz
-  livenessPath: /healthz
-env:
-  ADDR: ":8082"
-  POSTGRES_URL: "postgres://forge:forge@postgres:5432/forge_registry?sslmode=disable"
-  KEYCLOAK_ISSUER: "http://keycloak:8080/realms/forge"
-  KEYCLOAK_AUDIENCE: "forge-control-plane"
-  OPENFGA_API_URL: "http://openfga:8080"
-  KAFKA_BROKERS: "kafka:9092"
-  EVENTS_TOPIC: "forge.events"
-  OTEL_EXPORTER_OTLP_ENDPOINT: "otel-collector:4317"

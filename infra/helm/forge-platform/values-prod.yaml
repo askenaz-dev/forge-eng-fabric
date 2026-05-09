@@ -1,0 +1,435 @@
+# Production overlay: tier=medium by default; flip to large for big BUs.
+global:
+  tier: medium
+
+alfred:
+  enabled: true
+  replicaCount: 3
+  image:
+    tag: prod
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+app-onboarding:
+  enabled: true
+  replicaCount: 3
+  image:
+    tag: prod
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+approvals:
+  enabled: true
+  replicaCount: 3
+  image:
+    tag: prod
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+asset-observability:
+  enabled: true
+  replicaCount: 3
+  image:
+    tag: prod
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+audit:
+  enabled: true
+  replicaCount: 3
+  image:
+    tag: prod
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+control-plane:
+  enabled: true
+  replicaCount: 3
+  image:
+    tag: prod
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+deploy-orchestrator:
+  enabled: true
+  replicaCount: 3
+  image:
+    tag: prod
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+diagnosis:
+  enabled: true
+  replicaCount: 3
+  image:
+    tag: prod
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+eval-harness-adv:
+  enabled: true
+  replicaCount: 3
+  image:
+    tag: prod
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+evolution:
+  enabled: true
+  replicaCount: 3
+  image:
+    tag: prod
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+finops:
+  enabled: true
+  replicaCount: 3
+  image:
+    tag: prod
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+finops-advisor:
+  enabled: true
+  replicaCount: 3
+  image:
+    tag: prod
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+healing-engine:
+  enabled: true
+  replicaCount: 3
+  image:
+    tag: prod
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+iac-drift:
+  enabled: true
+  replicaCount: 3
+  image:
+    tag: prod
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+incident-detection:
+  enabled: true
+  replicaCount: 3
+  image:
+    tag: prod
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+incidents-kb:
+  enabled: true
+  replicaCount: 3
+  image:
+    tag: prod
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+marketplace:
+  enabled: true
+  replicaCount: 3
+  image:
+    tag: prod
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+mcp:
+  enabled: true
+  replicaCount: 3
+  image:
+    tag: prod
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+openspec:
+  enabled: true
+  replicaCount: 3
+  image:
+    tag: prod
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+permissions:
+  enabled: true
+  replicaCount: 3
+  image:
+    tag: prod
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+policy-engine:
+  enabled: true
+  replicaCount: 3
+  image:
+    tag: prod
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+postmortem:
+  enabled: true
+  replicaCount: 3
+  image:
+    tag: prod
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+prompt-registry:
+  enabled: true
+  replicaCount: 3
+  image:
+    tag: prod
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+rag-ingest:
+  enabled: true
+  replicaCount: 3
+  image:
+    tag: prod
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+rag-query:
+  enabled: true
+  replicaCount: 3
+  image:
+    tag: prod
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+registry:
+  enabled: true
+  replicaCount: 3
+  image:
+    tag: prod
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+runtime-registry:
+  enabled: true
+  replicaCount: 3
+  image:
+    tag: prod
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+scaffolder:
+  enabled: true
+  replicaCount: 3
+  image:
+    tag: prod
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+sdlc-orchestrator:
+  enabled: true
+  replicaCount: 3
+  image:
+    tag: prod
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+traceability:
+  enabled: true
+  replicaCount: 3
+  image:
+    tag: prod
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+webhooks:
+  enabled: true
+  replicaCount: 3
+  image:
+    tag: prod
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+workflow-registry:
+  enabled: true
+  replicaCount: 3
+  image:
+    tag: prod
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+workflow-runtime:
+  enabled: true
+  replicaCount: 3
+  image:
+    tag: prod
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+retention-jobs:
+  enabled: true

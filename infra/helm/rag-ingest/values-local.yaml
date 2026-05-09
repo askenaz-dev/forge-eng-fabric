@@ -1,0 +1,4 @@
+# Local overlay for rag-ingest.
+replicaCount: 1
+image:
+  tag: local

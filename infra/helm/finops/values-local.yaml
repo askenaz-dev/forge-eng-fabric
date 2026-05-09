@@ -1,0 +1,4 @@
+# Local overlay for finops.
+replicaCount: 1
+image:
+  tag: local

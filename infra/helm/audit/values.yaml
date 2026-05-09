@@ -1,0 +1,4 @@
+image:
+  repository: forge/audit-service
+service:
+  port: 8083

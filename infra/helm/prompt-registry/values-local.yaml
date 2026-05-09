@@ -1,0 +1,4 @@
+# Local overlay for prompt-registry.
+replicaCount: 1
+image:
+  tag: local

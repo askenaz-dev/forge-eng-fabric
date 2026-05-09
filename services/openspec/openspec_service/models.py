@@ -59,6 +59,59 @@ class AuditInfo(BaseModel):
 
 SourceMarker = Literal["human", "autonomous-loop"]
 ReviewStatus = Literal["pending", "approved", "rejected"]
+LifecycleStatus = Literal["drafting", "validating", "committed", "abandoned"]
+
+
+class CompletenessSection(BaseModel):
+    """Per-section/field status surfaced to the wizard so it knows what to ask next."""
+
+    name: str
+    status: Literal["complete", "partial", "empty"]
+    fields: dict[str, Literal["complete", "partial", "empty"]] = Field(default_factory=dict)
+
+
+class CompletenessReport(BaseModel):
+    openspec_id: str
+    overall: Literal["complete", "partial", "empty"]
+    sections: list[CompletenessSection]
+
+
+class IntentDraft(BaseModel):
+    """Progressive OpenSpec draft used by the Alfred wizard.
+
+    Drafts share the `openspec_id` namespace with committed OpenSpecs so the
+    wizard's commit step is atomic — when validation passes, the draft becomes a
+    normal first-class OpenSpec.
+    """
+
+    draft_id: str
+    workspace_id: uuid.UUID
+    openspec_id: str | None = None
+    status: LifecycleStatus = "drafting"
+    title: str = ""
+    business_intent: str = ""
+    problem_statement: str = ""
+    stakeholders: list[str] = Field(default_factory=list)
+    success_metrics: list[str] = Field(default_factory=list)
+    requirements: Requirements = Field(default_factory=Requirements)
+    constraints: list[str] = Field(default_factory=list)
+    autonomy_policy: AutonomyPolicy = Field(default_factory=AutonomyPolicy)
+    created_by: str
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    last_active_at: datetime = Field(default_factory=datetime.utcnow)
+    turn_count: int = 0
+    dialogue_history: list[dict[str, Any]] = Field(default_factory=list)
+    correlation_id: str | None = None
+
+
+class IntentAnswer(BaseModel):
+    """A single user answer being applied to a draft."""
+
+    draft_id: str
+    answer: str
+    field_updates: dict[str, Any] = Field(default_factory=dict)
+    actor: str
 
 
 class OpenSpecDocument(BaseModel):
@@ -84,6 +137,10 @@ class OpenSpecDocument(BaseModel):
     review_status: ReviewStatus = "approved"
     reviewed_by: str | None = None
     review_comment: str | None = None
+    # Draft lifecycle (platform-gaps-closure, openspec-backbone). Existing
+    # records default to `committed` so historical OpenSpecs remain valid for
+    # production-relevant operations without explicit migration of every row.
+    lifecycle_status: LifecycleStatus = "committed"
 
     @model_validator(mode="after")
     def validate_minimum_model(self) -> OpenSpecDocument:

@@ -1,0 +1,4 @@
+# Local overlay for mcp.
+replicaCount: 1
+image:
+  tag: local

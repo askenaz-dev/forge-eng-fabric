@@ -1,0 +1,5 @@
+image:
+  repository: forge/iac-drift
+service:
+  port: 8125
+replicaCount: 1

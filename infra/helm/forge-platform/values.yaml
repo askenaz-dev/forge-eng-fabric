@@ -1,0 +1,105 @@
+# Umbrella defaults. Override per environment via -f values-<env>.yaml.
+global:
+  tier: small  # small | medium | large
+
+alfred:
+  enabled: true
+
+app-onboarding:
+  enabled: true
+
+approvals:
+  enabled: true
+
+asset-observability:
+  enabled: true
+
+audit:
+  enabled: true
+
+control-plane:
+  enabled: true
+
+deploy-orchestrator:
+  enabled: true
+
+diagnosis:
+  enabled: true
+
+eval-harness-adv:
+  enabled: true
+
+evolution:
+  enabled: true
+
+finops:
+  enabled: true
+
+finops-advisor:
+  enabled: true
+
+healing-engine:
+  enabled: true
+
+iac-drift:
+  enabled: true
+
+incident-detection:
+  enabled: true
+
+incidents-kb:
+  enabled: true
+
+marketplace:
+  enabled: true
+
+mcp:
+  enabled: true
+
+openspec:
+  enabled: true
+
+permissions:
+  enabled: true
+
+policy-engine:
+  enabled: true
+
+postmortem:
+  enabled: true
+
+prompt-registry:
+  enabled: true
+
+rag-ingest:
+  enabled: true
+
+rag-query:
+  enabled: true
+
+registry:
+  enabled: true
+
+runtime-registry:
+  enabled: true
+
+scaffolder:
+  enabled: true
+
+sdlc-orchestrator:
+  enabled: true
+
+traceability:
+  enabled: true
+
+webhooks:
+  enabled: true
+
+workflow-registry:
+  enabled: true
+
+workflow-runtime:
+  enabled: true
+
+retention-jobs:
+  enabled: true

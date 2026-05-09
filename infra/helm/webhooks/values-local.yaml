@@ -1,0 +1,4 @@
+# Local overlay for webhooks.
+replicaCount: 1
+image:
+  tag: local

@@ -1,0 +1,4 @@
+# Staging overlay for eval-harness-adv. Tier: small.
+replicaCount: 2
+image:
+  tag: staging

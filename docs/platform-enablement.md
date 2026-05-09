@@ -2,6 +2,8 @@
 
 This is the living step-by-step guide for enabling Forge Engineering Fabric across all phases. Keep this document current as OpenSpec changes are implemented from Phase 0 through later phases.
 
+> **New to the platform?** Start with the [Tenancy Model](concepts/tenancy-model.md) to understand how Tenants, Business Units, and Workspaces relate before working through this guide.
+
 ## How To Use This Guide
 
 1. Start here for the full platform bootstrap path.
@@ -58,6 +60,132 @@ corepack pnpm --version
 | Local | Development and fast checks | Uses compose for shared dependencies; application services may run from source until compose wiring is complete. |
 | Staging | Integrated validation and evidence | Required for phase exit criteria that need real IAM, OpenFGA, Langfuse/Tempo, Jira/Confluence/GitHub or approvals. |
 | Production | Operated platform | Requires completed sign-off, hardened secrets, cloud infra and operational runbooks. |
+
+## Hardware & Sizing
+
+> Last refreshed: 2026-05-09. Owner: Platform Architecture + FinOps. Cost estimates are list-price baselines for `us-central1`, USD, refreshed alongside material resource changes.
+
+### Local tier (developer laptop)
+
+| Dimension | Minimum (full stack) | Recommended | Notes |
+|---|---|---|---|
+| RAM | 16 GiB | 32 GiB | 16 GiB requires disabling heavy components below |
+| vCPU | 4 | 8 | Modern Apple Silicon, recent Intel/AMD |
+| Disk free | 40 GiB | 80 GiB | Docker images, Postgres data, model caches |
+| Network | Outbound HTTPS | Outbound HTTPS | LiteLLM, GitHub, Artifact Registry pulls |
+
+#### Disable-flags to reduce footprint
+
+If a developer cannot allocate 32 GiB, the following compose services may be disabled:
+
+| Service | How to disable | Impact |
+|---|---|---|
+| `milvus` | `COMPOSE_PROFILES=base` (omit `rag`) | RAG ingest/query cannot run locally |
+| `tempo` | `COMPOSE_PROFILES=base` (omit `tracing`) | No traces in Grafana; logs and metrics still work |
+| `loki` | `docker compose -f deploy/compose/docker-compose.yaml stop loki` | No log aggregation; service stdout still available |
+| `langfuse` | `docker compose stop langfuse langfuse-db` | No LLM observability; LiteLLM still works |
+| `keycloak` | Use `DEV_AUTH_BYPASS=true` | Local auth bypassed; do not use for evidence |
+
+Recommended starter command for a 16 GiB laptop:
+
+```sh
+COMPOSE_PROFILES=base make up
+```
+
+Cost: $0 (developer hardware).
+
+### Staging tier (shared team environment, GKE)
+
+Default Staging is a single GKE cluster shared across the platform team, sized to support the full reference workflow plus 1-2 reference apps.
+
+#### Per-service Kubernetes requests/limits (Staging defaults)
+
+These are the baseline values consumed by the umbrella chart `forge-platform` at `tier=small`. Per-environment overrides go in `infra/helm/forge-platform/values-staging.yaml`.
+
+| Service | Replicas | CPU req | CPU limit | Mem req | Mem limit |
+|---|---:|---:|---:|---:|---:|
+| `alfred` | 2 | 200m | 1000m | 512Mi | 1Gi |
+| `app-onboarding` | 2 | 100m | 500m | 256Mi | 512Mi |
+| `approvals` | 2 | 100m | 500m | 256Mi | 512Mi |
+| `asset-observability` | 2 | 100m | 500m | 256Mi | 512Mi |
+| `audit` | 2 | 200m | 1000m | 512Mi | 1Gi |
+| `control-plane` | 2 | 200m | 1000m | 512Mi | 1Gi |
+| `deploy-orchestrator` | 2 | 200m | 1000m | 512Mi | 1Gi |
+| `eval-harness-adv` | 1 | 100m | 1000m | 512Mi | 2Gi |
+| `finops` | 1 | 100m | 500m | 256Mi | 512Mi |
+| `finops-advisor` | 1 | 100m | 500m | 256Mi | 512Mi |
+| `iac-drift` | 1 | 100m | 500m | 256Mi | 512Mi |
+| `incidents-kb` | 1 | 100m | 500m | 256Mi | 512Mi |
+| `marketplace` | 2 | 100m | 500m | 256Mi | 512Mi |
+| `mcp` | 2 | 200m | 1000m | 512Mi | 1Gi |
+| `openspec` | 2 | 200m | 1000m | 512Mi | 1Gi |
+| `permissions` | 2 | 100m | 500m | 256Mi | 512Mi |
+| `policy-engine` | 2 | 200m | 1000m | 512Mi | 1Gi |
+| `prompt-registry` | 1 | 100m | 500m | 256Mi | 512Mi |
+| `runtime-registry` | 2 | 200m | 1000m | 512Mi | 1Gi |
+| `scaffolder` | 2 | 100m | 500m | 256Mi | 512Mi |
+| `sdlc-orchestrator` | 2 | 200m | 1000m | 512Mi | 1Gi |
+| `traceability` | 1 | 100m | 500m | 256Mi | 512Mi |
+| `webhooks` | 2 | 100m | 500m | 256Mi | 512Mi |
+| `workflow-registry` | 2 | 200m | 1000m | 512Mi | 1Gi |
+| `workflow-runtime` | 3 | 200m | 1000m | 512Mi | 1Gi |
+| `diagnosis` (worker) | 1 | 100m | 500m | 256Mi | 512Mi |
+| `evolution` (worker) | 1 | 100m | 500m | 256Mi | 512Mi |
+| `healing-engine` (worker) | 1 | 100m | 500m | 256Mi | 512Mi |
+| `incident-detection` (worker) | 1 | 100m | 500m | 256Mi | 512Mi |
+| `postmortem` (worker) | 1 | 100m | 500m | 256Mi | 512Mi |
+| `rag-ingest` (worker) | 1 | 200m | 1000m | 512Mi | 2Gi |
+| `rag-query` (worker) | 1 | 200m | 1000m | 512Mi | 1Gi |
+
+#### Staging shared dependencies
+
+| Dependency | SKU / size | Notes |
+|---|---|---|
+| GKE | 3 × `e2-standard-4` (4 vCPU, 16 GiB) | Autoscale to 6 nodes |
+| Cloud SQL Postgres | `db-custom-2-7680` (2 vCPU, 7.5 GiB), 100 GiB SSD | Single zone, no HA in Staging |
+| Memorystore Redis | 1 GiB Basic | Caches and rate-limit counters |
+| Milvus | 1 × `e2-standard-4` standalone | RAG vectors only |
+| Kafka | 3 brokers, `e2-standard-2`, 50 GiB each | Event bus |
+| Loki | 30 GiB persistence, 14-day retention | See `data-retention.md` for classification rules |
+| Tempo | 30 GiB persistence, 7-day retention | |
+| Prometheus | 30 GiB persistence, 14-day retention | Mimir-compatible later |
+| Artifact Registry | 1 region, 100 GiB | Multi-region not required in Staging |
+
+**Indicative monthly cost (Staging, `us-central1`, USD, list price)**: $1,150–$1,400/mo. Volatility caveat: Egress costs vary with traffic; CI/CD pipelines pulling images from outside the region can push this higher.
+
+### Production tier (per-BU dimensioning)
+
+Production sizing is parameterized by BU profile. The umbrella chart exposes `tier=small | medium | large` presets that map to the rows below. Per-service requests/limits scale proportionally.
+
+| BU profile | Apps | GKE node pool | Cloud SQL | Memorystore | Milvus | Kafka | Loki retention | Tempo retention | Indicative $/mo |
+|---|---:|---|---|---|---|---|---|---|---:|
+| Small (≤10 apps) | ≤10 | 3-6 × `e2-standard-4` | `db-custom-4-15360`, 200 GiB SSD HA | 5 GiB Standard HA | 1 × `e2-standard-4` | 3 × `e2-standard-2` | 30 days | 14 days | $2,000–$2,800 |
+| Medium (≤50 apps) | ≤50 | 6-12 × `e2-standard-8` | `db-custom-8-30720`, 500 GiB SSD HA | 16 GiB Standard HA | 3 × `e2-standard-8` | 3 × `e2-standard-4` | 30 days | 14 days | $5,500–$8,000 |
+| Large (≤200 apps) | ≤200 | 12-24 × `e2-standard-16` | `db-custom-16-61440`, 1 TiB SSD HA + read replica | 32 GiB Standard HA | 5 × `e2-standard-16` | 5 × `e2-standard-8` | 90 days | 30 days | $14,000–$22,000 |
+
+**Assumptions**: `us-central1`, list pricing, USD. Excludes egress beyond default monthly free tier and excludes LiteLLM model usage. LiteLLM costs are passthrough to the model provider and tracked separately by FinOps.
+
+**Last refresh**: 2026-05-09. Refresh cadence: alongside any service whose resource profile changes materially, and at least quarterly.
+
+### Sizing-to-Helm mapping
+
+The umbrella chart `infra/helm/forge-platform/` exposes tier presets:
+
+```sh
+helm install forge-platform infra/helm/forge-platform \
+  --values infra/helm/forge-platform/values-prod.yaml \
+  --set global.tier=medium
+```
+
+Tier presets resolve to per-service replica counts and `requests`/`limits` from this document. The CI check `make sizing-check` verifies the umbrella `values-*.yaml` files match these tables — see [`scripts/check-sizing.py`](../scripts/check-sizing.py) for the diff logic.
+
+### Sizing change procedure
+
+1. Update the row in this document.
+2. Update the umbrella values in `infra/helm/forge-platform/values-{local,staging,prod}.yaml`.
+3. Run `make sizing-check` locally and ensure CI passes.
+4. PR is reviewed by Platform Architecture **and** FinOps owners.
+5. Note prior values in the PR description so the change log is reconstructable.
 
 ## Phase 0: Foundations
 
@@ -223,90 +351,243 @@ Update `docs/governance/phase-1-signoff.md` after evidence exists. Do not mark t
 
 Goal: onboard applications into Forge with CI, security scanning, SBOM, image signing and registry publication.
 
-Current source of truth:
+Source of truth: `openspec/changes/archive/2026-05-09-phase-2-app-onboarding/`. Sign-off: [`docs/governance/phase-2-signoff.md`](governance/phase-2-signoff.md).
 
-```text
-openspec/changes/phase-2-app-onboarding/
+### Step 2.1: Register the GitHub App
+
+1. Owner of the customer GitHub Org creates a GitHub App with the permissions listed in [`docs/runbooks/github-app.md`](runbooks/github-app.md).
+2. Record the App ID, slug and installation ID in the secret manager: `forge/github-app/{client_id, client_secret, private_key, app_id, installation_id}`.
+3. Configure `services/control-plane` env: `GITHUB_APP_ID`, `GITHUB_APP_INSTALLATION_ID`, `GITHUB_APP_PRIVATE_KEY_PATH` (mounted from secret).
+
+Evidence to capture: registered GitHub App URL, installation ID, screenshot of permissions panel, archived to `docs/governance/evidence/phase-2/`.
+
+### Step 2.2: Enable the Reusable CI Workflow
+
+The platform ships a reusable CI workflow that scaffolded repos consume:
+
+```yaml
+# .github/workflows/ci.yml in a scaffolded repo
+jobs:
+  forge-ci:
+    uses: forge-eng-fabric/forge-actions/.github/workflows/forge-ci.yml@v1
+    with:
+      service: ${{ github.event.repository.name }}
+      sbom: true
+      cosign: true
+      trivy: true
 ```
 
-Enablement steps to add when implementation starts:
+The reusable workflow runs lint → build → unit tests → SAST (CodeQL) → SCA (Dependabot/OSV) → SBOM (Syft) → container scan (Trivy) → image sign (Cosign keyless) → push to Artifact Registry. Each step writes evidence as a workflow artifact.
 
-1. Configure GitHub App installation and repository selection.
-2. Enable reusable CI workflows for lint, build, unit tests, SAST, SCA, SBOM, container scanning and signing.
-3. Configure Artifact Registry or local registry target.
-4. Record required secrets and OIDC trust setup.
-5. Add onboarding validation commands and evidence path.
+### Step 2.3: Provision Artifact Registry
+
+Use the Terraform module `infra/terraform/modules/artifact-registry/`:
+
+```sh
+cd infra/terraform/modules/artifact-registry
+terraform init
+terraform apply -var "project_id=$GCP_PROJECT" -var "location=us-central1" -var "repo_id=forge-platform"
+```
+
+Outputs include the repo URL, IAM policy bindings for the runtime SAs, and the immutable retention policy for prod images.
+
+### Step 2.4: Validate
+
+```sh
+# 1. Run the reusable CI on a scaffolded repo
+gh workflow run ci.yml --repo <org>/<scaffolded-repo>
+
+# 2. Verify the signed image
+cosign verify <region>-docker.pkg.dev/<project>/forge-platform/<image>:<digest> \
+  --certificate-identity-regexp '.*<org>/<repo>.*' \
+  --certificate-oidc-issuer 'https://token.actions.githubusercontent.com'
+```
+
+Phase 2 sign-off requires: a registered GitHub App, the reusable CI workflow used by ≥ 1 scaffolded repo, SBOM/Cosign/Trivy evidence for ≥ 1 image, an Artifact Registry record. Tag the merge commit with `phase-2-signoff-<YYYYMMDD>` once approvers have signed.
 
 ## Phase 3: Deployable Apps
 
 Goal: provision runtimes and deploy user applications to GKE, Cloud Run or local/minikube targets with preflight checks and image verification.
 
-Current source of truth:
+Source of truth: `openspec/changes/archive/2026-05-09-phase-3-deployable-apps/`. Sign-off: [`docs/governance/phase-3-signoff.md`](governance/phase-3-signoff.md).
 
-```text
-openspec/changes/phase-3-deployable-apps/
+### Step 3.1: Apply Terraform Modules
+
+The Phase 3 module set lives at `infra/terraform/modules/`. Each module has a README with required inputs and example invocation:
+
+| Module | Purpose |
+|---|---|
+| [`gke-cluster`](../infra/terraform/modules/gke-cluster/README.md) | GKE Autopilot or Standard cluster with Workload Identity |
+| [`cloud-run-service`](../infra/terraform/modules/cloud-run-service/README.md) | Cloud Run service with custom SA + ingress controls |
+| [`cloud-sql`](../infra/terraform/modules/cloud-sql/README.md) | Cloud SQL Postgres with private IP and CMEK |
+| [`memorystore`](../infra/terraform/modules/memorystore/README.md) | Memorystore Redis with private VPC access |
+| [`artifact-registry`](../infra/terraform/modules/artifact-registry/README.md) | Artifact Registry repo with retention and IAM bindings |
+| [`iam-delegated-permissions`](../infra/terraform/modules/iam-delegated-permissions/README.md) | Delegated SAs for federated runtimes |
+
+Apply order: `gke-cluster` → `iam-delegated-permissions` → `artifact-registry` → `cloud-sql` / `memorystore` → `cloud-run-service`.
+
+### Step 3.2: Federated Project Setup
+
+For each Tenant project:
+
+```sh
+# 1. Bootstrap the Terraform state backend
+terraform -chdir=infra/terraform/bootstrap apply -var "tenant_id=<tenant>"
+
+# 2. Apply the federated IAM module
+terraform -chdir=infra/terraform/modules/iam-delegated-permissions apply -var "tenant_id=<tenant>"
 ```
 
-Enablement steps to add when implementation starts:
+The federated IAM grants the Forge platform SA the minimum scopes listed in [`runtime-connectors`](../openspec/specs/runtime-connectors/spec.md) — never `roles/owner`, never `roles/editor`.
 
-1. Apply Terraform modules for cloud runtime foundations.
-2. Configure runtime registry and connectors.
-3. Run runtime preflight checks.
-4. Validate signed image digest and deployment release history.
-5. Record rollback and evidence collection commands.
+### Step 3.3: Register the Runtime in `runtime-registry`
+
+```sh
+curl -X POST http://localhost:8110/v1/runtimes \
+  -H 'content-type: application/json' \
+  -d '{
+    "workspace_id": "<ws>",
+    "tenant_id": "<tenant>",
+    "type": "gke",
+    "mode": "byo",
+    "kubeconfig": "<base64-encoded>",
+    "name": "pilot-prod-gke"
+  }'
+```
+
+### Step 3.4: Run Preflight and Verify
+
+```sh
+# Preflight (existing endpoint)
+curl -X POST http://localhost:8110/v1/runtimes/<id>/preflight
+
+# Verify (new — produces a structured report)
+make verify-runtime RUNTIME=<id> WORKSPACE=<ws>
+```
+
+The verify command exits non-zero on any `fail` and prints remediation hints.
+
+### Step 3.5: Image-Verification-at-Deploy
+
+Deploy actions verify the image's Cosign signature against the workflow's expected identity before applying the runtime change. The verification step is implemented in `services/deploy-orchestrator` and is non-overridable in production.
+
+Phase 3 sign-off requires: ≥ 1 BYO and ≥ 1 Provisioned runtime onboarded, successful `verify-runtime` reports for both, image-verification-at-deploy evidence for ≥ 1 deployment.
 
 ## Phase 4: SDLC Orchestration
 
 Goal: expose SDLC capabilities for product, architecture, design, development, QA, security, DevOps, SRE and FinOps as governed skills and workflows.
 
-Current source of truth:
+Source of truth: `openspec/changes/archive/2026-05-09-phase-4-sdlc-orchestration/`. Sign-off: [`docs/governance/phase-4-signoff.md`](governance/phase-4-signoff.md).
 
-```text
-openspec/changes/phase-4-sdlc-orchestration/
+### Step 4.1: Register SDLC Skills
+
+The reference skills under `skills/reference/agent-skills/` cover each SDLC capability. Register each via the Registry API or the seed automation:
+
+```sh
+make seed-registry  # idempotent — skips assets already at the same version
 ```
 
-Enablement steps to add when implementation starts:
+Each Skill carries a per-capability policy binding. Eval thresholds are documented in `docs/eval-harness/` and enforced at promotion to `approved`.
 
-1. Register SDLC capability skills in Registry.
-2. Configure per-capability policies, approvers and delegated permissions.
-3. Seed OpenSpec templates and prompt templates.
-4. Validate orchestration traces and audit records per capability.
+### Step 4.2: Bind Capabilities to Policies
+
+Each Workspace gets a default policy bundle that maps capabilities to autonomy modes. Override via `services/policy-engine` API or the Portal's Permissions page.
+
+Capability examples:
+
+| Capability | Default mode | Approver role |
+|---|---|---|
+| `sdlc-product` | `autonomous` | — |
+| `sdlc-architecture` | `requires_approval` | architecture-lead |
+| `sdlc-devops:deploy:prod` | `requires_dual_control` | sre + workspace-admin |
+| `sdlc-security` | `requires_approval` | security-lead |
+
+### Step 4.3: Seed Prompt Templates
+
+```sh
+curl -X POST http://localhost:8124/v1/templates -d @skills/reference/prompt-templates/seed.json
+```
+
+### Step 4.4: Validate
+
+Run the reference workflow end-to-end:
+
+```sh
+make demo-intent-to-deploy
+```
+
+Phase 4 sign-off requires: registered Skills with eval reports per capability, capability-bound policies, prompt templates seeded, ≥ 1 successful run of `forge.reference.intent-to-deploy@1`.
 
 ## Phase 5: Workflow Marketplace
 
 Goal: enable governed workflows, marketplace installation, workflow versioning, advanced evals and per-asset observability.
 
-Current source of truth:
+Source of truth: `openspec/changes/archive/2026-05-09-phase-5-workflow-marketplace/`. Sign-off: [`docs/governance/phase-5-signoff.md`](governance/phase-5-signoff.md).
 
-```text
-openspec/changes/phase-5-workflow-marketplace/
+### Step 5.1: Durable Workflow Runtime
+
+The default runtime is `workflow-runtime` backed by Postgres (event store). For production at scale, consider Temporal — that decision is tracked in a follow-up ADR (see `openspec/changes/` for any active proposals).
+
+```sh
+helm install forge-platform infra/helm/forge-platform \
+  -f infra/helm/forge-platform/values-staging.yaml \
+  --set workflow-runtime.replicaCount=3
 ```
 
-Enablement steps to add when implementation starts:
+### Step 5.2: Marketplace
 
-1. Start workflow runtime and workflow registry.
-2. Register workflow assets and versions.
-3. Configure marketplace installation scopes.
-4. Run advanced eval harness and publication gates.
-5. Validate observability tabs and workflow invocation audit.
+The marketplace surfaces installable workflow templates. The internal seed includes:
+
+- `forge.reference.intent-to-deploy@1.0.0` (tag: `reference,forge`)
+- additional reference workflows as they ship
+
+Install a workflow into a Workspace:
+
+```sh
+curl -X POST http://localhost:8118/v1/installations \
+  -d '{"workspace_id": "<ws>", "workflow_id": "forge.reference.intent-to-deploy", "version": "1.0.0"}'
+```
+
+### Step 5.3: Advanced Eval Harness
+
+`services/eval-harness-adv` runs per-workflow evaluations on each new version. Configure pass thresholds in the workflow metadata; the registry rejects publishes below threshold.
+
+Phase 5 sign-off requires: a long-lived workflow execution record (≥ 1 hour wall-clock), ≥ 1 marketplace installation in a Workspace, ≥ 1 advanced eval-harness run with pass/fail evidence.
 
 ## Phase 6: Autonomous Ops
 
 Goal: enable autonomous operations, healing actions, incident response and governed remediation loops.
 
-Current source of truth:
+Source of truth: `openspec/changes/archive/2026-05-09-phase-6-autonomous-ops/`. Sign-off: [`docs/governance/phase-6-signoff.md`](governance/phase-6-signoff.md).
 
-```text
-openspec/changes/phase-6-autonomous-ops/
+### Step 6.1: Healing Actions Catalog
+
+Healing actions are registered in `services/healing-engine`. Each action specifies:
+
+- Reversibility classification (`reversible`, `irreversible`)
+- Pre-condition probes
+- Post-condition assertions
+- Approval requirement (per autonomy preset)
+
+Seed the catalog:
+
+```sh
+curl -X POST http://localhost:8129/v1/actions -d @docs/healing/catalog-seed.json
 ```
 
-Enablement steps to add when implementation starts:
+### Step 6.2: Simulated Remediation
 
-1. Register healing action catalog assets.
-2. Configure reversible action policies and high-criticality approvals.
-3. Seed incident/audit/RAG data sources.
-4. Validate self-healing simulations with strict guardrails.
-5. Record SRE/Security sign-off evidence.
+Remediation runs in a sandboxed namespace before applying to production. The sandbox runs the same NetworkPolicy and OpenFGA scopes as the target Workspace, so policy violations surface in simulation.
+
+```sh
+curl -X POST http://localhost:8129/v1/incidents/<id>/simulate-remediation
+```
+
+### Step 6.3: Evolution Loop
+
+The evolution loop captures simulated and applied remediations as candidate OpenSpec changes (`source: autonomous-loop`). Reviewers approve or reject in the [Evolution Inbox](../portal/src/app/evolution/page.tsx).
+
+Phase 6 sign-off requires: healing action catalog populated, ≥ 1 simulated remediation under guardrails, ≥ 1 evolution-loop record proposing an OpenSpec update.
 
 ## Standard Validation Matrix
 

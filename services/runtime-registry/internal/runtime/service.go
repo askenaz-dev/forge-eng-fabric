@@ -66,13 +66,14 @@ func (b *InMemoryBackends) Bootstrap(tenantID string) {
 }
 
 type Service struct {
-	Store        *Store
-	KMS          KMS
-	Sink         Sink
-	Preflight    PreflightChecker
-	Provisioner  TerraformProvisioner
-	ActiveCheck  ActiveDeploymentChecker
-	Backends     StateBackends
+	Store         *Store
+	KMS           KMS
+	Sink          Sink
+	Preflight     PreflightChecker
+	Verifier      Verifier
+	Provisioner   TerraformProvisioner
+	ActiveCheck   ActiveDeploymentChecker
+	Backends      StateBackends
 	OverrideAdmin bool
 }
 
@@ -82,10 +83,50 @@ func NewService(store *Store, sink Sink) *Service {
 		KMS:         NewFakeKMS(),
 		Sink:        sink,
 		Preflight:   NewStaticPreflightChecker(),
+		Verifier:    NewStaticVerifier(),
 		Provisioner: NewFakeTerraformProvisioner(),
 		ActiveCheck: NoActiveDeployments{},
 		Backends:    NewInMemoryBackends(),
 	}
+}
+
+// RunVerify executes the verifier on a runtime, persists the report as
+// evidence on the runtime record, and emits an audit event. Spec D7 plus
+// task 2.13 require timestamp + caller principal in the persisted record.
+func (s *Service) RunVerify(ctx context.Context, runtimeID, principal string, hints VerifyHints) (*VerifyReport, error) {
+	r, ok := s.Store.Get(runtimeID)
+	if !ok {
+		return nil, ErrRuntimeNotFound
+	}
+	report := s.Verifier.Verify(ctx, r, hints)
+	report.RuntimeID = r.ID
+	report.WorkspaceID = r.WorkspaceID
+	report.Type = r.Type
+	report.Mode = r.Mode
+	report.Principal = principal
+	if report.ID == "" {
+		report.ID = newID()
+	}
+	stored := report
+	s.Store.AppendVerify(&stored)
+	_ = s.Sink.Emit(newEvent(r, "runtime.verified.v1", map[string]any{
+		"runtime_id": r.ID,
+		"verify_id":  report.ID,
+		"status":     string(report.Status),
+		"principal":  principal,
+		"checks":     report.Checks,
+	}))
+	return &stored, nil
+}
+
+// LatestVerify returns the most recent verification report for a runtime, or
+// nil if none has been recorded.
+func (s *Service) LatestVerify(runtimeID string) *VerifyReport {
+	reports := s.Store.Verifications(runtimeID)
+	if len(reports) == 0 {
+		return nil
+	}
+	return reports[len(reports)-1]
 }
 
 // Register implements `byo-runtime-onboarding` register flow.
