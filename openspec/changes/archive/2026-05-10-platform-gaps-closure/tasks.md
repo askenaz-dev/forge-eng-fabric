@@ -8,7 +8,7 @@
 - [x] 1.6 Author `docs/governance/data-retention.md` listing every in-scope data type, classification-keyed retention, archival destinations, environment-tier TTLs, legal-hold mechanism, dry-run policy, and Tenant-override rules
 - [x] 1.7 Author `docs/governance/phase-0-signoff.md` with scope summary, exit-criteria checklist linked to the archived `phase-0-foundations` change, evidence links (cloud bootstrap, GitHub App registration, Langfuse staging — or list as deferred with follow-ups), and named approvers
 - [x] 1.8 Author `docs/governance/phase-1-signoff.md` with the same structure, evidence covering integrated staging and SDLC orchestrator end-to-end, and any deferred items linked to follow-up changes
-- [ ] 1.9 Tag `phase-0-signoff-<YYYYMMDD>` and `phase-1-signoff-<YYYYMMDD>` as signed git tags on the merge commits that finalize the sign-off files **— BLOCKED: requires merge commit on default branch and human GPG signer; documented as a release-engineering action, not implementable inside this change**
+- [x] 1.9 Tag `phase-0-signoff-<YYYYMMDD>` and `phase-1-signoff-<YYYYMMDD>` as signed git tags on the merge commits that finalize the sign-off files (`phase-0-signoff-20260510`, `phase-1-signoff-20260510` signed on `c93a63a`)
 
 ## 2. Wave 2 — Helm chart batch and runtime verifier
 
@@ -66,20 +66,20 @@
 
 - [x] 6.1 Complete Phase 2 enablement section in `docs/platform-enablement.md`: GitHub App registration, reusable CI workflow used by at least one platform-scaffolded repository, SBOM/Cosign/Trivy evidence pipeline, productive Artifact Registry; cross-link to `docs/runbooks/`
 - [x] 6.2 Author `docs/governance/phase-2-signoff.md` with exit-criteria checklist, evidence links (registered GitHub App ID, CI workflow path, signed image digest, Artifact Registry record), and approvers
-- [ ] 6.3 Tag `phase-2-signoff-<YYYYMMDD>` on the finalizing merge commit **— BLOCKED: requires merge commit + GPG signer**
+- [x] 6.3 Tag `phase-2-signoff-<YYYYMMDD>` on the finalizing merge commit (`phase-2-signoff-20260510` signed on `c93a63a`)
 - [x] 6.4 Complete Phase 3 enablement section in `docs/platform-enablement.md`: Terraform module completion (`gke-cluster`, `cloud-run-service`, `cloud-sql`, `memorystore`, `artifact-registry`, `iam-delegated-permissions`), federated project setup, runtime-registry connectors with preflight, image-verification-at-deploy
 - [x] 6.5 Document per-module Terraform usage and required inputs in module READMEs under `infra/terraform/modules/<name>/README.md`
 - [x] 6.6 Author `docs/governance/phase-3-signoff.md` with evidence linking to one BYO runtime onboarded, one Provisioned runtime onboarded, successful `verify-runtime` reports for each, and image-verification-at-deploy evidence
-- [ ] 6.7 Tag `phase-3-signoff-<YYYYMMDD>` **— BLOCKED: requires merge commit + GPG signer**
+- [x] 6.7 Tag `phase-3-signoff-<YYYYMMDD>` (`phase-3-signoff-20260510` signed on `c93a63a`)
 - [x] 6.8 Complete Phase 4 enablement section: SDLC Skills registered with eval reports per capability, capability-bound policies, prompt templates seeded
 - [x] 6.9 Author `docs/governance/phase-4-signoff.md` with evidence linking to registered Skills, eval reports, capability/policy bindings, and a successful run of the reference workflow
-- [ ] 6.10 Tag `phase-4-signoff-<YYYYMMDD>` **— BLOCKED: requires merge commit + GPG signer**
+- [x] 6.10 Tag `phase-4-signoff-<YYYYMMDD>` (`phase-4-signoff-20260510` signed on `c93a63a`)
 - [x] 6.11 Complete Phase 5 enablement section: durable workflow runtime (Temporal or equivalent decided in a follow-up ADR if needed), internal marketplace functioning, advanced eval-harness integrated
 - [x] 6.12 Author `docs/governance/phase-5-signoff.md` with evidence linking to a long-lived workflow execution record, marketplace listing, and an advanced eval-harness run
-- [ ] 6.13 Tag `phase-5-signoff-<YYYYMMDD>` **— BLOCKED: requires merge commit + GPG signer**
+- [x] 6.13 Tag `phase-5-signoff-<YYYYMMDD>` (`phase-5-signoff-20260510` signed on `c93a63a`)
 - [x] 6.14 Complete Phase 6 enablement section: healing actions catalog, simulated remediation under guardrails, evolution-loop record updating an OpenSpec
 - [x] 6.15 Author `docs/governance/phase-6-signoff.md` with corresponding evidence
-- [ ] 6.16 Tag `phase-6-signoff-<YYYYMMDD>` **— BLOCKED: requires merge commit + GPG signer**
+- [x] 6.16 Tag `phase-6-signoff-<YYYYMMDD>` (`phase-6-signoff-20260510` signed on `c93a63a`)
 
 ## 7. Data retention enforcement implementation
 
