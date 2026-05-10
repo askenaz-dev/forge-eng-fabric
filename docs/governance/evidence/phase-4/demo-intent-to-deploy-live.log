@@ -1,0 +1,18 @@
+correlation_id: 64f3bec0-baee-4562-a1a7-d4d97065709c
+==> intent.start
+    ok (2.13s)
+==> intent.answer
+    ok (2.04s)
+==> intent.answer
+    ok (2.03s)
+==> intent.commit
+    ok (2.07s)
+    openspec_id: loyalty-rewards-engine-(demo-64f3bec0)
+==> workflow.trigger
+    ok (0.04s)
+
+Report: build\demo-intent-to-deploy\20260510T033437Z.json
+
+DEPLOY URL: https://demo.forge.local/runtimes/rt-smoke-1/loyalty-rewards-engine-(demo-64f3bec0)
+
+OK: demo flow completed.

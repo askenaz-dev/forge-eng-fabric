@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -48,13 +49,13 @@ func (h *Handler) metrics(w http.ResponseWriter, _ *http.Request) {
 }
 
 type startRequest struct {
-	TenantID      string         `json:"tenant_id"`
-	WorkspaceID   string         `json:"workspace_id"`
-	WorkflowYAML  string         `json:"workflow_yaml,omitempty"`
+	TenantID      string          `json:"tenant_id"`
+	WorkspaceID   string          `json:"workspace_id"`
+	WorkflowYAML  string          `json:"workflow_yaml,omitempty"`
 	Workflow      json.RawMessage `json:"workflow,omitempty"`
-	Inputs        map[string]any `json:"inputs,omitempty"`
-	CorrelationID string         `json:"correlation_id,omitempty"`
-	DryRun        bool           `json:"dry_run,omitempty"`
+	Inputs        map[string]any  `json:"inputs,omitempty"`
+	CorrelationID string          `json:"correlation_id,omitempty"`
+	DryRun        bool            `json:"dry_run,omitempty"`
 }
 
 func (h *Handler) start(w http.ResponseWriter, r *http.Request) {
@@ -73,7 +74,7 @@ func (h *Handler) start(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	exec, err := h.Service.Engine.StartWorkflow(r.Context(), StartRequest{
+	exec, err := h.Service.Engine.StartWorkflow(context.WithoutCancel(r.Context()), StartRequest{
 		TenantID:      req.TenantID,
 		WorkspaceID:   req.WorkspaceID,
 		Workflow:      wf,

@@ -85,11 +85,35 @@ dependencies:
 """
 
 
+def _flavor_defaults(flavor: str) -> dict:
+    flavor_values = REPO / "infra" / "helm" / "_flavors" / flavor / "values.yaml"
+    if not flavor_values.exists():
+        return {}
+    return yaml.safe_load(flavor_values.read_text(encoding="utf-8")) or {}
+
+
+def _deep_merge(base: dict, overlay: dict) -> dict:
+    out = dict(base)
+    for key, value in overlay.items():
+        if key in out and isinstance(out[key], dict) and isinstance(value, dict):
+            out[key] = _deep_merge(out[key], value)
+        else:
+            out[key] = value
+    return out
+
+
 def values_yaml(svc: str, flavor: str) -> str:
-    overrides = SERVICE_OVERRIDES.get(svc, {})
-    if not overrides:
-        overrides = {"image": {"repository": f"forge/{svc}"}}
-    return yaml.safe_dump(overrides, sort_keys=False, default_flow_style=False)
+    """Inline the flavor's default values plus per-service overrides.
+
+    Helm library charts don't merge their `values.yaml` into the consuming
+    chart automatically — the consumer must supply every key the templates
+    reference. We pre-merge here so each service chart's values.yaml is
+    self-contained and `helm template` works without extra flags.
+    """
+    base = _flavor_defaults(flavor)
+    overrides = SERVICE_OVERRIDES.get(svc, {"image": {"repository": f"forge/{svc}"}})
+    merged = _deep_merge(base, overrides)
+    return yaml.safe_dump(merged, sort_keys=False, default_flow_style=False)
 
 
 def values_overlay(svc: str, env: str) -> str:
@@ -238,6 +262,15 @@ def gen_chart(svc: str, flavor: str) -> int:
     if svc in PRESERVE_EXISTING:
         return 0
     chart_dir = HELM / svc
+    # Wipe stale per-resource templates left over from older hand-authored
+    # charts; the generator owns templates/all.yaml as the single source.
+    templates_dir = chart_dir / "templates"
+    if templates_dir.exists():
+        for stale in templates_dir.iterdir():
+            if stale.name == "all.yaml":
+                continue
+            if stale.is_file():
+                stale.unlink()
     written = 0
     if write_if_changed(chart_dir / "Chart.yaml", chart_yaml(svc, flavor)):
         written += 1

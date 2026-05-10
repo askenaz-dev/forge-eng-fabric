@@ -1,7 +1,7 @@
 # Intent-to-Deploy Demo Runbook
 
 > Workflow: `forge.reference.intent-to-deploy@1.0.0`
-> Last validated: 2026-05-09 (synthetic-only locally; full live run pending Phase 3 sign-off)
+> Last validated: 2026-05-10 (local workflow-runtime dry-run and ephemeral staging GKE runtime; `workflow_trigger_synthetic=false`)
 > Make target: `make demo-intent-to-deploy`
 
 This runbook drives a complete intent-to-deploy traversal:
@@ -110,7 +110,7 @@ curl -X PATCH http://localhost:8083/v1/openspecs/<openspec_id> \
 
 ## Validation date
 
-This runbook was last validated on **2026-05-09** in synthetic-only mode. Live-mode validation against staging GKE is a Phase 3 sign-off task; see [`platform-gaps-closure` task 8.2](../../openspec/changes/platform-gaps-closure/tasks.md).
+This runbook was last validated on **2026-05-10** against a local `workflow-runtime` dry-run and an ephemeral staging GKE Autopilot runtime (`workflow_trigger_synthetic=false`). Staging GKE evidence: [`demo-intent-to-deploy-staging-gke-20260510T194106Z.json`](../governance/evidence/phase-4/demo-intent-to-deploy-staging-gke-20260510T194106Z.json).
 
 ## Related
 

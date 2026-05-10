@@ -1,0 +1,22 @@
+
+Runtime verification — 87fe27ba-ec64-4d81-b3c3-1682313f0943 (provisioned, gke)
+Workspace: ws-pilot
+Principal: make-verify-runtime
+Started:   2026-05-09T18:50:54.8631639Z
+Ended:     2026-05-09T18:50:54.8631639Z
+Overall:   FAIL
+
+  [PASS] federated_iam_scope
+           evidence: sa=forge-deployer@forge-acme-prod.iam.gserviceaccount.com; project=forge-acme-prod
+  [FAIL] artifact_registry_image_pull
+           evidence: no Artifact Registry repo binding found for the workspace
+           remediation: Bind the Workspace's Artifact Registry repo to the runtime SA via terraform module.artifact-registry.
+  [WARN] observability_collector_reachable
+           evidence: observability collector reachability not confirmed by hints
+           remediation: Run `kubectl -n observability port-forward svc/otel-collector 4317:4317` and verify the runtime's traces appear in Tempo.
+  [WARN] network_egress_platform_endpoints
+           evidence: NetworkPolicy or VPC firewall not verified for required egress
+           remediation: Confirm the runtime's NetworkPolicy egress block allows LiteLLM (TCP 8080), Artifact Registry (TCP 443), and OTel collector (gRPC 4317).
+
+FAIL: 1 check(s) failed.
+make: *** [Makefile:90: verify-runtime] Error 1

@@ -1,0 +1,14 @@
+NAME: forge-platform
+LAST DEPLOYED: Sat May  9 17:53:21 2026
+NAMESPACE: forge
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+      3 cronjob.batch
+     33 deployment.apps
+      2 job.batch
+     36 networkpolicy.networking.k8s.io
+     35 pod
+     33 replicaset.apps
+     26 service
+     37 serviceaccount

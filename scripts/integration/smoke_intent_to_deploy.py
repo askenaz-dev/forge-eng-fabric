@@ -44,7 +44,7 @@ def main() -> int:
         return 2
 
     env = os.environ.copy()
-    env.setdefault("WORKSPACE_ID", "smoke-workspace")
+    env.setdefault("WORKSPACE_ID", "22222222-2222-4222-8222-222222222222")
     env.setdefault("RUNTIME_ID", "rt-smoke-1")
 
     print("==> running make demo-intent-to-deploy")

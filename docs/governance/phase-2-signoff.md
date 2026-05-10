@@ -29,6 +29,7 @@ Phase 2 makes Forge able to onboard applications: a customer GitHub App is regis
 | Cosign signature | `.sig` + `.pem` | Attached to release artifact |
 | Trivy report | JSON | `docs/governance/evidence/phase-2/trivy-<image>.json` |
 | Artifact Registry record | URL | TBD per Tenant project |
+| Umbrella chart install | Helm install log | `docs/governance/evidence/phase-3/helm-install-umbrella.log` |
 
 ## Deferred Items
 

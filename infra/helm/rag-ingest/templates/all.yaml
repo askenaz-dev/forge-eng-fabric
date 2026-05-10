@@ -1,11 +1,11 @@
-{{- include "service-worker.deployment" . }}
+{{ include "service-worker.deployment" . }}
 ---
-{{- include "service-worker.serviceaccount" . }}
+{{ include "service-worker.serviceaccount" . }}
 ---
-{{- include "service-worker.hpa" . }}
+{{ include "service-worker.hpa" . }}
 ---
-{{- include "service-worker.pdb" . }}
+{{ include "service-worker.pdb" . }}
 ---
-{{- include "service-worker.networkpolicy" . }}
+{{ include "service-worker.networkpolicy" . }}
 ---
-{{- include "service-worker.servicemonitor" . }}
+{{ include "service-worker.servicemonitor" . }}

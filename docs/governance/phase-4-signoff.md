@@ -1,6 +1,6 @@
 # Phase 4 Sign-Off
 
-Status: Approved for bootstrap (role-based). Named approvers pending replacement of the role-based row when the SDLC reference workflow has been run end-to-end with eval-gated promotion evidence.
+Status: Approved for bootstrap (role-based). Named approvers pending replacement of the role-based row when eval-gated promotion evidence is attached to a live SDLC initiative.
 
 > **Reference change**: [`phase-4-sdlc-orchestration`](../../openspec/changes/archive/2026-05-09-phase-4-sdlc-orchestration/).
 
@@ -15,7 +15,7 @@ Phase 4 makes Forge expose SDLC capabilities (product, architecture, design, dev
 - [x] Capability-bound policies in `services/policy-engine` — see [`policy-engine` spec](../../openspec/specs/policy-engine/spec.md).
 - [x] Prompt templates seeded in `prompt-registry` — see `skills/reference/prompt-templates/`.
 - [x] Reference workflow `forge.reference.intent-to-deploy@1` registered — see `services/workflow-registry/seeds/`.
-- [ ] ≥ 1 successful run of the reference workflow against staging — **deferred**, see [Deferred Items](#deferred-items).
+- [x] ≥ 1 successful run of the reference workflow against staging GKE — see evidence below.
 
 ## Evidence Links
 
@@ -26,15 +26,15 @@ Phase 4 makes Forge expose SDLC capabilities (product, architecture, design, dev
 | Capability policies | Policy bundle | `services/policy-engine/bundles/` |
 | Prompt templates | Registry list output | `services/prompt-registry` |
 | Reference workflow | Registry record | `forge.reference.intent-to-deploy@1.0.0` |
-| End-to-end run | JSON report | `build/demo-intent-to-deploy/` (synthetic so far) |
-| Wizard transcript (non-engineer evaluator) | Transcript | TBD — see `platform-gaps-closure` 8.5 |
+| End-to-end local run | JSON report | `docs/governance/evidence/phase-4/demo-intent-to-deploy-local-20260510T033437Z.json` (`workflow_trigger_synthetic=false`) |
+| End-to-end staging GKE run | JSON report | `docs/governance/evidence/phase-4/demo-intent-to-deploy-staging-gke-20260510T194106Z.json` (`workflow_trigger_synthetic=false`, ephemeral cluster deleted) |
+| Reference workflow smoke | Smoke log | `docs/governance/evidence/phase-4/smoke-live.log` |
+| Wizard transcript (non-engineer evaluator) | Transcript | `docs/governance/evidence/phase-4/wizard-nontechnical-transcript-20260510.md` |
 
 ## Deferred Items
 
 | Item | Owner | Target | Tracker |
 |---|---|---|---|
-| ≥ 1 successful end-to-end run of the reference workflow against staging | SDLC | 2026-Q3 | `platform-gaps-closure` 8.2 |
-| Wizard transcript by a non-technical evaluator | Product | 2026-Q3 | `platform-gaps-closure` 8.5 |
 | Live SDLC initiative running through the orchestrator end-to-end | SDLC | 2026-Q3 | follow-up |
 
 ## Approvers

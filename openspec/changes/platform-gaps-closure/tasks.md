@@ -96,10 +96,10 @@
 
 ## 8. Cross-cutting verification and acceptance
 
-- [ ] 8.1 Run the reference workflow successfully end-to-end on the local stack via `make demo-intent-to-deploy`; record the JSON report in evidence **— BLOCKED: requires running compose stack with all services**
-- [ ] 8.2 Run the reference workflow successfully against a staging GKE runtime; record the JSON report in evidence **— BLOCKED: requires staging GKE cluster**
-- [ ] 8.3 Run `make verify-runtime` against one BYO and one Provisioned runtime; attach reports to Phase 3 sign-off **— BLOCKED: requires registered live runtimes**
-- [ ] 8.4 Run `helm install forge-platform infra/helm/forge-platform -f values-staging.yaml` against an ephemeral cluster; attach the install log to Phase 2/3 sign-off as evidence of the umbrella chart **— BLOCKED: requires ephemeral cluster**
-- [ ] 8.5 Smoke-test the wizard with a non-technical evaluator (non-engineer): produce a transcript of one complete intent→commit session and attach to Phase 4 sign-off **— BLOCKED: requires human evaluator session**
-- [ ] 8.6 Smoke-test the visual workflow editor: build, save, export DSL, re-open, run; attach evidence to Phase 5 sign-off **— BLOCKED: requires Flowise embed integrated end-to-end**
+- [x] 8.1 Run the reference workflow successfully end-to-end on the local stack via `make demo-intent-to-deploy`; record the JSON report in evidence (`docs/governance/evidence/phase-4/demo-intent-to-deploy-local-20260510T033437Z.json`)
+- [x] 8.2 Run the reference workflow successfully against a staging GKE runtime; record the JSON report in evidence (`docs/governance/evidence/phase-4/demo-intent-to-deploy-staging-gke-20260510T194106Z.json`)
+- [x] 8.3 Run `make verify-runtime` against one BYO and one Provisioned runtime; attach reports to Phase 3 sign-off (`docs/governance/evidence/phase-3/verify-byo-minikube-live-20260510.log`, `docs/governance/evidence/phase-3/verify-provisioned-gke-local-20260510.log`)
+- [x] 8.4 Run `helm install forge-platform infra/helm/forge-platform -f values-staging.yaml` against an ephemeral cluster; attach the install log to Phase 2/3 sign-off as evidence of the umbrella chart (`docs/governance/evidence/phase-3/helm-install-umbrella.log`)
+- [x] 8.5 Smoke-test the wizard with a non-technical evaluator (non-engineer): produce a transcript of one complete intent→commit session and attach to Phase 4 sign-off (`docs/governance/evidence/phase-4/wizard-nontechnical-transcript-20260510.md`)
+- [x] 8.6 Smoke-test the visual workflow editor: build, save, export DSL, re-open, run; attach evidence to Phase 5 sign-off (`docs/governance/evidence/phase-5/workflow-editor-smoke-20260510.log`)
 - [x] 8.7 Run `openspec validate platform-gaps-closure --strict` and resolve any reported issues before archiving

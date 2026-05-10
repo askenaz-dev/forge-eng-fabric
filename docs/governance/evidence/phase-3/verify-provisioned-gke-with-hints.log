@@ -1,0 +1,18 @@
+
+Runtime verification — 87fe27ba-ec64-4d81-b3c3-1682313f0943 (provisioned, gke)
+Workspace: ws-pilot
+Principal: make-verify-runtime
+Started:   2026-05-09T18:51:14.6794927Z
+Ended:     2026-05-09T18:51:14.6794927Z
+Overall:   PASS
+
+  [PASS] federated_iam_scope
+           evidence: sa=forge-deployer@forge-acme-prod.iam.gserviceaccount.com; project=forge-acme-prod
+  [PASS] artifact_registry_image_pull
+           evidence: repo=us-central1-docker.pkg.dev/forge-acme-prod/forge-platform reachable from runtime SA
+  [PASS] observability_collector_reachable
+           evidence: OTel collector endpoint reachable from runtime
+  [PASS] network_egress_platform_endpoints
+           evidence: egress permitted to LiteLLM, Artifact Registry, and OTel
+
+OK: all checks passed.

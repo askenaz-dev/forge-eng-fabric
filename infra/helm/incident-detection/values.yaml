@@ -1,2 +1,54 @@
+replicaCount: 1
 image:
   repository: forge/incident-detection
+  tag: local
+  pullPolicy: IfNotPresent
+metricsPort: 9090
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 4
+  targetCPUUtilizationPercentage: 75
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+networkPolicy:
+  enabled: true
+  egressTo:
+  - ports:
+    - port: 53
+      protocol: UDP
+    to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+  - ports:
+    - port: 5432
+      protocol: TCP
+    to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: postgres
+  - ports:
+    - port: 9092
+      protocol: TCP
+    to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: kafka
+serviceMonitor:
+  enabled: true
+  path: /metrics
+  interval: 30s
+serviceAccount:
+  create: true
+  annotations: {}
+  rbacRules: []
+env: {}

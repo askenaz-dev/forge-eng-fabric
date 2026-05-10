@@ -1,0 +1,6 @@
+dependencies:
+- name: service-http
+  repository: file://../_flavors/service-http
+  version: 0.1.0
+digest: sha256:b935989a67a55b227a55b7d5b94854c695b89eb3342e28b21dae6c57040b405d
+generated: "2026-05-09T14:57:34.6968743-04:00"

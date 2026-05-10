@@ -1,0 +1,6 @@
+dependencies:
+- name: service-worker
+  repository: file://../_flavors/service-worker
+  version: 0.1.0
+digest: sha256:b96f1c14e09ac7823137a5272f372f0f524296f1d7552f176d38fade36fc4b5a
+generated: "2026-05-09T14:57:27.7180689-04:00"

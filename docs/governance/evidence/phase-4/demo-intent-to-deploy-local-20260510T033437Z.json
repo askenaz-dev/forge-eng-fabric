@@ -1,0 +1,28 @@
+{
+  "status": "ok",
+  "timestamp": "20260510T033437Z",
+  "command": "make demo-intent-to-deploy",
+  "workspace_id": "33333333-3333-4333-8333-333333333333",
+  "runtime_id": "rt-smoke-1",
+  "correlation_id": "64f3bec0-baee-4562-a1a7-d4d97065709c",
+  "openspec_id": "loyalty-rewards-engine-(demo-64f3bec0)",
+  "workflow_trigger_synthetic": false,
+  "workflow_execution_id": "9c7db695-6cf7-4ff4-9e6e-4a4091b60ab1",
+  "deploy_url": "https://demo.forge.local/runtimes/rt-smoke-1/loyalty-rewards-engine-(demo-64f3bec0)",
+  "source_report": "build/demo-intent-to-deploy/20260510T033437Z.json",
+  "steps": [
+    {"name": "intent.start", "status": "ok"},
+    {"name": "intent.answer", "status": "ok"},
+    {"name": "intent.answer", "status": "ok"},
+    {"name": "intent.commit", "status": "ok"},
+    {"name": "workflow.trigger", "status": "ok", "synthetic": false}
+  ],
+  "milestones": [
+    "intent.committed.v1",
+    "repo.scaffolded.v1",
+    "pr.opened.v1",
+    "ci.passed.v1",
+    "approval.granted.v1",
+    "deploy.completed.v1"
+  ]
+}

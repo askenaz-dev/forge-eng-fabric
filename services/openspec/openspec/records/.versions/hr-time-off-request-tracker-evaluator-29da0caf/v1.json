@@ -1,0 +1,53 @@
+{
+  "openspec_id": "hr-time-off-request-tracker-evaluator-29da0caf",
+  "workspace_id": "44444444-4444-4444-8444-444444444444",
+  "title": "HR time-off request tracker evaluator 29da0caf",
+  "business_intent": "Necesito una app interna para que RRHH gestione solicitudes de vacaciones sin usar comandos ni depender de ingeniería.",
+  "problem_statement": "",
+  "stakeholders": [
+    "RRHH",
+    "Managers",
+    "Empleados"
+  ],
+  "success_metrics": [
+    "aprobacion de solicitudes en menos de 2 dias",
+    "reducir correos manuales en 50%"
+  ],
+  "requirements": {
+    "functional": [
+      "Crear solicitudes de vacaciones",
+      "Aprobar o rechazar solicitudes",
+      "Mostrar calendario del equipo",
+      "Notificar decisiones por email"
+    ],
+    "non_functional": [
+      "Datos internos de empleados",
+      "Staging antes de produccion",
+      "Produccion requiere aprobacion manual"
+    ]
+  },
+  "constraints": [
+    "No almacenar datos sensibles fuera del workspace",
+    "Mantener auditoria de aprobaciones"
+  ],
+  "autonomy_policy": {
+    "default_mode": "requires_approval",
+    "approvals_required": [
+      "deploy:prod"
+    ]
+  },
+  "linked_artifacts": [],
+  "decision_log": [],
+  "audit": {
+    "created_by": "human-evaluator:chat-user",
+    "created_at": "2026-05-10T03:53:52.144246",
+    "updated_by": null,
+    "updated_at": null
+  },
+  "version": 1,
+  "source": "human",
+  "review_status": "approved",
+  "reviewed_by": null,
+  "review_comment": null,
+  "lifecycle_status": "committed"
+}

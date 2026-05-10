@@ -1,31 +1,87 @@
 {{- range $name, $cfg := .Values }}
+{{- if and (kindIs "map" $cfg) $cfg.image }}
 ---
-{{- $ctx := dict "Chart" (dict "Name" $name "Version" "0.1.0") "Values" $cfg "Release" $.Release "Capabilities" $.Capabilities "Files" $.Files }}
-{{- $cfg = merge $cfg (dict "fullnameOverride" $name) }}
-{{- $_ := set $cfg "fullnameOverride" $name }}
-{{- $_ := set $cfg "concurrencyPolicy" (default "Forbid" $cfg.concurrencyPolicy) }}
-{{- $_ := set $cfg "successfulJobsHistoryLimit" (default 3 $cfg.successfulJobsHistoryLimit) }}
-{{- $_ := set $cfg "failedJobsHistoryLimit" (default 1 $cfg.failedJobsHistoryLimit) }}
-{{- $_ := set $cfg "restartPolicy" (default "OnFailure" $cfg.restartPolicy) }}
-{{- $_ := set $cfg "backoffLimit" (default 2 $cfg.backoffLimit) }}
-{{- if not $cfg.resources }}
-{{- $_ := set $cfg "resources" (dict "requests" (dict "cpu" "100m" "memory" "256Mi") "limits" (dict "cpu" "1000m" "memory" "1Gi")) }}
-{{- end }}
-{{- if not $cfg.serviceAccount }}
-{{- $_ := set $cfg "serviceAccount" (dict "create" true "annotations" (dict) "rbacRules" list) }}
-{{- end }}
-{{- if not $cfg.networkPolicy }}
-{{- $_ := set $cfg "networkPolicy" (dict "enabled" true) }}
-{{- end }}
-{{- if not $cfg.image }}
-{{- $_ := set $cfg "image" (dict "repository" "forge/CHANGE-ME" "tag" "local" "pullPolicy" "IfNotPresent") }}
-{{- end }}
-{{- if not $cfg.image.pullPolicy }}
-{{- $_ := set $cfg.image "pullPolicy" "IfNotPresent" }}
-{{- end }}
-{{- include "service-cron.cronjob" $ctx }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $name }}
+  labels:
+    app.kubernetes.io/name: {{ $name }}
+    app.kubernetes.io/part-of: forge
+    forge.platform/flavor: service-cron
 ---
-{{- include "service-cron.serviceaccount" $ctx }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $name }}
+  labels:
+    app.kubernetes.io/name: {{ $name }}
+    app.kubernetes.io/part-of: forge
+    forge.platform/flavor: service-cron
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: {{ $name }}
+  policyTypes: [Ingress, Egress]
+  ingress: []
+  egress:
+    - ports:
+        - { port: 53, protocol: UDP }
+      to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+    - ports:
+        - { port: 5432, protocol: TCP }
+      to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: postgres
 ---
-{{- include "service-cron.networkpolicy" $ctx }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ $name }}
+  labels:
+    app.kubernetes.io/name: {{ $name }}
+    app.kubernetes.io/part-of: forge
+    forge.platform/flavor: service-cron
+spec:
+  schedule: {{ default "0 2 * * *" $cfg.schedule | quote }}
+  concurrencyPolicy: {{ default "Forbid" $cfg.concurrencyPolicy }}
+  successfulJobsHistoryLimit: {{ default 3 $cfg.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ default 1 $cfg.failedJobsHistoryLimit }}
+  jobTemplate:
+    spec:
+      backoffLimit: {{ default 2 $cfg.backoffLimit }}
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: {{ $name }}
+        spec:
+          serviceAccountName: {{ $name }}
+          restartPolicy: {{ default "OnFailure" $cfg.restartPolicy }}
+          containers:
+            - name: {{ $name }}
+              image: "{{ $cfg.image.repository }}:{{ default "local" $cfg.image.tag }}"
+              imagePullPolicy: {{ default "IfNotPresent" $cfg.image.pullPolicy }}
+              env:
+                {{- range $k, $v := $cfg.env }}
+                - name: {{ $k }}
+                  value: {{ $v | quote }}
+                {{- end }}
+              resources:
+                requests:
+                  cpu: {{ default "100m" (dig "resources" "requests" "cpu" "100m" $cfg) }}
+                  memory: {{ default "256Mi" (dig "resources" "requests" "memory" "256Mi" $cfg) }}
+                limits:
+                  cpu: {{ default "1000m" (dig "resources" "limits" "cpu" "1000m" $cfg) }}
+                  memory: {{ default "1Gi" (dig "resources" "limits" "memory" "1Gi" $cfg) }}
+              securityContext:
+                allowPrivilegeEscalation: false
+                runAsNonRoot: true
+                runAsUser: 1000
+                capabilities:
+                  drop: ["ALL"]
+{{- end }}
 {{- end }}

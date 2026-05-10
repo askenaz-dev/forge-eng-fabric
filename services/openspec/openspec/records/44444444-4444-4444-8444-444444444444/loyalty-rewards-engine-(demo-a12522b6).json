@@ -1,0 +1,47 @@
+{
+  "openspec_id": "loyalty-rewards-engine-(demo-a12522b6)",
+  "workspace_id": "44444444-4444-4444-8444-444444444444",
+  "title": "Loyalty rewards engine (demo a12522b6)",
+  "business_intent": "Track purchase history and issue tier-based discounts to retail customers.",
+  "problem_statement": "",
+  "stakeholders": [
+    "Customer Support",
+    "Operations",
+    "Marketing"
+  ],
+  "success_metrics": [
+    "redemption rate >= 30%",
+    "tier-up rate per quarter"
+  ],
+  "requirements": {
+    "functional": [
+      "Track customer purchase history",
+      "Issue tier-based discount codes",
+      "Integrate with POS system at checkout"
+    ],
+    "non_functional": [
+      "P99 < 200ms at checkout"
+    ]
+  },
+  "constraints": [
+    "No PII in audit logs"
+  ],
+  "autonomy_policy": {
+    "default_mode": "autonomous",
+    "approvals_required": []
+  },
+  "linked_artifacts": [],
+  "decision_log": [],
+  "audit": {
+    "created_by": "demo:make-demo-intent-to-deploy",
+    "created_at": "2026-05-10T19:50:51.818399",
+    "updated_by": null,
+    "updated_at": null
+  },
+  "version": 1,
+  "source": "human",
+  "review_status": "approved",
+  "reviewed_by": null,
+  "review_comment": null,
+  "lifecycle_status": "committed"
+}

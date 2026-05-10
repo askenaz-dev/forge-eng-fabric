@@ -4,7 +4,3 @@ description: Forge retention and archival cron jobs (audit partitioning, archiva
 type: application
 version: 0.1.0
 appVersion: "0.1.0"
-dependencies:
-  - name: service-cron
-    version: 0.1.0
-    repository: file://../_flavors/service-cron

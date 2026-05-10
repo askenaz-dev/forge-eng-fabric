@@ -25,11 +25,12 @@ import time
 import urllib.error
 import urllib.request
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 REPORT_DIR = REPO / "build" / "demo-intent-to-deploy"
+REFERENCE_WORKFLOW = REPO / "services" / "workflow-registry" / "seeds" / "forge.reference.intent-to-deploy.v1.yaml"
 
 DEFAULT_ALFRED = os.environ.get("ALFRED_URL", "http://localhost:8090")
 DEFAULT_OPENSPEC = os.environ.get("OPENSPEC_URL", "http://localhost:8083")
@@ -70,7 +71,7 @@ def step(name: str, fn, report: list) -> dict:
 
 def write_report(report: list, status: str, **extra) -> Path:
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
-    ts = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+    ts = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     path = REPORT_DIR / f"{ts}.json"
     body = {
         "status": status,
@@ -114,7 +115,7 @@ def main() -> int:
                     body={
                         "workspace_id": args.workspace,
                         "created_by": "demo:make-demo-intent-to-deploy",
-                        "title": "Loyalty rewards engine (demo)",
+                        "title": f"Loyalty rewards engine (demo {correlation_id[:8]})",
                         "business_intent": "Track purchase history and issue tier-based discounts to retail customers.",
                         "correlation_id": correlation_id,
                     },
@@ -123,6 +124,8 @@ def main() -> int:
             )
             draft_id = draft["draft_id"]
         except Exception as exc:
+            if isinstance(exc, RuntimeError) and str(exc).startswith("http "):
+                raise
             print(f"    (openspec unreachable: {exc} — synthesizing draft)")
             synthetic_intent = True
             draft_id = f"draft-{uuid.uuid4()}"
@@ -235,12 +238,14 @@ def trigger_workflow(base: str, openspec_id: str, workspace_id: str, runtime_id:
     so local development still exercises the demo end-to-end.
     """
     try:
+        workflow_yaml = REFERENCE_WORKFLOW.read_text(encoding="utf-8")
         status, body = http_request(
             f"{base}/v1/executions",
             method="POST",
             body={
-                "workflow_id": "forge.reference.intent-to-deploy",
-                "workflow_version": "1.0.0",
+                "tenant_id": "demo-tenant",
+                "workspace_id": workspace_id,
+                "workflow_yaml": workflow_yaml,
                 "inputs": {
                     "openspec_id": openspec_id,
                     "workspace_id": workspace_id,
@@ -248,12 +253,46 @@ def trigger_workflow(base: str, openspec_id: str, workspace_id: str, runtime_id:
                     "target_env": "staging",
                 },
                 "correlation_id": correlation_id,
+                "dry_run": True,
             },
             timeout=30,
         )
-        if status < 400:
-            return body
-    except Exception:
+        if status >= 400:
+            raise RuntimeError(f"http {status}: {body}")
+
+        execution_id = body["id"]
+        execution = wait_for_execution(base, "demo-tenant", execution_id, {"waiting", "completed", "failed", "cancelled"})
+        if execution.get("status") == "waiting":
+            status, signal_body = http_request(
+                f"{base}/v1/executions/{execution_id}/signal?tenant_id=demo-tenant",
+                method="POST",
+                body={
+                    "signal": "approve",
+                    "payload": {
+                        "approval_id": f"demo-{execution_id}",
+                        "approved_by": "demo:auto-approve",
+                    },
+                },
+                timeout=30,
+            )
+            if status >= 400:
+                raise RuntimeError(f"http {status}: {signal_body}")
+            execution = wait_for_execution(base, "demo-tenant", execution_id, {"completed", "failed", "cancelled"})
+
+        if execution.get("status") != "completed":
+            raise RuntimeError(
+                f"workflow execution {execution_id} ended {execution.get('status')}: "
+                f"{execution.get('failure_reason', '')}"
+            )
+        return {
+            "execution_id": execution_id,
+            "approval_id": None,
+            "deploy_url": (execution.get("outputs") or {}).get("deploy_url")
+            or f"https://demo.forge.local/runtimes/{runtime_id}/{openspec_id}",
+            "milestones": milestones_from_execution(execution, correlation_id),
+            "synthetic": False,
+        }
+    except urllib.error.URLError:
         pass
     # Local-dev fallback: synthesize a successful execution shape.
     print("    (workflow-runtime unreachable — synthesizing demo execution)")
@@ -271,6 +310,38 @@ def trigger_workflow(base: str, openspec_id: str, workspace_id: str, runtime_id:
         ],
         "synthetic": True,
     }
+
+
+def wait_for_execution(base: str, tenant_id: str, execution_id: str, terminal: set[str]) -> dict:
+    deadline = time.time() + 20
+    last: dict = {}
+    while time.time() < deadline:
+        status, body = http_request(
+            f"{base}/v1/executions/{execution_id}?tenant_id={tenant_id}",
+            timeout=5,
+        )
+        if status >= 400:
+            raise RuntimeError(f"http {status}: {body}")
+        last = body
+        if body.get("status") in terminal:
+            return body
+        time.sleep(0.25)
+    raise RuntimeError(f"workflow execution {execution_id} did not reach {sorted(terminal)}; last={last.get('status')}")
+
+
+def milestones_from_execution(execution: dict, correlation_id: str) -> list[dict]:
+    completed = {step.get("step_id") for step in execution.get("steps", []) if step.get("status") == "completed"}
+    milestones = [{"event": "intent.committed.v1", "correlation_id": correlation_id}]
+    for step_id, event in [
+        ("scaffold", "repo.scaffolded.v1"),
+        ("open-pr", "pr.opened.v1"),
+        ("ci-build", "ci.passed.v1"),
+        ("prod-approval-gate", "approval.granted.v1"),
+        ("deploy", "deploy.completed.v1"),
+    ]:
+        if step_id in completed:
+            milestones.append({"event": event, "correlation_id": correlation_id})
+    return milestones
 
 
 if __name__ == "__main__":

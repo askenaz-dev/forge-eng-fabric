@@ -12,10 +12,42 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 HELM_DIR="${REPO_ROOT}/infra/helm"
 
-if ! command -v helm >/dev/null 2>&1; then
+HELM_BIN="${HELM_BIN:-helm}"
+if ! command -v "${HELM_BIN}" >/dev/null 2>&1; then
+  if command -v helm.exe >/dev/null 2>&1; then
+    HELM_BIN="helm.exe"
+  fi
+fi
+
+if ! command -v "${HELM_BIN}" >/dev/null 2>&1; then
   echo "ERROR: helm CLI not found in PATH" >&2
   exit 2
 fi
+
+HELM_CMD_PATH="$(command -v "${HELM_BIN}")"
+HELM_WINDOWS_PATHS=0
+if [[ "${HELM_CMD_PATH}" == /mnt/* || "${HELM_CMD_PATH}" == *.exe ]]; then
+  HELM_WINDOWS_PATHS=1
+fi
+
+helm_path() {
+  local path="$1"
+  if [[ "${HELM_WINDOWS_PATHS}" == "1" ]]; then
+    if command -v cygpath >/dev/null 2>&1; then
+      cygpath -w "${path}"
+    elif command -v wslpath >/dev/null 2>&1; then
+      wslpath -w "${path}"
+    elif [[ "${path}" =~ ^/mnt/([A-Za-z])/(.*)$ ]]; then
+      local drive="${BASH_REMATCH[1]^^}"
+      local rest="${BASH_REMATCH[2]//\//\\}"
+      printf '%s:\\%s' "${drive}" "${rest}"
+    else
+      printf '%s' "${path}"
+    fi
+  else
+    printf '%s' "${path}"
+  fi
+}
 
 # Update flavor library deps for every chart that declares one.
 echo ">> helm dependency update (flavor libraries)"
@@ -25,7 +57,7 @@ find "${HELM_DIR}" -mindepth 2 -maxdepth 2 -type f -name Chart.yaml | while read
     continue
   fi
   if grep -q "dependencies:" "${chart}"; then
-    (cd "${chart_dir}" && helm dependency update >/dev/null)
+    "${HELM_BIN}" dependency update "$(helm_path "${chart_dir}")" >/dev/null
   fi
 done
 
@@ -37,7 +69,7 @@ for chart in "${HELM_DIR}"/*/Chart.yaml; do
   if [[ "${chart_name}" == "_flavors" ]]; then
     continue
   fi
-  if ! helm lint "${chart_dir}" >/tmp/helm-lint-"${chart_name}".log 2>&1; then
+  if ! "${HELM_BIN}" lint "$(helm_path "${chart_dir}")" >/tmp/helm-lint-"${chart_name}".log 2>&1; then
     echo "LINT FAILED: ${chart_name}"
     cat /tmp/helm-lint-"${chart_name}".log
     LINT_FAILED=1
@@ -78,7 +110,7 @@ for chart in "${HELM_DIR}"/*/Chart.yaml; do
     continue
   fi
 
-  rendered=$(helm template "${chart_dir}" 2>/dev/null || true)
+  rendered=$("${HELM_BIN}" template "$(helm_path "${chart_dir}")" 2>/dev/null || true)
   if [[ -z "${rendered}" ]]; then
     echo "  SKIP: ${chart_name} could not be rendered"
     continue

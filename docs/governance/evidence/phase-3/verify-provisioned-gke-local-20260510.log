@@ -1,0 +1,19 @@
+PROVISIONED_RUNTIME_ID=bb13ad9d-0ccb-44a5-8729-0dba803ff309
+
+Runtime verification - bb13ad9d-0ccb-44a5-8729-0dba803ff309 (provisioned, gke)
+Workspace: ws-pilot
+Principal: make-verify-runtime
+Started:   2026-05-10T03:44:07.3635913Z
+Ended:     2026-05-10T03:44:07.3635913Z
+Overall:   PASS
+
+  [PASS] federated_iam_scope
+           evidence: sa=forge-deployer@forge-ws-pilot-staging.iam.gserviceaccount.com; project=forge-ws-pilot-staging
+  [PASS] artifact_registry_image_pull
+           evidence: repo=us-central1-docker.pkg.dev/forge-ws-pilot-staging/forge-platform reachable from runtime SA
+  [PASS] observability_collector_reachable
+           evidence: OTel collector endpoint reachable from runtime
+  [PASS] network_egress_platform_endpoints
+           evidence: egress permitted to LiteLLM, Artifact Registry, and OTel
+
+OK: all checks passed.

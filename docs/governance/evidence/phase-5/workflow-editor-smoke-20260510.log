@@ -1,0 +1,22 @@
+Command: npm run build (portal)
+Result: PASS
+Route evidence: /workflows and /workflows/editor built successfully by Next.js.
+
+Command: python scripts/integration/smoke_workflow_editor.py
+Result: PASS
+
+workflow_id: editor-smoke-20260510034744
+==> build DSL
+    sha256: ecc488a370f2a51742ce582ed3ea348e32ca45bcf7e9a217a0133ca443f4b907
+==> save workflow parent
+    ok
+==> save immutable version
+    version: 1.0.0
+==> export DSL
+    bytes: 534
+==> re-open saved version
+    ok
+==> run dry-run execution
+    execution_id: e0e4d320-cca8-466b-a207-6711fe09a45d
+    completed_steps: ['refine', 'notify']
+OK: workflow editor smoke completed

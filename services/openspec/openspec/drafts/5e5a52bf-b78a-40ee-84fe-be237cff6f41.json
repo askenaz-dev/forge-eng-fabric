@@ -1,0 +1,57 @@
+{
+  "draft_id": "5e5a52bf-b78a-40ee-84fe-be237cff6f41",
+  "workspace_id": "22222222-2222-4222-8222-222222222222",
+  "openspec_id": "loyalty-rewards-engine-(demo-eeddc6a4)",
+  "status": "committed",
+  "title": "Loyalty rewards engine (demo eeddc6a4)",
+  "business_intent": "Track purchase history and issue tier-based discounts to retail customers.",
+  "problem_statement": "",
+  "stakeholders": [
+    "Customer Support",
+    "Operations",
+    "Marketing"
+  ],
+  "success_metrics": [
+    "redemption rate >= 30%",
+    "tier-up rate per quarter"
+  ],
+  "requirements": {
+    "functional": [
+      "Track customer purchase history",
+      "Issue tier-based discount codes",
+      "Integrate with POS system at checkout"
+    ],
+    "non_functional": [
+      "P99 < 200ms at checkout"
+    ]
+  },
+  "constraints": [
+    "No PII in audit logs"
+  ],
+  "autonomy_policy": {
+    "default_mode": "autonomous",
+    "approvals_required": []
+  },
+  "created_by": "demo:make-demo-intent-to-deploy",
+  "created_at": "2026-05-10T03:29:53.970216",
+  "updated_at": "2026-05-10T03:30:00.162422",
+  "last_active_at": "2026-05-10T03:30:00.162426",
+  "turn_count": 2,
+  "dialogue_history": [
+    {
+      "turn": 1,
+      "question": null,
+      "answer": "Customer Support, Operations, Marketing",
+      "actor": "demo",
+      "ts": "2026-05-10T03:29:56.027338Z"
+    },
+    {
+      "turn": 2,
+      "question": null,
+      "answer": "Track purchases and tiers, issue discounts, integrate with POS",
+      "actor": "demo",
+      "ts": "2026-05-10T03:29:58.096501Z"
+    }
+  ],
+  "correlation_id": "eeddc6a4-aadc-4af3-be77-1100f68d875a"
+}

@@ -40,6 +40,14 @@ When the loaded version is not the latest, the editor renders **read-only**. The
 
 The editor MUST preserve canonical AST semantics across `Flowise format ↔ canonical AST`. The parity test lives at [`portal/src/lib/flowise-adapter/index.test.ts`](../../portal/src/lib/flowise-adapter/index.test.ts) and is part of `pnpm test`.
 
+Run the editor smoke after changes to the adapter, Portal workflow pages, `workflow-registry`, or `workflow-runtime`:
+
+```sh
+python scripts/integration/smoke_workflow_editor.py
+```
+
+The smoke builds a workflow DSL payload, saves a new immutable workflow version, exports the DSL, re-opens the saved version, and dry-runs it through `workflow-runtime`.
+
 If you observe a save that mangles the workflow:
 
 1. Run `pnpm test --filter flowise-adapter` and confirm the round-trip test still passes.

@@ -1,0 +1,52 @@
+{
+  "status": "ok",
+  "timestamp": "20260510T194106Z",
+  "change": "platform-gaps-closure",
+  "task": "8.2",
+  "project_id": "askenaz",
+  "region": "us-central1",
+  "cluster_name": "forge-pgc-stg-194106",
+  "logs": "C:\\Users\\guill\\AppData\\Local\\Temp\\opencode\\platform-gaps-gke-20260510-success-20260510T194106Z",
+  "cleanup_required": "cluster deletion verified before task completion",
+  "cluster": {
+    "name": "forge-pgc-stg-194106",
+    "project_id": "askenaz",
+    "region": "us-central1",
+    "status": "RUNNING",
+    "endpoint": "34.171.234.40",
+    "version": "1.35.3-gke.1389000",
+    "autopilot": true,
+    "kubectl_version": "Flag --short has been deprecated, and will be removed in the future. The --short output will become the default.\nClient Version: v1.25.3\nWARNING: version difference between client (1.25) and server (1.35) exceeds the supported minor version skew of +/-1\nKustomize Version: v4.5.7\nServer Version: v1.35.3-gke.1389000",
+    "default_namespace_reachable": true,
+    "namespace": "forge-staging",
+    "namespace_applied": true,
+    "service_account": "forge-deployer",
+    "scoped_sa_can_create_deployments": "yes"
+  },
+  "runtime": {
+    "id": "f85dce5b-03bb-4642-8f07-940f4b31b53a",
+    "mode": "byo",
+    "type": "gke",
+    "registry_url": "http://127.0.0.1:18110",
+    "verification_log": "C:\\Users\\guill\\AppData\\Local\\Temp\\opencode\\platform-gaps-gke-20260510-success-20260510T194106Z\\verify-runtime-staging-gke.log",
+    "verification_passed": true
+  },
+  "demo": {
+    "report_path": "C:\\forge-eng-fabric\\build\\demo-intent-to-deploy\\20260510T195052Z.json",
+    "log_path": "C:\\Users\\guill\\AppData\\Local\\Temp\\opencode\\platform-gaps-gke-20260510-success-20260510T194106Z\\demo-intent-to-deploy-staging-gke.log",
+    "status": "ok",
+    "openspec_id": "loyalty-rewards-engine-(demo-a12522b6)",
+    "correlation_id": "a12522b6-f8b3-4095-b965-8533758f897e",
+    "deploy_url": "https://demo.forge.local/runtimes/f85dce5b-03bb-4642-8f07-940f4b31b53a/loyalty-rewards-engine-(demo-a12522b6)",
+    "workflow_trigger_synthetic": false,
+    "runtime_id": "f85dce5b-03bb-4642-8f07-940f4b31b53a"
+  },
+  "cleanup": {
+    "cluster_delete_exit_code": 0,
+    "cluster_deleted": true,
+    "cluster_present_after_delete": false,
+    "remaining_clusters_after_delete": [],
+    "remaining_gke_node_instances_after_delete": [],
+    "container_api_disabled_after_cleanup": true
+  }
+}

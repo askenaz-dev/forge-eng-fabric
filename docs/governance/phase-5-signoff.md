@@ -27,6 +27,7 @@ Phase 5 makes Forge a workflow marketplace: customers can browse, install, and r
 | Workflow runtime tests | Test report | `services/workflow-runtime/...` (`go test ./...`) |
 | Workflow registry tests | Test report | `services/workflow-registry/...` (`go test ./...`) |
 | Visual editor round-trip test | Test report | `portal/src/lib/flowise-adapter/index.test.ts` |
+| Visual editor smoke | Build + smoke log | `docs/governance/evidence/phase-5/workflow-editor-smoke-20260510.log` |
 | Marketplace install record | Registry record | TBD per Workspace |
 | Long-lived execution | Execution ID + duration | TBD |
 | Advanced eval run | JSON report | TBD |
@@ -37,7 +38,7 @@ Phase 5 makes Forge a workflow marketplace: customers can browse, install, and r
 |---|---|---|---|
 | ≥ 1 long-lived workflow execution (≥ 1h wall-clock) | SDLC | 2026-Q3 | follow-up |
 | ≥ 1 marketplace install with end-to-end usage | SDLC | 2026-Q3 | follow-up |
-| Visual editor smoke test (build, save, export DSL, re-open, run) | Frontend Eng | 2026-Q3 | `platform-gaps-closure` 8.6 |
+| Live Flowise embed browser session | Frontend Eng | 2026-Q3 | follow-up |
 | Advanced eval-harness run on a productive workflow | SDLC | 2026-Q3 | follow-up |
 
 ## Approvers

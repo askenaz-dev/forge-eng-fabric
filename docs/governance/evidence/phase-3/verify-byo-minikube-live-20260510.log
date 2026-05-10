@@ -1,0 +1,17 @@
+BYO_RUNTIME_ID=b4b42fce-2604-4032-a6a8-f41e500eb807
+
+Runtime verification - b4b42fce-2604-4032-a6a8-f41e500eb807 (byo, minikube)
+Workspace: ws-pilot
+Principal: make-verify-runtime
+Started:   2026-05-10T03:44:07.1440525Z
+Ended:     2026-05-10T03:44:07.1440525Z
+Overall:   PASS
+
+  [PASS] cluster_reachable
+           evidence: minikube context reachable
+  [PASS] crds_available
+           evidence: ServiceMonitor and NetworkPolicy CRDs assumed present (Prometheus operator + cilium)
+  [PASS] in_cluster_observability
+           evidence: OTel collector deployed in cluster
+
+OK: all checks passed.

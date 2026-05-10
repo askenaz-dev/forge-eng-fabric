@@ -1,0 +1,17 @@
+
+Runtime verification — 5c23223e-ca23-48a0-b849-753b2c3e9bc1 (byo, minikube)
+Workspace: ws-pilot
+Principal: make-verify-runtime
+Started:   2026-05-09T18:50:53.863624Z
+Ended:     2026-05-09T18:50:53.863624Z
+Overall:   WARN
+
+  [PASS] cluster_reachable
+           evidence: minikube context reachable
+  [PASS] crds_available
+           evidence: ServiceMonitor and NetworkPolicy CRDs assumed present (Prometheus operator + cilium)
+  [WARN] in_cluster_observability
+           evidence: in-cluster observability stack not confirmed
+           remediation: Run `kubectl -n observability get svc otel-collector` and confirm presence.
+
+OK with warnings — review remediation hints above.

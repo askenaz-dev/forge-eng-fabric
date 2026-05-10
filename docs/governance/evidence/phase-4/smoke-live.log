@@ -1,0 +1,23 @@
+==> running make demo-intent-to-deploy
+correlation_id: a69045a4-1c87-40e0-bf40-24a46c0aaaf6
+==> intent.start
+    ok (2.10s)
+==> intent.answer
+    ok (2.04s)
+==> intent.answer
+    ok (2.06s)
+==> intent.commit
+    ok (2.04s)
+    openspec_id: loyalty-rewards-engine-(demo-a69045a4)
+==> workflow.trigger
+    ok (0.01s)
+
+Report: build\demo-intent-to-deploy\20260510T033349Z.json
+
+DEPLOY URL: https://demo.forge.local/runtimes/rt-smoke-1/loyalty-rewards-engine-(demo-a69045a4)
+
+OK: demo flow completed.
+
+==> asserting milestone order: ['intent.committed.v1', 'repo.scaffolded.v1', 'pr.opened.v1', 'ci.passed.v1', 'approval.granted.v1', 'deploy.completed.v1']
+OK: all 6 milestones present in order with consistent correlation_id
+

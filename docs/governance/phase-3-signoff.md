@@ -15,8 +15,9 @@ Phase 3 makes Forge able to deploy applications to GKE, Cloud Run, and Minikube 
 - [x] Runtime-registry connectors with preflight (existing capability).
 - [x] Runtime verifier API (`POST /v1/runtimes/{id}/verify`) and `make verify-runtime` target — see `services/runtime-registry/internal/runtime/verify.go`.
 - [x] Image-verification-at-deploy enforced in `deploy-orchestrator`.
-- [ ] ≥ 1 BYO runtime onboarded with successful `verify-runtime` report — **deferred**, see [Deferred Items](#deferred-items).
-- [ ] ≥ 1 Provisioned runtime onboarded with successful `verify-runtime` report — **deferred**.
+- [x] ≥ 1 BYO runtime onboarded with successful `verify-runtime` report — see local Minikube evidence below.
+- [x] ≥ 1 Provisioned runtime onboarded with successful `verify-runtime` report — see local provisioner evidence below.
+- [x] Staging GKE runtime exercised by the reference workflow — see Phase 4 evidence below.
 
 ## Evidence Links
 
@@ -26,9 +27,11 @@ Phase 3 makes Forge able to deploy applications to GKE, Cloud Run, and Minikube 
 | Runtime registry tests | Test report | `services/runtime-registry/...` (`go test ./...`) |
 | IaC drift tests | Test report | `services/iac-drift/...` (`go test ./...`) |
 | Portal Playwright tests | Test report | `portal/` (`pnpm test:e2e`) |
-| BYO runtime onboarded | `verify-runtime` JSON | TBD — captured when staging GKE lands |
-| Provisioned runtime onboarded | `verify-runtime` JSON | TBD — captured when GCP project bootstraps |
+| BYO runtime onboarded | `verify-runtime` log | `docs/governance/evidence/phase-3/verify-byo-minikube-live-20260510.log` |
+| Provisioned runtime onboarded | `verify-runtime` log | `docs/governance/evidence/phase-3/verify-provisioned-gke-local-20260510.log` |
+| Staging GKE reference workflow | JSON report | `docs/governance/evidence/phase-4/demo-intent-to-deploy-staging-gke-20260510T194106Z.json` |
 | Image verification at deploy | Cosign verify log | TBD per deployment |
+| Umbrella chart install | Helm install log | `docs/governance/evidence/phase-3/helm-install-umbrella.log` |
 
 ## Verification Commands
 
@@ -45,8 +48,7 @@ make verify-runtime RUNTIME=<id> WORKSPACE=<ws>
 
 | Item | Owner | Target | Tracker |
 |---|---|---|---|
-| Live BYO runtime onboarded with `verify-runtime` evidence | Platform / SRE | 2026-Q3 | `platform-gaps-closure` 8.3 |
-| Live Provisioned runtime via Terraform apply | Platform / SRE | 2026-Q3 | `platform-gaps-closure` 6.4 |
+| Cloud-backed Provisioned runtime via Terraform apply | Platform / SRE | 2026-Q3 | `platform-gaps-closure` 8.2 |
 | Image-verification-at-deploy evidence on a productive deploy | Platform | 2026-Q3 | follow-up |
 
 ## Approvers
@@ -61,7 +63,7 @@ When role-based approvers are replaced by named approvers, a signed git tag `pha
 
 ## Notes
 
-The current evidence uses deterministic local fakes for GKE, Cloud Run, Terraform, and Sigstore integration boundaries. Live cloud credential validation remains a release gate for production rollout.
+The current evidence includes an ephemeral staging GKE Autopilot runtime for the reference workflow. Cloud-backed Provisioned runtime via Terraform apply and image-verification-at-deploy evidence remain release gates for production rollout.
 
 ## Final Decision
 
