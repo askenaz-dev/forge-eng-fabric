@@ -9,3 +9,4 @@ CREATE DATABASE openfga OWNER openfga;
 CREATE DATABASE forge_control_plane OWNER forge;
 CREATE DATABASE forge_registry      OWNER forge;
 CREATE DATABASE forge_audit         OWNER forge;
+CREATE DATABASE forge_litellm       OWNER forge;

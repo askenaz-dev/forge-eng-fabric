@@ -30,7 +30,7 @@ async function submitConsole(formData: FormData) {
         headers: { "content-type": "application/json", ...(token ? { authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({
           workspace_id: workspaceId,
-          title: fields.title ?? "Alfred OpenSpec",
+          title: fields.title ?? "Alfred specification",
           business_intent: fields.intent ?? fields.business_intent ?? "Captured from Alfred Console",
           problem_statement: fields.problem ?? "Created from slash command",
           requirements: { functional: [fields.requirement ?? "Clarify requirements"] },
@@ -85,7 +85,7 @@ export default async function AlfredPage({ searchParams }: { searchParams: Searc
     <section className="mx-auto max-w-5xl space-y-5">
       <div>
         <h2 className="text-2xl font-semibold">Alfred Console</h2>
-        <p className="mt-1 text-sm opacity-70">Submit natural-language intents or use slash commands to create and edit OpenSpecs.</p>
+        <p className="mt-1 text-sm opacity-70">Submit natural-language intents or use slash commands to create and edit structured specifications.</p>
       </div>
 
       {searchParams.result && <p className="rounded border border-green-300 bg-green-50 p-3 text-sm text-green-800 dark:border-green-800 dark:bg-green-950 dark:text-green-200">{searchParams.result}: <code>{searchParams.session_id}</code></p>}
@@ -105,11 +105,11 @@ export default async function AlfredPage({ searchParams }: { searchParams: Searc
 
       <div className="grid gap-3 rounded border border-dashed border-neutral-300 bg-white p-5 text-sm dark:border-neutral-800 dark:bg-neutral-900 md:grid-cols-2">
         <div>
-          <h3 className="font-medium">Create OpenSpec</h3>
+          <h3 className="font-medium">Create specification</h3>
           <code className="mt-2 block rounded bg-neutral-100 p-2 text-xs dark:bg-neutral-800">/openspec create title="Payments" intent="Reduce failures" requirement="Retry failed payments" jira=PAY-123 confluence=https://confluence.example/payments</code>
         </div>
         <div>
-          <h3 className="font-medium">Edit OpenSpec</h3>
+          <h3 className="font-medium">Edit specification</h3>
           <code className="mt-2 block rounded bg-neutral-100 p-2 text-xs dark:bg-neutral-800">/openspec edit id=payments title="Payments v2" problem="Retries are inconsistent"</code>
         </div>
       </div>

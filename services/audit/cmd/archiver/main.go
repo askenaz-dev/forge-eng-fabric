@@ -37,7 +37,7 @@ type auditRow struct {
 
 func main() {
 	ctx := context.Background()
-	postgresURL := getenv("POSTGRES_URL", "postgres://forge:forge@localhost:5432/forge_audit?sslmode=disable")
+	postgresURL := getenv("POSTGRES_URL", "postgres://forge:forge@localhost:15432/forge_audit?sslmode=disable")
 	archiveURI := getenv("AUDIT_ARCHIVE_URI", "file://./var/audit-archive")
 	retentionDays := getenvInt("AUDIT_RETENTION_DAYS", 365)
 	cutoff := time.Now().UTC().AddDate(0, 0, -retentionDays)

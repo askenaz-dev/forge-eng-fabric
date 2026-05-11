@@ -149,11 +149,29 @@ func NewService(store *Store, sink Sink) *Service {
 		Store:      store,
 		Sink:       sink,
 		Policy:     AlwaysAllowPolicy{},
-		Catalog:    FilesystemCatalog{BaseDir: "forge-templates/templates"},
+		Catalog:    FilesystemCatalog{BaseDir: defaultTemplatesDir()},
 		GitHub:     &StubGitHubMCP{},
 		Registrar:  NoopRegistrar{},
 		WorkOutDir: filepath.Join(".", "tmp", "onboarding"),
 	}
+}
+
+func defaultTemplatesDir() string {
+	const rel = "forge-templates/templates"
+	if dir, err := os.Getwd(); err == nil {
+		for i := 0; i < 8; i++ {
+			candidate := filepath.Join(dir, rel)
+			if st, err := os.Stat(candidate); err == nil && st.IsDir() {
+				return candidate
+			}
+			parent := filepath.Dir(dir)
+			if parent == dir {
+				break
+			}
+			dir = parent
+		}
+	}
+	return rel
 }
 
 // Submit creates a new request and (if not pending approval) runs the full

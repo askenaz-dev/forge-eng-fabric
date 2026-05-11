@@ -39,6 +39,30 @@ func newTestService(t *testing.T) (*Service, *MemorySink, *StubGitHubMCP) {
 	return svc, sink, stub
 }
 
+func TestDefaultServiceCatalogFindsRepoTemplatesFromServiceDir(t *testing.T) {
+	originalCWD, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+	t.Cleanup(func() {
+		if err := os.Chdir(originalCWD); err != nil {
+			t.Fatalf("restore cwd: %v", err)
+		}
+	})
+	if err := os.Chdir(filepath.Join(tplBaseDir(t), "..", "..", "services", "app-onboarding")); err != nil {
+		t.Fatalf("chdir service dir: %v", err)
+	}
+
+	svc := NewService(NewStore(), &MemorySink{})
+	templates, err := svc.ListTemplates(context.Background())
+	if err != nil {
+		t.Fatalf("list templates: %v", err)
+	}
+	if len(templates) == 0 {
+		t.Fatal("expected templates")
+	}
+}
+
 func waitFor(t *testing.T, store *Store, id string, want Status, timeout time.Duration) *Request {
 	t.Helper()
 	deadline := time.Now().Add(timeout)

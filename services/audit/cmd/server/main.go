@@ -117,7 +117,7 @@ func loadConfig() config {
 	}
 	return config{
 		Addr:             get("ADDR", ":8083"),
-		PostgresURL:      get("POSTGRES_URL", "postgres://forge:forge@localhost:5432/forge_audit?sslmode=disable"),
+		PostgresURL:      get("POSTGRES_URL", "postgres://forge:forge@localhost:15432/forge_audit?sslmode=disable"),
 		KeycloakIssuer:   get("KEYCLOAK_ISSUER", "http://localhost:8080/realms/forge"),
 		KeycloakAudience: get("KEYCLOAK_AUDIENCE", "forge-control-plane"),
 		KafkaBrokers:     get("KAFKA_BROKERS", "localhost:29092"),

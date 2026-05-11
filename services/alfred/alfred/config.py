@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     registry_url: str = Field(default="http://localhost:8082", alias="REGISTRY_URL")
     openspec_url: str = Field(default="http://localhost:8083", alias="OPENSPEC_URL")
     policy_engine_url: str = Field(default="http://localhost:8084", alias="POLICY_ENGINE_URL")
-    approvals_url: str = Field(default="http://localhost:8085", alias="APPROVALS_URL")
+    approvals_url: str = Field(default="http://localhost:8105", alias="APPROVALS_URL")
     rag_query_url: str = Field(default="http://localhost:8086", alias="RAG_QUERY_URL")
     prompt_registry_url: str = Field(default="http://localhost:8087", alias="PROMPT_REGISTRY_URL")
     permissions_url: str = Field(default="http://localhost:8092", alias="PERMISSIONS_URL")
@@ -42,7 +42,7 @@ class Settings(BaseSettings):
 
     # Persistence
     postgres_url: str = Field(
-        default="postgres://forge:forge@localhost:5432/forge_alfred?sslmode=disable",
+        default="postgres://forge:forge@localhost:15432/forge_alfred?sslmode=disable",
         alias="POSTGRES_URL",
     )
 

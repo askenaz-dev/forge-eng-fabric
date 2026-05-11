@@ -2,7 +2,7 @@ import { authOptions } from "@/auth";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 
-type OpenSpec = {
+type SpecificationDocument = {
   openspec_id: string;
   workspace_id: string;
   title: string;
@@ -17,6 +17,7 @@ type OpenSpec = {
   decision_log: { actor: string; decision: string; rationale: string; timestamp: string; correlation_id?: string }[];
   audit: { created_by: string; created_at: string; updated_by?: string; updated_at?: string };
   version: number;
+  openspec_artifacts?: { change_id: string; root: string; files: string[] } | null;
 };
 
 type SearchParams = {
@@ -35,22 +36,22 @@ async function getToken() {
   return (session as { accessToken?: string }).accessToken;
 }
 
-async function fetchOpenSpecs(workspaceId: string, token?: string) {
+async function fetchSpecifications(workspaceId: string, token?: string) {
   const response = await fetch(`${openspecUrl()}/v1/openspecs?workspace_id=${encodeURIComponent(workspaceId)}`, {
     headers: token ? { authorization: `Bearer ${token}` } : {},
     cache: "no-store",
   });
-  if (!response.ok) throw new Error(`openspec-service ${response.status}: ${await response.text()}`);
-  return ((await response.json()) as { openspecs: OpenSpec[] }).openspecs;
+  if (!response.ok) throw new Error(`specification-service ${response.status}: ${await response.text()}`);
+  return ((await response.json()) as { openspecs: SpecificationDocument[] }).openspecs;
 }
 
-async function fetchOpenSpec(openspecId: string, token?: string) {
+async function fetchSpecification(openspecId: string, token?: string) {
   const response = await fetch(`${openspecUrl()}/v1/openspecs/${encodeURIComponent(openspecId)}`, {
     headers: token ? { authorization: `Bearer ${token}` } : {},
     cache: "no-store",
   });
-  if (!response.ok) throw new Error(`openspec-service ${response.status}: ${await response.text()}`);
-  return (await response.json()) as OpenSpec;
+  if (!response.ok) throw new Error(`specification-service ${response.status}: ${await response.text()}`);
+  return (await response.json()) as SpecificationDocument;
 }
 
 async function fetchVersions(openspecId: string, token?: string) {
@@ -68,10 +69,10 @@ async function fetchVersion(openspecId: string, version: number, token?: string)
     { headers: token ? { authorization: `Bearer ${token}` } : {}, cache: "no-store" },
   );
   if (!response.ok) return null;
-  return (await response.json()) as OpenSpec;
+  return (await response.json()) as SpecificationDocument;
 }
 
-async function createOpenSpec(formData: FormData) {
+async function createSpecification(formData: FormData) {
   "use server";
   const token = await getToken();
   const workspaceId = required(formData, "workspace_id");
@@ -95,12 +96,12 @@ async function createOpenSpec(formData: FormData) {
     headers: { "content-type": "application/json", ...(token ? { authorization: `Bearer ${token}` } : {}) },
     body: JSON.stringify(payload),
   });
-  if (!response.ok) throw new Error(`openspec-service ${response.status}: ${await response.text()}`);
-  const created = (await response.json()) as OpenSpec;
+  if (!response.ok) throw new Error(`specification-service ${response.status}: ${await response.text()}`);
+  const created = (await response.json()) as SpecificationDocument;
   redirect(`/openspecs?workspace_id=${workspaceId}&openspec_id=${created.openspec_id}&saved=1`);
 }
 
-async function updateOpenSpec(formData: FormData) {
+async function updateSpecification(formData: FormData) {
   "use server";
   const token = await getToken();
   const workspaceId = required(formData, "workspace_id");
@@ -123,26 +124,26 @@ async function updateOpenSpec(formData: FormData) {
     headers: { "content-type": "application/json", ...(token ? { authorization: `Bearer ${token}` } : {}) },
     body: JSON.stringify(payload),
   });
-  if (!response.ok) throw new Error(`openspec-service ${response.status}: ${await response.text()}`);
+  if (!response.ok) throw new Error(`specification-service ${response.status}: ${await response.text()}`);
   redirect(`/openspecs?workspace_id=${workspaceId}&openspec_id=${openspecId}&saved=1`);
 }
 
-export default async function OpenSpecsPage({ searchParams }: { searchParams: SearchParams }) {
+export default async function SpecificationsPage({ searchParams }: { searchParams: SearchParams }) {
   const token = await getToken();
   const workspaceId = searchParams.workspace_id?.trim() ?? "";
-  let specs: OpenSpec[] = [];
-  let selected: OpenSpec | null = null;
+  let specs: SpecificationDocument[] = [];
+  let selected: SpecificationDocument | null = null;
   let versions: number[] = [];
-  let base: OpenSpec | null = null;
-  let compare: OpenSpec | null = null;
+  let base: SpecificationDocument | null = null;
+  let compare: SpecificationDocument | null = null;
   let error: string | null = null;
 
   if (workspaceId) {
     try {
-      specs = await fetchOpenSpecs(workspaceId, token);
+      specs = await fetchSpecifications(workspaceId, token);
       const selectedId = searchParams.openspec_id ?? specs[0]?.openspec_id;
       if (selectedId) {
-        selected = await fetchOpenSpec(selectedId, token);
+        selected = await fetchSpecification(selectedId, token);
         versions = await fetchVersions(selectedId, token);
         const compareVersion = Number(searchParams.compare_version ?? selected.version);
         const baseVersion = Number(searchParams.base_version ?? Math.max(1, compareVersion - 1));
@@ -150,7 +151,7 @@ export default async function OpenSpecsPage({ searchParams }: { searchParams: Se
         compare = await fetchVersion(selectedId, compareVersion, token);
       }
     } catch (e) {
-      error = e instanceof Error ? e.message : "failed to load OpenSpecs";
+      error = e instanceof Error ? e.message : "failed to load specifications";
     }
   }
 
@@ -158,8 +159,8 @@ export default async function OpenSpecsPage({ searchParams }: { searchParams: Se
     <section className="space-y-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <h2 className="text-2xl font-semibold">OpenSpecs</h2>
-          <p className="mt-1 text-sm opacity-70">Living contracts with structured fields, Markdown preview, links and version diff.</p>
+          <h2 className="text-2xl font-semibold">Specifications</h2>
+          <p className="mt-1 text-sm opacity-70">Structured delivery specifications backed by OpenSpec artifacts, links, and version history.</p>
         </div>
         <form className="flex gap-2" method="get">
           <input name="workspace_id" defaultValue={workspaceId} placeholder="Workspace ID" className="min-w-0 rounded border border-neutral-300 bg-transparent px-3 py-2 text-sm dark:border-neutral-700" />
@@ -167,12 +168,12 @@ export default async function OpenSpecsPage({ searchParams }: { searchParams: Se
         </form>
       </div>
 
-      {searchParams.saved && <p className="rounded border border-green-300 bg-green-50 p-3 text-sm text-green-800 dark:border-green-800 dark:bg-green-950 dark:text-green-200">OpenSpec saved.</p>}
+      {searchParams.saved && <p className="rounded border border-green-300 bg-green-50 p-3 text-sm text-green-800 dark:border-green-800 dark:bg-green-950 dark:text-green-200">Specification saved.</p>}
       {error && <p className="rounded border border-red-300 bg-red-50 p-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200">{error}</p>}
 
       <div className="grid gap-5 xl:grid-cols-[320px_1fr]">
         <aside className="space-y-4 rounded border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
-          <h3 className="font-medium">Workspace OpenSpecs</h3>
+          <h3 className="font-medium">Workspace specifications</h3>
           <div className="grid gap-2 text-sm">
             {specs.map((spec) => (
               <a key={spec.openspec_id} href={`/openspecs?workspace_id=${workspaceId}&openspec_id=${spec.openspec_id}`} className="rounded border border-neutral-200 px-3 py-2 hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-800">
@@ -180,21 +181,22 @@ export default async function OpenSpecsPage({ searchParams }: { searchParams: Se
                 <span className="text-xs opacity-60">{spec.openspec_id} · v{spec.version}</span>
               </a>
             ))}
-            {workspaceId && specs.length === 0 && !error && <p className="opacity-70">No OpenSpecs indexed for this Workspace.</p>}
+            {workspaceId && specs.length === 0 && !error && <p className="opacity-70">No specifications indexed for this Workspace.</p>}
           </div>
         </aside>
 
         <div className="grid gap-5 lg:grid-cols-2">
-          <OpenSpecForm workspaceId={workspaceId} selected={selected} />
+          <SpecificationForm workspaceId={workspaceId} selected={selected} />
           <div className="space-y-5">
             {selected ? (
               <>
                 <MarkdownPreview spec={selected} />
+                <OpenSpecArtifacts spec={selected} />
                 <LinkedArtifacts spec={selected} />
                 <VersionDiff spec={selected} versions={versions} base={base} compare={compare} workspaceId={workspaceId} />
               </>
             ) : (
-              <div className="rounded border border-dashed border-neutral-300 p-6 text-sm opacity-70 dark:border-neutral-800">Load a Workspace and select an OpenSpec to preview versions and links.</div>
+              <div className="rounded border border-dashed border-neutral-300 p-6 text-sm opacity-70 dark:border-neutral-800">Load a Workspace and select a specification to preview versions and links.</div>
             )}
           </div>
         </div>
@@ -203,17 +205,17 @@ export default async function OpenSpecsPage({ searchParams }: { searchParams: Se
   );
 }
 
-function OpenSpecForm({ workspaceId, selected }: { workspaceId: string; selected: OpenSpec | null }) {
-  const action = selected ? updateOpenSpec : createOpenSpec;
+function SpecificationForm({ workspaceId, selected }: { workspaceId: string; selected: SpecificationDocument | null }) {
+  const action = selected ? updateSpecification : createSpecification;
   return (
     <form action={action} className="space-y-4 rounded border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
       <div>
-        <h3 className="font-medium">{selected ? "Edit OpenSpec" : "Create OpenSpec"}</h3>
+        <h3 className="font-medium">{selected ? "Edit specification" : "Create specification"}</h3>
         <p className="mt-1 text-xs opacity-60">One item per line for lists. Functional requirements are required.</p>
       </div>
       <input type="hidden" name="workspace_id" value={workspaceId} />
       <label className="grid gap-1 text-sm">
-        <span className="font-medium">OpenSpec ID</span>
+        <span className="font-medium">Specification ID</span>
         <input name="openspec_id" defaultValue={selected?.openspec_id ?? ""} readOnly={Boolean(selected)} className="rounded border border-neutral-300 bg-transparent px-3 py-2 dark:border-neutral-700" />
       </label>
       <Field name="title" label="Title" defaultValue={selected?.title} required />
@@ -224,7 +226,7 @@ function OpenSpecForm({ workspaceId, selected }: { workspaceId: string; selected
       <TextArea name="stakeholders" label="Stakeholders" defaultValue={selected?.stakeholders.join("\n")} />
       <TextArea name="success_metrics" label="Success metrics" defaultValue={selected?.success_metrics.join("\n")} />
       <TextArea name="constraints" label="Constraints" defaultValue={selected?.constraints.join("\n")} />
-      <button disabled={!workspaceId} className="rounded bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-40 dark:bg-neutral-100 dark:text-neutral-900">{selected ? "Save changes" : "Create OpenSpec"}</button>
+      <button disabled={!workspaceId} className="rounded bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-40 dark:bg-neutral-100 dark:text-neutral-900">{selected ? "Save changes" : "Create specification"}</button>
     </form>
   );
 }
@@ -247,7 +249,7 @@ function TextArea({ name, label, defaultValue, required = false }: { name: strin
   );
 }
 
-function MarkdownPreview({ spec }: { spec: OpenSpec }) {
+function MarkdownPreview({ spec }: { spec: SpecificationDocument }) {
   return (
     <div className="rounded border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
       <h3 className="font-medium">Markdown preview</h3>
@@ -256,7 +258,33 @@ function MarkdownPreview({ spec }: { spec: OpenSpec }) {
   );
 }
 
-function LinkedArtifacts({ spec }: { spec: OpenSpec }) {
+function OpenSpecArtifacts({ spec }: { spec: SpecificationDocument }) {
+  const artifacts = spec.openspec_artifacts;
+  return (
+    <div className="rounded border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
+      <h3 className="font-medium">OpenSpec backing artifacts</h3>
+      {artifacts ? (
+        <div className="mt-3 space-y-2 text-sm">
+          <p>
+            Change ID <code>{artifacts.change_id}</code>
+          </p>
+          <p className="break-all text-xs opacity-70">{artifacts.root}</p>
+          <div className="grid gap-2">
+            {artifacts.files.map((file) => (
+              <code key={file} className="rounded bg-neutral-100 px-3 py-2 text-xs dark:bg-neutral-950">{file}</code>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <p className="mt-3 rounded border border-dashed border-neutral-300 p-4 text-sm opacity-70 dark:border-neutral-800">
+          The specification service did not return OpenSpec artifacts for this record.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function LinkedArtifacts({ spec }: { spec: SpecificationDocument }) {
   const namespaces = ["jira", "confluence", "test", "slo", "cost", "incident"];
   return (
     <div className="rounded border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
@@ -285,7 +313,7 @@ function LinkedArtifacts({ spec }: { spec: OpenSpec }) {
   );
 }
 
-function VersionDiff({ spec, versions, base, compare, workspaceId }: { spec: OpenSpec; versions: number[]; base: OpenSpec | null; compare: OpenSpec | null; workspaceId: string }) {
+function VersionDiff({ spec, versions, base, compare, workspaceId }: { spec: SpecificationDocument; versions: number[]; base: SpecificationDocument | null; compare: SpecificationDocument | null; workspaceId: string }) {
   const rows = base && compare ? diffLines(toMarkdown(base), toMarkdown(compare)) : [];
   return (
     <div className="rounded border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
@@ -309,11 +337,11 @@ function VersionDiff({ spec, versions, base, compare, workspaceId }: { spec: Ope
   );
 }
 
-function toMarkdown(spec: OpenSpec) {
+function toMarkdown(spec: SpecificationDocument) {
   return [
     `# ${spec.title}`,
     "",
-    `OpenSpec: ${spec.openspec_id} · Workspace: ${spec.workspace_id} · Version: ${spec.version}`,
+    `Specification: ${spec.openspec_id} · Workspace: ${spec.workspace_id} · Version: ${spec.version}`,
     "",
     "## Business Intent",
     spec.business_intent,

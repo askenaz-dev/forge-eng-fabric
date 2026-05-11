@@ -33,7 +33,7 @@ from datetime import datetime, timedelta, timezone
 def main() -> int:
     job = os.environ.get("JOB", "partition-audit")
     enforce = os.environ.get("ENFORCE_RETENTION", "false").lower() == "true"
-    pg_url = os.environ.get("POSTGRES_URL", "postgres://forge:forge@localhost:5432/forge_audit?sslmode=disable")
+    pg_url = os.environ.get("POSTGRES_URL", "postgres://forge:forge@localhost:15432/forge_audit?sslmode=disable")
     bucket = os.environ.get("GCS_BUCKET", "")
     classification = os.environ.get("CLASSIFICATION", "confidential")
     retention_days = int(os.environ.get("RETENTION_DAYS", "365"))

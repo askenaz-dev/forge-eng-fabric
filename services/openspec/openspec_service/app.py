@@ -4,9 +4,10 @@ import uuid
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from openspec_service.artifacts import OpenSpecArtifactWriter
 from openspec_service.drafts import (
     DraftStore,
     can_commit,
@@ -34,6 +35,15 @@ class Settings(BaseSettings):
 
     openspec_root: str = "openspec/records"
     drafts_root: str = "openspec/drafts"
+    openspec_artifacts_root: str = Field(default_factory=lambda: _default_openspec_artifacts_root())
+
+
+def _default_openspec_artifacts_root() -> str:
+    for parent in Path(__file__).resolve().parents:
+        candidate = parent / "openspec" / "config.yaml"
+        if candidate.exists():
+            return str(candidate.parent)
+    return ""
 
 
 class LinkRequest(BaseModel):
@@ -76,7 +86,8 @@ def create_app(
     drafts: DraftStore | None = None,
 ) -> FastAPI:
     settings = settings or Settings()
-    store = store or FilesystemOpenSpecStore(Path(settings.openspec_root))
+    artifact_writer = OpenSpecArtifactWriter(Path(settings.openspec_artifacts_root)) if settings.openspec_artifacts_root else None
+    store = store or FilesystemOpenSpecStore(Path(settings.openspec_root), artifact_writer=artifact_writer)
     drafts = drafts or DraftStore(root=Path(settings.drafts_root))
     publisher = publisher or InMemoryEventPublisher()
     app = FastAPI(title="OpenSpec Service", version="0.1.0")

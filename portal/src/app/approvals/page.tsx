@@ -30,7 +30,7 @@ type Approval = {
 
 type SearchParams = { approver?: string; status?: string; decided?: string; error?: string };
 
-const approvalsUrl = () => process.env.APPROVALS_URL ?? "http://localhost:8085";
+const approvalsUrl = () => process.env.APPROVALS_URL ?? "http://localhost:8105";
 
 async function getToken() {
   const session = await getServerSession(authOptions);

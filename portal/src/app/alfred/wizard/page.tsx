@@ -153,7 +153,7 @@ export default async function AlfredWizardPage({ searchParams }: { searchParams:
       <section className="space-y-4">
         <h2 className="text-2xl font-semibold">Alfred Wizard</h2>
         <p className="text-sm text-neutral-600 dark:text-neutral-300">
-          Describe what you want to build. Alfred will ask follow-up questions and assemble an OpenSpec for review.
+          Describe what you want to build. Alfred will ask follow-up questions and assemble a structured specification for review.
         </p>
         {error && (
           <div className="rounded border border-red-300 bg-red-50 p-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200">
@@ -251,10 +251,10 @@ export default async function AlfredWizardPage({ searchParams }: { searchParams:
             <input type="hidden" name="draft_id" value={draftId} />
             <p className="font-medium text-emerald-900 dark:text-emerald-200">Ready to commit</p>
             <p className="text-sm text-emerald-900/80 dark:text-emerald-200/80">
-              All sections complete. Click below to commit the OpenSpec and hand off to the SDLC orchestrator.
+              All sections complete. Click below to commit the specification and hand off to the SDLC orchestrator.
             </p>
             <button className="rounded bg-emerald-700 px-4 py-2 text-sm font-medium text-white">
-              Ejecutar SDLC (Commit OpenSpec)
+              Ejecutar SDLC (Commit specification)
             </button>
           </form>
         )}

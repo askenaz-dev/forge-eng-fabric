@@ -4,6 +4,7 @@ import json
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from openspec_service.artifacts import OpenSpecArtifactWriter
 from openspec_service.models import (
     AuditInfo,
     DecisionLogEntry,
@@ -28,6 +29,7 @@ class InMemoryIndex:
 @dataclass
 class FilesystemOpenSpecStore:
     root: Path
+    artifact_writer: OpenSpecArtifactWriter | None = None
     index: InMemoryIndex = field(default_factory=InMemoryIndex)
 
     def __post_init__(self) -> None:
@@ -85,8 +87,7 @@ class FilesystemOpenSpecStore:
             source=request.source,
             review_status=review_status,
         )
-        self._write(document)
-        return document
+        return self._write(document)
 
     def review(
         self,
@@ -110,8 +111,7 @@ class FilesystemOpenSpecStore:
         updated.version += 1
         updated.audit.updated_by = reviewer
         updated.audit.updated_at = _utcnow()
-        self._write(updated)
-        return updated
+        return self._write(updated)
 
     def evolution_stats(self) -> dict[str, float | int]:
         total = pending = approved = rejected = 0
@@ -146,8 +146,7 @@ class FilesystemOpenSpecStore:
         updated.audit.updated_at = _utcnow()
         updated.version = document.version + 1
         validated = OpenSpecDocument.model_validate(updated.model_dump())
-        self._write(validated)
-        return validated
+        return self._write(validated)
 
     def append_decision(self, openspec_id: str, decision: DecisionLogEntry) -> OpenSpecDocument | None:
         document = self.get(openspec_id)
@@ -158,8 +157,7 @@ class FilesystemOpenSpecStore:
         updated.version += 1
         updated.audit.updated_by = decision.actor
         updated.audit.updated_at = _utcnow()
-        self._write(updated)
-        return updated
+        return self._write(updated)
 
     def append_link(self, openspec_id: str, link: LinkedArtifact, actor: str) -> OpenSpecDocument | None:
         document = self.get(openspec_id)
@@ -170,8 +168,7 @@ class FilesystemOpenSpecStore:
         updated.version += 1
         updated.audit.updated_by = actor
         updated.audit.updated_at = _utcnow()
-        self._write(updated)
-        return updated
+        return self._write(updated)
 
     def sync_from_filesystem(self) -> None:
         self.index.rows.clear()
@@ -179,7 +176,10 @@ class FilesystemOpenSpecStore:
             document = OpenSpecDocument.model_validate(json.loads(path.read_text(encoding="utf-8")))
             self.index.upsert(document)
 
-    def _write(self, document: OpenSpecDocument) -> None:
+    def _write(self, document: OpenSpecDocument) -> OpenSpecDocument:
+        if self.artifact_writer:
+            artifact_ref = self.artifact_writer.write(document)
+            document = document.model_copy(update={"openspec_artifacts": artifact_ref})
         ws_dir = self.root / str(document.workspace_id)
         ws_dir.mkdir(parents=True, exist_ok=True)
         data = document.model_dump_json(indent=2)
@@ -188,6 +188,7 @@ class FilesystemOpenSpecStore:
         version_dir.mkdir(parents=True, exist_ok=True)
         (version_dir / f"v{document.version}.json").write_text(data + "\n", encoding="utf-8")
         self.index.upsert(document)
+        return document
 
 
 def _slug(value: str) -> str:

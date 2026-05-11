@@ -207,6 +207,7 @@ Apply-Migration "forge_alfred" "alfred/0001_init.sql" (Join-Path $Root "db\migra
 Seed-Workspace
 
 $processes = @()
+$AlfredDefaultModel = if ($env:ALFRED_DEFAULT_MODEL) { $env:ALFRED_DEFAULT_MODEL } else { "gemini-1.5-pro" }
 $commonGoEnv = @"
 `$env:KEYCLOAK_ISSUER = 'http://localhost:8080/realms/forge'
 `$env:KEYCLOAK_AUDIENCE = 'forge-control-plane'
@@ -217,11 +218,19 @@ $commonGoEnv = @"
 `$env:OTEL_EXPORTER_OTLP_ENDPOINT = 'localhost:4317'
 "@
 
+$controlPlaneCommand = @"
+$commonGoEnv
+`$env:ADDR = ':8081'
+`$env:POSTGRES_URL = 'postgres://forge:forge@localhost:15432/forge_control_plane?sslmode=disable'
+go run ./cmd/server
+"@
+$processes += Start-ManagedProcess "control-plane" (Join-Path $Root "services\control-plane") $controlPlaneCommand "http://localhost:8081/readyz"
+
 $registryCommand = @"
 $commonGoEnv
 `$env:ADDR = ':8082'
-`$env:POSTGRES_URL = 'postgres://forge:forge@localhost:5432/forge_registry?sslmode=disable'
-`$env:CONTROL_PLANE_DB_URL = 'postgres://forge:forge@localhost:5432/forge_control_plane?sslmode=disable'
+`$env:POSTGRES_URL = 'postgres://forge:forge@localhost:15432/forge_registry?sslmode=disable'
+`$env:CONTROL_PLANE_DB_URL = 'postgres://forge:forge@localhost:15432/forge_control_plane?sslmode=disable'
 go run ./cmd/server
 "@
 $processes += Start-ManagedProcess "registry" (Join-Path $Root "services\registry") $registryCommand "http://localhost:8082/healthz"
@@ -240,9 +249,15 @@ $processes += Start-ManagedProcess "openspec" (Join-Path $Root "services\openspe
 
 $approvalsCommand = @"
 `$env:APPROVALS_STORE_PATH = '$((Join-Path $DataDir "approvals.json") -replace "'", "''")'
-uv run uvicorn approvals.app:app --host 127.0.0.1 --port 8085
+uv run uvicorn approvals.app:app --host 127.0.0.1 --port 8105
 "@
-$processes += Start-ManagedProcess "approvals" (Join-Path $Root "services\approvals") $approvalsCommand "http://localhost:8085/healthz"
+$processes += Start-ManagedProcess "approvals" (Join-Path $Root "services\approvals") $approvalsCommand "http://localhost:8105/healthz"
+
+$appOnboardingCommand = @"
+`$env:ADDR = ':8085'
+go run ./cmd
+"@
+$processes += Start-ManagedProcess "app-onboarding" (Join-Path $Root "services\app-onboarding") $appOnboardingCommand "http://localhost:8085/healthz"
 
 $ragQueryCommand = @"
 `$env:OPENFGA_STORE_ID = ''
@@ -279,18 +294,19 @@ $alfredCommand = @"
 `$env:KEYCLOAK_AUDIENCE = 'forge-control-plane'
 `$env:OPENFGA_STORE_ID = ''
 `$env:OPENFGA_AUTHORIZATION_MODEL_ID = ''
-`$env:POSTGRES_URL = 'postgres://forge:forge@localhost:5432/forge_alfred?sslmode=disable'
+`$env:POSTGRES_URL = 'postgres://forge:forge@localhost:15432/forge_alfred?sslmode=disable'
 `$env:POLICY_ENGINE_URL = 'http://localhost:8084'
-`$env:APPROVALS_URL = 'http://localhost:8085'
+`$env:APPROVALS_URL = 'http://localhost:8105'
 `$env:RAG_QUERY_URL = 'http://localhost:8086'
 `$env:PROMPT_REGISTRY_URL = 'http://localhost:8087'
 `$env:SKILL_RUNNER_URL = 'http://localhost:8091'
 `$env:PERMISSIONS_URL = 'http://localhost:8092'
 `$env:MCP_OPENSPEC_URL = 'http://localhost:8104'
-`$env:ALFRED_DEFAULT_MODEL = 'stub-chat'
+`$env:ALFRED_DIALOGUE_API = 'enabled'
+`$env:ALFRED_DEFAULT_MODEL = '$($AlfredDefaultModel -replace "'", "''")'
 uv run uvicorn alfred.app:app --host 127.0.0.1 --port 8090
 "@
-$processes += Start-ManagedProcess "alfred" (Join-Path $Root "services\alfred") $alfredCommand "http://localhost:8090/healthz"
+$processes += Start-ManagedProcess "alfred" (Join-Path $Root "services\alfred") $alfredCommand "http://localhost:8090/readyz"
 
 $processes = @($processes | Where-Object { $_ -ne $null })
 if ($processes.Count -gt 0) {

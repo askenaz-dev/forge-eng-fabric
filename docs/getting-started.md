@@ -37,16 +37,17 @@ The first run downloads images for: Postgres, Redis, Kafka (KRaft), Keycloak, Op
 
 | Service | URL | Notes |
 |---|---|---|
-| Portal (Next.js) | http://localhost:3000 | login via Keycloak |
+| Portal (Next.js) | http://localhost:3000 | login with `alice/alice` or `bob/bob` |
 | Control Plane API | http://localhost:8081 | Workspace CRUD |
 | Registry API | http://localhost:8082 | Asset CRUD |
 | Audit API | http://localhost:8083 | read-only query |
-| Alfred stub (FastAPI) | http://localhost:8090 | demo agent |
-| Keycloak | http://localhost:8080 | admin/admin |
+| App Onboarding API | http://localhost:8085 | templates and onboarding requests |
+| Alfred (FastAPI) | http://localhost:8090 | control-plane agent |
+| Keycloak admin | http://localhost:8080/admin | `admin/admin` for the master realm only |
 | OpenFGA | http://localhost:8088 | playground at /playground |
 | Grafana | http://localhost:3001 | admin/admin |
 | Prometheus | http://localhost:9090 | |
-| LiteLLM | http://localhost:4000 | |
+| LiteLLM | http://localhost:4000 | UI: `admin` / `sk-forge-local`; API key: `sk-forge-local` |
 
 ## First-run smoke test
 
@@ -60,7 +61,7 @@ The script:
 3. Logs in to Keycloak as the seed user.
 4. Creates a Tenant, BU and Workspace via the Control Plane API.
 5. Registers an asset in the Registry.
-6. Calls LiteLLM via the Go SDK from the Alfred stub.
+6. Verifies Alfred and LiteLLM local gateway readiness.
 7. Verifies that audit entries exist for each step.
 
 ## Tearing down
@@ -78,7 +79,7 @@ services/
   control-plane/   # Go — Tenant/BU/Workspace CRUD
   registry/        # Go — Asset CRUD
   audit/           # Go — append-only audit consumer + query API
-  alfred/          # Python (FastAPI) — minimal agent stub
+  alfred/          # Python (FastAPI) — control-plane agent
 portal/            # Next.js 14 — login + workspaces list
 pkg/
   llmclient/       # Go SDK for LiteLLM

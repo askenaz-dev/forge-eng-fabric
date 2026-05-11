@@ -6,7 +6,8 @@ This runbook covers the Phase 0 local docker-compose Keycloak instance.
 
 | Purpose | URL | Notes |
 |---|---|---|
-| Admin console | http://localhost:8080 | Admin user: `admin`, password: `admin` |
+| Admin console | http://localhost:8080/admin | Master realm admin user: `admin`, password: `admin` |
+| Portal login | http://localhost:3000 | Use Forge realm seed users, not `admin/admin` |
 | Forge realm | http://localhost:8080/realms/forge | Imported from `deploy/compose/keycloak/forge-realm.json` |
 | OIDC discovery | http://localhost:8080/realms/forge/.well-known/openid-configuration | Used by services and portal |
 | JWKS | http://localhost:8080/realms/forge/protocol/openid-connect/certs | Used by Go services for JWT validation |
@@ -20,6 +21,8 @@ This runbook covers the Phase 0 local docker-compose Keycloak instance.
 
 These accounts are local-only fixtures and must not be reused outside development.
 
+`admin/admin` is only the Keycloak master-realm administrator for the admin console. It is not a Forge realm application user and will not sign in to the Portal.
+
 ## Clients
 
 | Client | Type | Purpose |
@@ -32,7 +35,7 @@ These accounts are local-only fixtures and must not be reused outside developmen
 
 ```sh
 docker compose -f deploy/compose/docker-compose.yaml up -d keycloak
-curl -sf http://localhost:8080/health/ready
+curl -sf http://localhost:8080/realms/forge/.well-known/openid-configuration
 ```
 
 If the ready endpoint does not return healthy, inspect logs:

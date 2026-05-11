@@ -34,7 +34,7 @@ services:
     volumes:
       - pg-data:/var/lib/postgresql/data
       - ./postgres/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
-    ports: ["5432:5432"]
+    ports: ["15432:5432"]
     networks: [forge]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U forge"]
@@ -145,9 +145,15 @@ services:
     environment:
       <<: *common-env
       LITELLM_MASTER_KEY: "sk-forge-local"
+      UI_USERNAME: "admin"
+      UI_PASSWORD: "sk-forge-local"
+      DATABASE_URL: "postgresql://forge:forge@postgres:5432/forge_litellm"
     volumes:
       - ./litellm/config.yaml:/app/config.yaml:ro
     ports: ["4000:4000"]
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks: [forge]
 
   otel-collector:

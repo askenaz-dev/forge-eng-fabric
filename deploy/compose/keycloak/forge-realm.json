@@ -102,7 +102,19 @@
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": true,
       "redirectUris": ["http://localhost:*", "urn:ietf:wg:oauth:2.0:oob"],
-      "attributes": { "pkce.code.challenge.method": "S256" }
+      "attributes": { "pkce.code.challenge.method": "S256" },
+      "protocolMappers": [
+        {
+          "name": "audience-control-plane",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.client.audience": "forge-control-plane",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        }
+      ]
     }
   ],
   "defaultDefaultClientScopes": ["profile", "email", "roles"],

@@ -146,7 +146,7 @@ func loadConfig() config {
 	}
 	return config{
 		Addr:             get("ADDR", ":8081"),
-		PostgresURL:      get("POSTGRES_URL", "postgres://forge:forge@localhost:5432/forge_control_plane?sslmode=disable"),
+		PostgresURL:      get("POSTGRES_URL", "postgres://forge:forge@localhost:15432/forge_control_plane?sslmode=disable"),
 		KeycloakIssuer:   get("KEYCLOAK_ISSUER", "http://localhost:8080/realms/forge"),
 		KeycloakAudience: get("KEYCLOAK_AUDIENCE", "forge-control-plane"),
 		OpenFGAURL:       get("OPENFGA_API_URL", "http://localhost:8088"),

@@ -35,7 +35,7 @@ REFERENCE_WORKFLOW = REPO / "services" / "workflow-registry" / "seeds" / "forge.
 DEFAULT_ALFRED = os.environ.get("ALFRED_URL", "http://localhost:8090")
 DEFAULT_OPENSPEC = os.environ.get("OPENSPEC_URL", "http://localhost:8083")
 DEFAULT_WORKFLOW_RUNTIME = os.environ.get("WORKFLOW_RUNTIME_URL", "http://localhost:8095")
-DEFAULT_APPROVALS = os.environ.get("APPROVALS_URL", "http://localhost:8085")
+DEFAULT_APPROVALS = os.environ.get("APPROVALS_URL", "http://localhost:8105")
 
 
 def http_request(url: str, *, method: str = "GET", body: dict | None = None, headers: dict | None = None, timeout: int = 30) -> tuple[int, dict]:

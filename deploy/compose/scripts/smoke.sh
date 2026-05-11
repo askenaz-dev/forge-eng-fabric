@@ -12,7 +12,7 @@ ALFRED="${ALFRED:-http://localhost:8090}"
 step() { printf '\n=== %s ===\n' "$1"; }
 
 step "Wait for core services"
-for url in "${KC}/health/ready" "${CP}/healthz" "${RG}/healthz" "${AU}/healthz" "${ALFRED}/healthz"; do
+for url in "${KC}/realms/forge/.well-known/openid-configuration" "${CP}/readyz" "${RG}/healthz" "${AU}/healthz" "${ALFRED}/readyz"; do
   for i in $(seq 1 60); do
     if curl -sf "$url" >/dev/null; then echo "ok: $url"; break; fi
     sleep 1
@@ -97,13 +97,9 @@ if [[ "${DUP_STATUS}" != "409" ]]; then
   exit 1
 fi
 
-step "Call Alfred /list-workspaces"
-curl -sf "${ALFRED}/list-workspaces" "${AUTH[@]}" | python -m json.tool
-
-step "Call Alfred /chat via LiteLLM wrapper"
-curl -sf -X POST "${ALFRED}/chat" \
-  -H "content-type: application/json" \
-  -d "{\"tenant_id\":\"${TENANT_ID}\",\"workspace_id\":\"${WS_ID}\",\"correlation_id\":\"smoke-chat\",\"messages\":[{\"role\":\"user\",\"content\":\"hello\"}]}" | python -m json.tool
+step "Verify Alfred real API"
+curl -sf "${ALFRED}/readyz" | python -m json.tool
+curl -sf "${ALFRED}/v1/decisions?workspace_id=${WS_ID}" "${AUTH[@]}" | python -m json.tool
 
 step "Query audit"
 sleep 2 # allow consumer to drain

@@ -134,7 +134,7 @@ func loadConfig() config {
 	}
 	return config{
 		Addr:             get("ADDR", ":8082"),
-		PostgresURL:      get("POSTGRES_URL", "postgres://forge:forge@localhost:5432/forge_registry?sslmode=disable"),
+		PostgresURL:      get("POSTGRES_URL", "postgres://forge:forge@localhost:15432/forge_registry?sslmode=disable"),
 		KeycloakIssuer:   get("KEYCLOAK_ISSUER", "http://localhost:8080/realms/forge"),
 		KeycloakAudience: get("KEYCLOAK_AUDIENCE", "forge-control-plane"),
 		KafkaBrokers:     get("KAFKA_BROKERS", "localhost:29092"),
@@ -575,7 +575,7 @@ func (s *server) lookupTenant(ctx context.Context, wsID uuid.UUID) (uuid.UUID, e
 	// connection here. For Phase 0 scope we just open a per-call conn.
 	cpURL := os.Getenv("CONTROL_PLANE_DB_URL")
 	if cpURL == "" {
-		cpURL = "postgres://forge:forge@localhost:5432/forge_control_plane?sslmode=disable"
+		cpURL = "postgres://forge:forge@localhost:15432/forge_control_plane?sslmode=disable"
 	}
 	conn, err := pgx.Connect(ctx, cpURL)
 	if err != nil {

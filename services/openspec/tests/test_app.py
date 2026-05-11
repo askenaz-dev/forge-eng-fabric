@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import uuid
+from pathlib import Path
 
 from fastapi.testclient import TestClient
 
-from openspec_service.app import create_app
+from openspec_service.app import Settings, create_app
 from openspec_service.events import InMemoryEventPublisher
 from openspec_service.store import FilesystemOpenSpecStore
 
@@ -200,3 +201,37 @@ def test_review_rejects_non_autonomous_doc(tmp_path) -> None:
             json={"approved": True, "reviewer": "bob"},
         )
         assert resp.status_code == 400
+
+
+def test_create_writes_openspec_backing_artifacts(tmp_path: Path) -> None:
+    settings = Settings(
+        openspec_root=str(tmp_path / "records"),
+        drafts_root=str(tmp_path / "drafts"),
+        openspec_artifacts_root=str(tmp_path / "openspec"),
+    )
+    client = TestClient(create_app(settings=settings))
+    workspace_id = str(uuid.uuid4())
+
+    created = client.post(
+        "/v1/openspecs",
+        json={
+            "openspec_id": "payments-retry",
+            "workspace_id": workspace_id,
+            "title": "Payments Retry",
+            "business_intent": "Reduce failed checkout payments",
+            "problem_statement": "Transient processor errors fail too many checkouts",
+            "requirements": {"functional": ["Retry transient payment failures"]},
+            "created_by": "alice",
+        },
+    )
+
+    assert created.status_code == 201, created.text
+    artifacts = created.json()["openspec_artifacts"]
+    assert artifacts["change_id"] == "payments-retry"
+    assert artifacts["files"] == [".openspec.yaml", "README.md", "specs/payments-retry/spec.md"]
+    assert (tmp_path / "openspec" / "changes" / "payments-retry" / ".openspec.yaml").exists()
+    spec_delta = (tmp_path / "openspec" / "changes" / "payments-retry" / "specs" / "payments-retry" / "spec.md").read_text(
+        encoding="utf-8"
+    )
+    assert "## ADDED Requirements" in spec_delta
+    assert "Retry transient payment failures" in spec_delta

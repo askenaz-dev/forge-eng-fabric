@@ -57,6 +57,12 @@ class AuditInfo(BaseModel):
     updated_at: datetime | None = None
 
 
+class OpenSpecArtifactRef(BaseModel):
+    change_id: str
+    root: str
+    files: list[str] = Field(default_factory=list)
+
+
 SourceMarker = Literal["human", "autonomous-loop"]
 ReviewStatus = Literal["pending", "approved", "rejected"]
 LifecycleStatus = Literal["drafting", "validating", "committed", "abandoned"]
@@ -141,6 +147,7 @@ class OpenSpecDocument(BaseModel):
     # records default to `committed` so historical OpenSpecs remain valid for
     # production-relevant operations without explicit migration of every row.
     lifecycle_status: LifecycleStatus = "committed"
+    openspec_artifacts: OpenSpecArtifactRef | None = None
 
     @model_validator(mode="after")
     def validate_minimum_model(self) -> OpenSpecDocument:

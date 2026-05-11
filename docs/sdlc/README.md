@@ -17,4 +17,7 @@ Phase 4 coordinates initiatives across product, architecture, design, developmen
 
 ## Portal
 
-The Portal `Initiatives` module shows initiative status, phase progression, blockers, traceability, and cost summaries.
+The Portal `Initiatives` module reads initiative status from `services/sdlc-orchestrator`,
+traceability from `services/traceability`, and cost summaries from `services/finops`.
+It does not ship seeded initiative cards or synthetic phase data; empty states mean the
+underlying service returned no records for the selected Workspace.

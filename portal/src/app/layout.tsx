@@ -4,7 +4,7 @@ import { Providers } from "./providers";
 
 export const metadata = {
   title: "Forge Engineering Fabric",
-  description: "Phase 0 portal",
+  description: "Forge Engineering Fabric portal",
 };
 
 const modules = [
@@ -16,7 +16,7 @@ const modules = [
   { label: "Alfred Console", href: "/alfred" },
   { label: "Alfred Wizard (Beta)", href: "/alfred/wizard?wizard=1" },
   { label: "Asset Registry", href: "/assets" },
-  { label: "OpenSpecs", href: "/openspecs" },
+  { label: "Specifications", href: "/openspecs" },
   { label: "Initiatives", href: "/initiatives" },
   { label: "Repositories", href: "/settings/github" },
   { label: "Runtimes", href: "/runtimes" },
