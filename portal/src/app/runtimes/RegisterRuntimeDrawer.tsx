@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Sheet } from "@/components/primitives";
+import { ScopeSelect } from "@/components/scope/ScopeSelect";
 import { useToast } from "@/components/providers/ToastProvider";
 
 // Type values MUST match what services/runtime-registry validates via
@@ -157,11 +158,25 @@ export function RegisterRuntimeDrawer({ open, onOpenChange }: Props) {
         </Row>
 
         <div className="grid gap-4 md:grid-cols-2">
-          <Row label="Workspace ID" required>
-            <input value={form.workspace_id} onChange={(e) => set("workspace_id", e.target.value)} placeholder="ws-acme-eng" className={monoCls} />
+          <Row label="Tenant" required>
+            <ScopeSelect
+              kind="tenant"
+              name="tenant_id"
+              value={form.tenant_id}
+              onChange={(next) => set("tenant_id", next)}
+              required
+              className={monoCls}
+            />
           </Row>
-          <Row label="Tenant ID" required>
-            <input value={form.tenant_id} onChange={(e) => set("tenant_id", e.target.value)} placeholder="acme" className={monoCls} />
+          <Row label="Workspace" required>
+            <ScopeSelect
+              kind="workspace"
+              name="workspace_id"
+              value={form.workspace_id}
+              onChange={(next) => set("workspace_id", next)}
+              required
+              className={monoCls}
+            />
           </Row>
         </div>
 
