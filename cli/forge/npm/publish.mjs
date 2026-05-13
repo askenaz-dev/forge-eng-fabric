@@ -8,7 +8,7 @@
 //   DIST      path to goreleaser dist directory. Default: ../dist relative to this file.
 //   DRY_RUN   set to "1" to print actions without publishing.
 
-import { mkdirSync, writeFileSync, copyFileSync, existsSync } from 'node:fs';
+import { mkdirSync, writeFileSync, copyFileSync, existsSync, readdirSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -36,16 +36,20 @@ const platforms = [
 ];
 
 function findBinary(p) {
-  // goreleaser layout varies by GOAMD64 setting: amd64 builds default to "_v1"
-  // suffix, arm64 has no suffix. Try both.
-  const candidates = [
-    path.join(distRoot, `forge_${p.goos}_${p.goarch}_v1`, p.bin),
-    path.join(distRoot, `forge_${p.goos}_${p.goarch}`, p.bin),
-  ];
-  for (const c of candidates) {
-    if (existsSync(c)) return c;
+  // goreleaser appends micro-arch suffixes that vary with version:
+  // amd64 -> "_v1" (GOAMD64), arm64 -> "_v8.0" (GOARM64) in v2.x. Glob by prefix.
+  const prefix = `forge_${p.goos}_${p.goarch}`;
+  const matches = readdirSync(distRoot, { withFileTypes: true })
+    .filter((e) => e.isDirectory() && (e.name === prefix || e.name.startsWith(prefix + '_')))
+    .map((e) => e.name)
+    .sort();
+  for (const d of matches) {
+    const candidate = path.join(distRoot, d, p.bin);
+    if (existsSync(candidate)) return candidate;
   }
-  throw new Error(`binary not found for ${p.goos}/${p.goarch} (looked under ${distRoot})`);
+  throw new Error(
+    `binary not found for ${p.goos}/${p.goarch} under ${distRoot} (looked for dirs matching ${prefix} or ${prefix}_*)`,
+  );
 }
 
 function npmPublish(cwd) {
