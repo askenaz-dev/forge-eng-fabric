@@ -2,6 +2,7 @@ import { fetchPipelineGates, requirePortalIdentity } from "@/lib/onboarding";
 import type { PipelineGateResult } from "@/lib/onboarding-types";
 import { PageHead } from "@/components/page/PageHead";
 import { Button, Card } from "@/components/primitives";
+import { ScopeSelect } from "@/components/scope/ScopeSelect";
 
 type SearchParams = { workspace_id?: string; repo?: string; pr?: string };
 
@@ -25,7 +26,7 @@ export default async function PRGatesPage({ searchParams }: { searchParams: Sear
         sub="Quality, security, SBOM and signing gate results by stage with links to raw logs."
         actions={
           <form method="get" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <input name="workspace_id" defaultValue={searchParams.workspace_id ?? ""} placeholder="Workspace ID" className="top-search" style={{ height: 32, width: 180 }} />
+            <ScopeSelect kind="workspace" name="workspace_id" defaultValue={searchParams.workspace_id ?? ""} className="top-search" style={{ height: 32, width: 180 }} />
             <input name="repo" defaultValue={searchParams.repo ?? ""} placeholder="org/repo" className="top-search" style={{ height: 32, width: 180 }} />
             <input name="pr" defaultValue={searchParams.pr ?? ""} placeholder="PR" className="top-search" style={{ height: 32, width: 80 }} />
             <Button variant="primary" type="submit">Load</Button>

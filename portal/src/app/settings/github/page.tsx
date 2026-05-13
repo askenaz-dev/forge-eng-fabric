@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/auth";
 import { PageHead } from "@/components/page/PageHead";
+import { ScopeSelect } from "@/components/scope/ScopeSelect";
 
 type GitHubRepository = {
   name: string;
@@ -98,7 +99,7 @@ export default async function GitHubSettingsPage({ searchParams }: { searchParam
         <h3 className="font-medium">Record local installation</h3>
         <label className="grid gap-1 text-sm">
           <span className="font-medium">Workspace ID</span>
-          <input name="workspace_id" required className="rounded border border-neutral-300 bg-transparent px-3 py-2 dark:border-neutral-700" />
+          <ScopeSelect kind="workspace" name="workspace_id" required className="rounded border border-neutral-300 bg-transparent px-3 py-2 dark:border-neutral-700" />
         </label>
         <label className="grid gap-1 text-sm">
           <span className="font-medium">Installation ID</span>
@@ -123,7 +124,7 @@ export default async function GitHubSettingsPage({ searchParams }: { searchParam
           <p className="mt-1 text-sm opacity-70">List repositories for the latest installation recorded on a workspace. Results are cached by the Control Plane.</p>
         </div>
         <form className="flex flex-col gap-3 sm:flex-row" method="get">
-          <input name="workspace_id" defaultValue={workspaceId} required placeholder="Workspace ID" className="min-w-0 flex-1 rounded border border-neutral-300 bg-transparent px-3 py-2 text-sm dark:border-neutral-700" />
+          <ScopeSelect kind="workspace" name="workspace_id" defaultValue={workspaceId} required className="min-w-0 flex-1 rounded border border-neutral-300 bg-transparent px-3 py-2 text-sm dark:border-neutral-700" />
           <button type="submit" className="rounded border border-neutral-300 px-4 py-2 text-sm font-medium dark:border-neutral-700">
             List repositories
           </button>

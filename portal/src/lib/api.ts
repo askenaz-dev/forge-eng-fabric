@@ -16,7 +16,8 @@ export type Endpoint =
   | "INCIDENT_URL"
   | "EVOLUTION_URL"
   | "FINOPS_URL"
-  | "POLICY_URL";
+  | "POLICY_URL"
+  | "RUNTIME_REGISTRY_URL";
 
 const DEFAULTS: Record<Endpoint, string> = {
   CONTROL_PLANE_URL: "http://localhost:8081",
@@ -32,6 +33,7 @@ const DEFAULTS: Record<Endpoint, string> = {
   EVOLUTION_URL:     "http://localhost:8098",
   FINOPS_URL:        "http://localhost:8099",
   POLICY_URL:        "http://localhost:8102",
+  RUNTIME_REGISTRY_URL: "http://localhost:8110",
 };
 
 export function endpoint(name: Endpoint): string {

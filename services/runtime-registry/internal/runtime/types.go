@@ -162,13 +162,29 @@ func (s *Store) Update(r *Runtime) {
 	s.runtimes[r.ID] = r
 }
 
+// List returns runtimes visible from `workspaceID`: own-workspace runtimes
+// plus every Visibility=tenant runtime in the same tenant. When workspaceID
+// is empty, every runtime is returned (admin / listing-all use).
 func (s *Store) List(workspaceID string) []*Runtime {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
+	tenantOf := ""
+	if workspaceID != "" {
+		for _, r := range s.runtimes {
+			if r.WorkspaceID == workspaceID {
+				tenantOf = r.TenantID
+				break
+			}
+		}
+	}
 	out := make([]*Runtime, 0, len(s.runtimes))
 	for _, r := range s.runtimes {
-		if workspaceID != "" && r.WorkspaceID != workspaceID {
-			continue
+		if workspaceID != "" {
+			ownWorkspace := r.WorkspaceID == workspaceID
+			sharedInTenant := r.Visibility == VisibilityTenant && tenantOf != "" && r.TenantID == tenantOf
+			if !ownWorkspace && !sharedInTenant {
+				continue
+			}
 		}
 		copy := *r
 		out = append(out, &copy)

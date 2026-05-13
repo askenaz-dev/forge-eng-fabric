@@ -74,7 +74,7 @@ services:
     ports: ["29092:29092"]
     networks: [forge]
     healthcheck:
-      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server kafka:9092 --list >/dev/null 2>&1"]
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --list >/dev/null 2>&1"]
       interval: 10s
       timeout: 5s
       retries: 20
@@ -93,16 +93,20 @@ services:
       KC_HOSTNAME: localhost
       KC_HTTP_ENABLED: "true"
       KC_HEALTH_ENABLED: "true"
+      KC_SPI_THEME_CACHE_THEMES: "false"
+      KC_SPI_THEME_CACHE_TEMPLATES: "false"
+      KC_SPI_THEME_STATIC_MAX_AGE: "-1"
     volumes:
       - keycloak-data:/opt/keycloak/data
       - ./keycloak/forge-realm.json:/opt/keycloak/data/import/forge-realm.json:ro
+      - ./keycloak/themes:/opt/keycloak/themes:ro
     ports: ["8080:8080"]
     depends_on:
       postgres:
         condition: service_healthy
     networks: [forge]
     healthcheck:
-      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080 && echo -e 'GET /realms/forge/.well-known/openid-configuration HTTP/1.0\\r\\n\\r\\n' >&3 && cat <&3 | grep -q 'issuer'"]
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '\"status\": \"UP\"'"]
       interval: 10s
       timeout: 5s
       retries: 30
@@ -171,6 +175,7 @@ services:
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"
+      - "--web.enable-remote-write-receiver"
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./prometheus/rules:/etc/prometheus/rules:ro
@@ -241,4 +246,48 @@ services:
       - "19530:19530"   # gRPC
       - "9091:9091"     # metrics
     depends_on: [milvus-etcd, milvus-minio]
+    networks: [forge]
+
+  runtime-registry:
+    image: golang:1.22-alpine
+    working_dir: /workspace/services/runtime-registry
+    command: ["go", "run", "./cmd"]
+    volumes:
+      - ../..:/workspace:cached
+    environment:
+      ADDR: ":8110"
+      # Seed a shared runtime so a fresh install has a deployable target on
+      # day one. Tenant matches deploy/compose/scripts/seed-portal.sh.
+      FORGE_DEFAULT_RUNTIME_TENANT: "acme"
+      FORGE_DEFAULT_RUNTIME_TYPE:   "minikube"
+      FORGE_DEFAULT_RUNTIME_NAME:   "Forge shared (dev)"
+      FORGE_BOOTSTRAP_TENANT:       "acme"
+    ports: ["8110:8110"]
+    networks: [forge]
+
+  skill-gateway:
+    image: golang:1.22-alpine
+    working_dir: /workspace/services/skill-gateway
+    command: ["go", "run", "./cmd/server"]
+    volumes:
+      - ../..:/workspace:cached
+    environment:
+      ADDR: ":8120"
+      POSTGRES_URL: "postgres://forge:forge@postgres:5432/forge_registry?sslmode=disable"
+      REDIS_URL: "redis://redis:6379/0"
+      KAFKA_BROKERS: "kafka:9092"
+      EVENTS_TOPIC: "forge.events"
+      REGISTRY_URL: "http://host.docker.internal:8082"
+      RATE_CAPACITY: "60"
+      RATE_WINDOW: "1m"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "otel-collector:4317"
+      ENV: "local"
+    ports: ["8120:8120"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
     networks: [forge]

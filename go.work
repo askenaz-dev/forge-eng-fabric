@@ -1,10 +1,12 @@
 go 1.22
 
 use (
+	./cli/forge
 	./pkg/cosign
 	./pkg/deployers
 	./pkg/llmclient
 	./pkg/runtimes
+	./pkg/skill-packager
 	./pkg/workflow
 	./services/app-onboarding
 	./services/asset-observability
@@ -21,6 +23,7 @@ use (
 	./services/runtime-registry
 	./services/scaffolder
 	./services/sdlc-orchestrator
+	./services/skill-gateway
 	./services/traceability
 	./services/webhooks/github
 	./services/workflow-registry

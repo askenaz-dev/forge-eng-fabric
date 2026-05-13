@@ -92,6 +92,7 @@ func main() {
 			r.Post("/assets/{assetID}/versions/{version}/transition", srv.transitionAsset)
 			r.Post("/assets/{assetID}/versions/{version}/lifecycle-hooks/pipeline-green", srv.pipelineGreenHook)
 			r.Post("/assets/{assetID}/versions/{version}/lifecycle-hooks/workspace-owner-approval", srv.workspaceOwnerApprovalHook)
+			r.Post("/assets/{assetID}/versions/{version}/lifecycle-hooks/gateway-publish", srv.gatewayPublishHook)
 			r.Post("/assets/{assetID}/versions/{version}/invoke-check", srv.checkAssetInvocation)
 		})
 	})
@@ -305,6 +306,34 @@ type Asset struct {
 	Metadata       map[string]any `json:"metadata"`
 	CreatedAt      time.Time      `json:"created_at"`
 	CreatedBy      string         `json:"created_by"`
+	Distribution   Distribution   `json:"distribution"`
+}
+
+// Distribution describes how an asset is exposed to external developer clients
+// through the skill gateway. See `developer-skill-gateway` capability.
+type Distribution struct {
+	GatewayPublished    bool       `json:"gateway_published"`
+	GatewayChannel      string     `json:"gateway_channel"`
+	PackageDigest       *string    `json:"package_digest"`
+	PackageSignedAt     *time.Time `json:"package_signed_at"`
+	DeprecationPointer  *string    `json:"deprecation_pointer"`
+}
+
+// assetSelectColumns is the canonical column list returned by every asset read.
+// Keep this in sync with rowScanAsset(...).
+const assetSelectColumns = `id,version,type,name,COALESCE(description,''),owner_team,inputs_schema,outputs_schema,workspace_id,tenant_id,visibility,lifecycle_state,COALESCE(trust_level,'T0'),COALESCE(eval_scores,'{}'::jsonb),owners,metadata,created_at,COALESCE(created_by,''),COALESCE(distribution_gateway_published,false),COALESCE(distribution_gateway_channel,'stable'),distribution_package_digest,distribution_package_signed_at,distribution_deprecation_pointer`
+
+// rowScanAsset reads a single asset row produced by assetSelectColumns.
+func rowScanAsset(row interface{ Scan(...any) error }, a *Asset) error {
+	return row.Scan(
+		&a.ID, &a.Version, &a.Type, &a.Name, &a.Description, &a.OwnerTeam,
+		&a.InputsSchema, &a.OutputsSchema, &a.WorkspaceID, &a.TenantID,
+		&a.Visibility, &a.LifecycleState, &a.TrustLevel, &a.EvalScores,
+		&a.Owners, &a.Metadata, &a.CreatedAt, &a.CreatedBy,
+		&a.Distribution.GatewayPublished, &a.Distribution.GatewayChannel,
+		&a.Distribution.PackageDigest, &a.Distribution.PackageSignedAt,
+		&a.Distribution.DeprecationPointer,
+	)
 }
 
 type assetCreate struct {
@@ -391,8 +420,7 @@ func (s *server) listAssets(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "forbidden", 403)
 		return
 	}
-	q := `SELECT id,version,type,name,COALESCE(description,''),owner_team,inputs_schema,outputs_schema,workspace_id,tenant_id,visibility,lifecycle_state,COALESCE(trust_level,'T0'),COALESCE(eval_scores,'{}'::jsonb),owners,metadata,created_at,COALESCE(created_by,'')
-		  FROM asset WHERE workspace_id=$1`
+	q := `SELECT ` + assetSelectColumns + ` FROM asset WHERE workspace_id=$1`
 	args := []any{wsID}
 	for _, filter := range []struct{ key, column string }{
 		{"type", "type"},
@@ -415,7 +443,7 @@ func (s *server) listAssets(w http.ResponseWriter, r *http.Request) {
 	out := []Asset{}
 	for rows.Next() {
 		var a Asset
-		if err := rows.Scan(&a.ID, &a.Version, &a.Type, &a.Name, &a.Description, &a.OwnerTeam, &a.InputsSchema, &a.OutputsSchema, &a.WorkspaceID, &a.TenantID, &a.Visibility, &a.LifecycleState, &a.TrustLevel, &a.EvalScores, &a.Owners, &a.Metadata, &a.CreatedAt, &a.CreatedBy); err != nil {
+		if err := rowScanAsset(rows, &a); err != nil {
 			http.Error(w, err.Error(), 500)
 			return
 		}
@@ -505,12 +533,11 @@ func (s *server) createAsset(w http.ResponseWriter, r *http.Request) {
 	outputsBytes, _ := json.Marshal(req.OutputsSchema)
 	evalBytes, _ := json.Marshal(normalizeEvalScores(req.EvalScores))
 	var a Asset
-	err = s.pool.QueryRow(r.Context(),
+	err = rowScanAsset(s.pool.QueryRow(r.Context(),
 		`INSERT INTO asset(id,version,type,name,description,owner_team,inputs_schema,outputs_schema,workspace_id,tenant_id,visibility,lifecycle_state,trust_level,eval_scores,owners,metadata,created_by)
 		 VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8::jsonb,$9,$10,$11,$12,$13,$14::jsonb,$15,$16::jsonb,$17)
-		 RETURNING id,version,type,name,COALESCE(description,''),owner_team,inputs_schema,outputs_schema,workspace_id,tenant_id,visibility,lifecycle_state,COALESCE(trust_level,'T0'),COALESCE(eval_scores,'{}'::jsonb),owners,metadata,created_at,COALESCE(created_by,'')`,
-		assetID, req.Version, req.Type, req.Name, req.Description, req.OwnerTeam, string(inputsBytes), string(outputsBytes), wsID, tenantID, req.Visibility, req.LifecycleState, req.TrustLevel, string(evalBytes), req.Owners, string(metaBytes), sub).
-		Scan(&a.ID, &a.Version, &a.Type, &a.Name, &a.Description, &a.OwnerTeam, &a.InputsSchema, &a.OutputsSchema, &a.WorkspaceID, &a.TenantID, &a.Visibility, &a.LifecycleState, &a.TrustLevel, &a.EvalScores, &a.Owners, &a.Metadata, &a.CreatedAt, &a.CreatedBy)
+		 RETURNING `+assetSelectColumns,
+		assetID, req.Version, req.Type, req.Name, req.Description, req.OwnerTeam, string(inputsBytes), string(outputsBytes), wsID, tenantID, req.Visibility, req.LifecycleState, req.TrustLevel, string(evalBytes), req.Owners, string(metaBytes), sub), &a)
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
@@ -593,10 +620,8 @@ func (s *server) lookupTenant(ctx context.Context, wsID uuid.UUID) (uuid.UUID, e
 func (s *server) getAssetLatest(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "assetID")
 	var a Asset
-	err := s.pool.QueryRow(r.Context(),
-		`SELECT id,version,type,name,COALESCE(description,''),owner_team,inputs_schema,outputs_schema,workspace_id,tenant_id,visibility,lifecycle_state,COALESCE(trust_level,'T0'),COALESCE(eval_scores,'{}'::jsonb),owners,metadata,created_at,COALESCE(created_by,'')
-		 FROM asset WHERE id=$1 ORDER BY created_at DESC LIMIT 1`, id).
-		Scan(&a.ID, &a.Version, &a.Type, &a.Name, &a.Description, &a.OwnerTeam, &a.InputsSchema, &a.OutputsSchema, &a.WorkspaceID, &a.TenantID, &a.Visibility, &a.LifecycleState, &a.TrustLevel, &a.EvalScores, &a.Owners, &a.Metadata, &a.CreatedAt, &a.CreatedBy)
+	err := rowScanAsset(s.pool.QueryRow(r.Context(),
+		`SELECT `+assetSelectColumns+` FROM asset WHERE id=$1 ORDER BY created_at DESC LIMIT 1`, id), &a)
 	if err != nil {
 		http.Error(w, "not found", 404)
 		return
@@ -688,10 +713,8 @@ func (s *server) getAssetVersion(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "assetID")
 	v := chi.URLParam(r, "version")
 	var a Asset
-	err := s.pool.QueryRow(r.Context(),
-		`SELECT id,version,type,name,COALESCE(description,''),owner_team,inputs_schema,outputs_schema,workspace_id,tenant_id,visibility,lifecycle_state,COALESCE(trust_level,'T0'),COALESCE(eval_scores,'{}'::jsonb),owners,metadata,created_at,COALESCE(created_by,'')
-		 FROM asset WHERE id=$1 AND version=$2`, id, v).
-		Scan(&a.ID, &a.Version, &a.Type, &a.Name, &a.Description, &a.OwnerTeam, &a.InputsSchema, &a.OutputsSchema, &a.WorkspaceID, &a.TenantID, &a.Visibility, &a.LifecycleState, &a.TrustLevel, &a.EvalScores, &a.Owners, &a.Metadata, &a.CreatedAt, &a.CreatedBy)
+	err := rowScanAsset(s.pool.QueryRow(r.Context(),
+		`SELECT `+assetSelectColumns+` FROM asset WHERE id=$1 AND version=$2`, id, v), &a)
 	if err != nil {
 		http.Error(w, "not found", 404)
 		return
@@ -746,14 +769,18 @@ func (s *server) transitionAsset(w http.ResponseWriter, r *http.Request) {
 	}
 	evalBytes, _ := json.Marshal(req.EvalScores)
 	var a Asset
-	err := s.pool.QueryRow(r.Context(),
+	err := rowScanAsset(s.pool.QueryRow(r.Context(),
 		`UPDATE asset SET lifecycle_state=$3, trust_level=$4, eval_scores=$5::jsonb WHERE id=$1 AND version=$2
-		 RETURNING id,version,type,name,COALESCE(description,''),owner_team,inputs_schema,outputs_schema,workspace_id,tenant_id,visibility,lifecycle_state,COALESCE(trust_level,'T0'),COALESCE(eval_scores,'{}'::jsonb),owners,metadata,created_at,COALESCE(created_by,'')`,
-		id, v, req.LifecycleState, req.TrustLevel, string(evalBytes)).
-		Scan(&a.ID, &a.Version, &a.Type, &a.Name, &a.Description, &a.OwnerTeam, &a.InputsSchema, &a.OutputsSchema, &a.WorkspaceID, &a.TenantID, &a.Visibility, &a.LifecycleState, &a.TrustLevel, &a.EvalScores, &a.Owners, &a.Metadata, &a.CreatedAt, &a.CreatedBy)
+		 RETURNING `+assetSelectColumns,
+		id, v, req.LifecycleState, req.TrustLevel, string(evalBytes)), &a)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
+	}
+	if next := req.LifecycleState; next == "deprecated" || next == "retired" {
+		if unpub, uerr := s.autoUnpublishOnLifecycle(r, id, v); uerr == nil && unpub != nil {
+			a = *unpub
+		}
 	}
 	s.publishAssetLifecycleEvent(r, a, current, req.LifecycleState)
 	writeJSON(w, 200, a)
@@ -896,13 +923,17 @@ func (s *server) transitionAssetWithPatch(r *http.Request, id, version, nextStat
 	evalBytes, _ := json.Marshal(normalizeEvalScores(evalScores))
 	patchBytes, _ := json.Marshal(metadataPatch)
 	var a Asset
-	err := s.pool.QueryRow(r.Context(),
+	err := rowScanAsset(s.pool.QueryRow(r.Context(),
 		`UPDATE asset SET lifecycle_state=$3, trust_level=$4, eval_scores=$5::jsonb, metadata=metadata || $6::jsonb WHERE id=$1 AND version=$2
-		 RETURNING id,version,type,name,COALESCE(description,''),owner_team,inputs_schema,outputs_schema,workspace_id,tenant_id,visibility,lifecycle_state,COALESCE(trust_level,'T0'),COALESCE(eval_scores,'{}'::jsonb),owners,metadata,created_at,COALESCE(created_by,'')`,
-		id, version, nextState, trustLevel, string(evalBytes), string(patchBytes)).
-		Scan(&a.ID, &a.Version, &a.Type, &a.Name, &a.Description, &a.OwnerTeam, &a.InputsSchema, &a.OutputsSchema, &a.WorkspaceID, &a.TenantID, &a.Visibility, &a.LifecycleState, &a.TrustLevel, &a.EvalScores, &a.Owners, &a.Metadata, &a.CreatedAt, &a.CreatedBy)
+		 RETURNING `+assetSelectColumns,
+		id, version, nextState, trustLevel, string(evalBytes), string(patchBytes)), &a)
 	if err != nil {
 		return Asset{}, current, err
+	}
+	if nextState == "deprecated" || nextState == "retired" {
+		if unpub, uerr := s.autoUnpublishOnLifecycle(r, id, version); uerr == nil && unpub != nil {
+			a = *unpub
+		}
 	}
 	return a, current, nil
 }

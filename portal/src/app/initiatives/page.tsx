@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { PageHead } from "@/components/page/PageHead";
 import { Button, Card } from "@/components/primitives";
+import { ScopeSelect } from "@/components/scope/ScopeSelect";
 
 type PhaseStatus =
   | "not_started"
@@ -210,7 +211,7 @@ export default async function InitiativesPage({ searchParams }: { searchParams: 
         sub="Live initiative state from the SDLC orchestrator, traceability graph, and FinOps attribution."
         actions={
           <form method="get" style={{ display: "flex", gap: 8 }}>
-            <input name="workspace_id" defaultValue={workspaceId} placeholder="Workspace ID" className="top-search" style={{ height: 32, width: 200 }} />
+            <ScopeSelect kind="workspace" name="workspace_id" defaultValue={workspaceId} className="top-search" style={{ height: 32, width: 200 }} />
             <Button variant="primary" type="submit">Load</Button>
           </form>
         }

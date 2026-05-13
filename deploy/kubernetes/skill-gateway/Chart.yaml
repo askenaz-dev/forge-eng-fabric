@@ -1,0 +1,6 @@
+apiVersion: v2
+name: skill-gateway
+description: Forge developer skill gateway — public surface for installable assets, MCP proxy, A2A.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

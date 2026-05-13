@@ -2,8 +2,9 @@ import { authOptions } from "@/auth";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { WorkflowEditor } from "./editor";
+import { CreateWorkflowForm } from "./CreateWorkflowForm";
 import { PageHead } from "@/components/page/PageHead";
-import { Button, Card } from "@/components/primitives";
+import { Button, Card, CardHeader } from "@/components/primitives";
 
 type Workflow = {
   id: string;
@@ -139,6 +140,9 @@ async function dryRun(formData: FormData) {
 
 export default async function WorkflowsPage({ searchParams }: { searchParams: SearchParams }) {
   const token = await getToken();
+  // Tenant/workspace come from the URL when navigating from a workflow link;
+  // otherwise the inline Create form picks them from a dropdown (sourced
+  // from /api/me/tenants and /api/me/workspaces).
   const tenantId = searchParams.tenant_id?.trim() ?? "";
   const workspaceId = searchParams.workspace_id?.trim() ?? "";
 
@@ -196,42 +200,69 @@ export default async function WorkflowsPage({ searchParams }: { searchParams: Se
       />
 
       {searchParams.saved && (
-        <Card style={{ marginBottom: 16 }}>
-          <div style={{ padding: 14, color: "var(--thread)" }}>Saved.</div>
-        </Card>
+        <div className="notice notice--ok" style={{ marginBottom: 16 }} role="status">
+          <span className="body">Saved.</span>
+        </div>
       )}
       {error && (
-        <Card style={{ marginBottom: 16 }}>
-          <div style={{ padding: 14, color: "var(--rust)" }}>{error}</div>
-        </Card>
+        <div className="notice notice--err" style={{ marginBottom: 16 }} role="alert">
+          <span className="body">{error}</span>
+        </div>
       )}
 
-      <div className="grid gap-5 xl:grid-cols-[300px_1fr]">
-        <aside className="space-y-4 rounded border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
-          <h3 className="font-medium">Workspace workflows</h3>
-          <div className="grid gap-2 text-sm">
-            {workflows.map((wf) => (
-              <a
-                key={wf.id}
-                href={`/workflows?tenant_id=${tenantId}&workspace_id=${workspaceId}&workflow_id=${wf.id}`}
-                className={`rounded border px-3 py-2 ${
-                  selected?.id === wf.id ? "border-blue-400 bg-blue-50 dark:bg-blue-950" : "border-neutral-200 hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-800"
-                }`}
-              >
-                <span className="block font-medium">{wf.name}</span>
-                <span className="text-xs opacity-60">
-                  {wf.id} · {wf.visibility} · v{wf.latest_version ?? "-"}
-                </span>
-              </a>
-            ))}
-            {tenantId && workspaceId && workflows.length === 0 && !error && (
-              <p className="opacity-70">No workflows yet. Create one →</p>
-            )}
+      <div className="grid gap-5 xl:grid-cols-[320px_1fr]">
+        <aside
+          style={{
+            background: "var(--bg-card)",
+            border: "1px solid var(--border)",
+            borderRadius: "var(--r-4)",
+            padding: 16,
+            display: "grid",
+            gap: 14,
+            alignContent: "start",
+          }}
+        >
+          <div>
+            <h3 style={{ margin: 0, fontSize: 13, fontWeight: 500 }}>Workspace workflows</h3>
+            <p className="h-eyebrow" style={{ margin: "6px 0 0" }}>
+              {tenantId && workspaceId ? `${tenantId} · ${workspaceId}` : "Set a tenant + workspace to load"}
+            </p>
           </div>
-          <CreateWorkflowForm tenantId={tenantId} workspaceId={workspaceId} />
+          {tenantId && workspaceId && (
+            <div className="grid gap-2 text-sm">
+              {workflows.map((wf) => {
+                const isActive = selected?.id === wf.id;
+                return (
+                  <a
+                    key={wf.id}
+                    href={`/workflows?tenant_id=${encodeURIComponent(tenantId)}&workspace_id=${encodeURIComponent(workspaceId)}&workflow_id=${encodeURIComponent(wf.id)}`}
+                    style={{
+                      display: "block",
+                      padding: "8px 10px",
+                      borderRadius: "var(--r-2)",
+                      border: "1px solid",
+                      borderColor: isActive ? "color-mix(in oklch, var(--primary), transparent 60%)" : "var(--border)",
+                      background: isActive ? "color-mix(in oklch, var(--primary), transparent 90%)" : "transparent",
+                      color: "var(--fg)",
+                      transition: "background var(--t-fast), border-color var(--t-fast)",
+                    }}
+                  >
+                    <span style={{ display: "block", fontWeight: 500, fontSize: 13 }}>{wf.name}</span>
+                    <span style={{ fontFamily: "var(--f-mono)", fontSize: 11, color: "var(--fg-3)" }}>
+                      {wf.id} · {wf.visibility} · v{wf.latest_version ?? "-"}
+                    </span>
+                  </a>
+                );
+              })}
+              {workflows.length === 0 && !error && (
+                <p style={{ color: "var(--fg-3)", fontSize: 12, margin: 0 }}>No workflows yet. Create one below.</p>
+              )}
+            </div>
+          )}
+          <CreateWorkflowForm tenantId={tenantId} workspaceId={workspaceId} action={createWorkflow} />
         </aside>
 
-        <div className="space-y-5">
+        <div style={{ display: "grid", gap: 20 }}>
           {selected ? (
             <>
               <WorkflowEditor
@@ -245,34 +276,18 @@ export default async function WorkflowsPage({ searchParams }: { searchParams: Se
               <DiffViewer base={baseVersion} compare={compareVersion} versions={versions} workflow={selected} tenantId={tenantId} workspaceId={workspaceId} />
             </>
           ) : (
-            <div className="rounded border border-dashed border-neutral-300 p-6 text-sm opacity-70 dark:border-neutral-800">
-              Set a Tenant + Workspace and select a workflow.
+            <div className="empty-state">
+              <span className="title">No workflow selected</span>
+              <span className="sub">
+                {tenantId && workspaceId
+                  ? "Pick a workflow from the list, or create a new one to start composing steps."
+                  : "Set a Tenant + Workspace using the Load form above. You can also type IDs directly in the New workflow form to create one without loading first."}
+              </span>
             </div>
           )}
         </div>
       </div>
     </>
-  );
-}
-
-function CreateWorkflowForm({ tenantId, workspaceId }: { tenantId: string; workspaceId: string }) {
-  return (
-    <form action={createWorkflow} className="space-y-2 rounded border border-neutral-200 p-3 text-sm dark:border-neutral-800">
-      <p className="font-medium">New workflow</p>
-      <input type="hidden" name="tenant_id" value={tenantId} />
-      <input type="hidden" name="workspace_id" value={workspaceId} />
-      <input name="id" required placeholder="id (kebab-case)" className="w-full rounded border border-neutral-300 bg-transparent px-2 py-1 dark:border-neutral-700" />
-      <input name="name" required placeholder="display name" className="w-full rounded border border-neutral-300 bg-transparent px-2 py-1 dark:border-neutral-700" />
-      <select name="visibility" defaultValue="workspace" className="w-full rounded border border-neutral-300 bg-transparent px-2 py-1 dark:border-neutral-700">
-        <option value="private">private</option>
-        <option value="workspace">workspace</option>
-        <option value="tenant">tenant</option>
-      </select>
-      <textarea name="description" rows={2} placeholder="description" className="w-full rounded border border-neutral-300 bg-transparent px-2 py-1 dark:border-neutral-700" />
-      <button disabled={!tenantId || !workspaceId} className="w-full rounded bg-neutral-900 px-3 py-1.5 text-white disabled:opacity-40 dark:bg-neutral-100 dark:text-neutral-900">
-        Create
-      </button>
-    </form>
   );
 }
 
@@ -298,68 +313,95 @@ function DiffViewer({
   const added = compareSteps.filter((s: any) => !baseIds.has(s.id));
   const removed = baseSteps.filter((s: any) => !compareIds.has(s.id));
   return (
-    <div className="rounded border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
-      <h3 className="font-medium">Version diff</h3>
-      <form className="mt-3 flex flex-wrap gap-2 text-sm" method="get">
-        <input type="hidden" name="tenant_id" value={tenantId} />
-        <input type="hidden" name="workspace_id" value={workspaceId} />
-        <input type="hidden" name="workflow_id" value={workflow.id} />
-        <select name="base_version" defaultValue={base?.version} className="rounded border border-neutral-300 bg-transparent px-2 py-1 dark:border-neutral-700">
-          {versions.map((v) => (
-            <option key={`b-${v.version}`} value={v.version}>
-              base v{v.version}
-            </option>
-          ))}
-        </select>
-        <select name="compare_version" defaultValue={compare?.version} className="rounded border border-neutral-300 bg-transparent px-2 py-1 dark:border-neutral-700">
-          {versions.map((v) => (
-            <option key={`c-${v.version}`} value={v.version}>
-              compare v{v.version}
-            </option>
-          ))}
-        </select>
-        <button className="rounded border border-neutral-300 px-3 py-1 dark:border-neutral-700">Diff</button>
-      </form>
-      {compare?.diff_prev && (
-        <div className="mt-3 rounded bg-neutral-100 p-3 text-sm dark:bg-neutral-800">
-          <p>
-            Bump: <strong>{compare.diff_prev.bump}</strong>
-          </p>
-          {compare.diff_prev.reasons.length > 0 && (
-            <ul className="mt-1 list-inside list-disc text-xs opacity-80">
-              {compare.diff_prev.reasons.map((r, i) => (
-                <li key={i}>{r}</li>
+    <Card>
+      <CardHeader title="Version diff" sub={versions.length > 0 ? `${versions.length} versions` : "no versions yet"} />
+      <div style={{ padding: 16, display: "grid", gap: 14 }}>
+        <form method="get" className="fld-row">
+          <input type="hidden" name="tenant_id" value={tenantId} />
+          <input type="hidden" name="workspace_id" value={workspaceId} />
+          <input type="hidden" name="workflow_id" value={workflow.id} />
+          <label className="fld" style={{ minWidth: 160 }}>
+            <span className="fld-label">Base</span>
+            <select name="base_version" defaultValue={base?.version} className="fld-select">
+              {versions.map((v) => (
+                <option key={`b-${v.version}`} value={v.version}>
+                  v{v.version}
+                </option>
               ))}
-            </ul>
-          )}
-        </div>
-      )}
-      <div className="mt-3 grid gap-3 md:grid-cols-2">
-        <div className="rounded border border-red-300 p-3 text-sm dark:border-red-800">
-          <p className="font-medium text-red-700 dark:text-red-300">Removed steps</p>
-          {removed.length === 0 ? (
-            <p className="opacity-60">none</p>
-          ) : (
-            removed.map((s: any) => (
-              <code key={s.id} className="block">
-                {s.id} ({s.type})
-              </code>
-            ))
-          )}
-        </div>
-        <div className="rounded border border-green-300 p-3 text-sm dark:border-green-800">
-          <p className="font-medium text-green-700 dark:text-green-300">Added steps</p>
-          {added.length === 0 ? (
-            <p className="opacity-60">none</p>
-          ) : (
-            added.map((s: any) => (
-              <code key={s.id} className="block">
-                {s.id} ({s.type})
-              </code>
-            ))
-          )}
+            </select>
+          </label>
+          <label className="fld" style={{ minWidth: 160 }}>
+            <span className="fld-label">Compare</span>
+            <select name="compare_version" defaultValue={compare?.version} className="fld-select">
+              {versions.map((v) => (
+                <option key={`c-${v.version}`} value={v.version}>
+                  v{v.version}
+                </option>
+              ))}
+            </select>
+          </label>
+          <Button variant="secondary" type="submit">Diff</Button>
+        </form>
+
+        {compare?.diff_prev && (
+          <div
+            style={{
+              background: "var(--bg-sunk)",
+              border: "1px solid var(--border)",
+              borderRadius: "var(--r-3)",
+              padding: 12,
+              fontSize: 13,
+            }}
+          >
+            <p style={{ margin: 0 }}>
+              Bump: <strong>{compare.diff_prev.bump}</strong>
+            </p>
+            {compare.diff_prev.reasons.length > 0 && (
+              <ul style={{ margin: "6px 0 0", paddingLeft: 18, fontSize: 12, color: "var(--fg-2)" }}>
+                {compare.diff_prev.reasons.map((r, i) => (
+                  <li key={i}>{r}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+
+        <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+          <DiffPanel tone="rem" label="Removed steps" items={removed} />
+          <DiffPanel tone="add" label="Added steps" items={added} />
         </div>
       </div>
+    </Card>
+  );
+}
+
+function DiffPanel({ tone, label, items }: { tone: "add" | "rem"; label: string; items: { id: string; type: string }[] }) {
+  const color = tone === "add" ? "var(--thread)" : "var(--rust)";
+  return (
+    <div
+      style={{
+        border: `1px solid color-mix(in oklch, ${color}, transparent 60%)`,
+        background: `color-mix(in oklch, ${color}, transparent 92%)`,
+        borderRadius: "var(--r-3)",
+        padding: 12,
+        fontFamily: "var(--f-mono)",
+        fontSize: 12,
+      }}
+    >
+      <p style={{ margin: 0, color, fontWeight: 500, fontSize: 11.5, letterSpacing: ".06em", textTransform: "uppercase" }}>
+        {label}
+      </p>
+      {items.length === 0 ? (
+        <p style={{ margin: "8px 0 0", color: "var(--fg-3)", fontFamily: "var(--f-sans)", fontSize: 12 }}>none</p>
+      ) : (
+        <ul style={{ margin: "8px 0 0", padding: 0, listStyle: "none", display: "grid", gap: 4 }}>
+          {items.map((s) => (
+            <li key={s.id} style={{ color: "var(--fg)" }}>
+              {s.id} <span style={{ color: "var(--fg-3)" }}>({s.type})</span>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

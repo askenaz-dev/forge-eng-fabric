@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { PageHead } from "@/components/page/PageHead";
 import { Button } from "@/components/primitives";
+import { ScopeSelect } from "@/components/scope/ScopeSelect";
 
 type Recommendation = {
   id: string;
@@ -58,7 +59,7 @@ export default async function FinOpsRecommendationsPage({ searchParams }: { sear
         sub="Cost-reduction proposals from the autonomous FinOps advisor. Each comes with a draft PR."
         actions={
           <form method="get" style={{ display: "flex", gap: 8 }}>
-            <input name="tenant_id" defaultValue={tenantId} placeholder="Tenant ID" className="top-search" style={{ height: 32, width: 200 }} />
+            <ScopeSelect kind="tenant" name="tenant_id" defaultValue={tenantId} className="top-search" style={{ height: 32, width: 200 }} />
             <Button variant="primary" type="submit">Filter</Button>
           </form>
         }

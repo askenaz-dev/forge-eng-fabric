@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -79,6 +80,10 @@ func main() {
 		r.Get("/v1/audit", srv.listAudit)
 		r.Get("/v1/audit/verify", srv.verifyAuditChain)
 	})
+	// /v1/events is the dashboard-facing list endpoint: workspace-scoped,
+	// no tenant_id required, no JWT (the portal proxies it). Returns the
+	// shape the portal expects: { events: [...] } with a flattened payload.
+	r.Get("/v1/events", srv.listEvents)
 
 	httpSrv := &http.Server{Addr: cfg.Addr, Handler: otelhttp.NewHandler(r, "audit-service"), ReadHeaderTimeout: 10 * time.Second}
 	go func() {
@@ -365,4 +370,54 @@ func (s *queryServer) verifyAuditChain(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("content-type", "application/json")
 	_ = json.NewEncoder(w).Encode(result)
+}
+
+// listEvents serves the portal dashboard's Platform Activity card. Unlike
+// /v1/audit it requires no tenant_id and no JWT — the portal proxies the call
+// and applies its own session scoping. The response uses a flattened shape
+// matching what /api/audit/events expects: { events: [{id, type, principal,
+// timestamp, data}] }.
+func (s *queryServer) listEvents(w http.ResponseWriter, r *http.Request) {
+	limit := 20
+	if v := r.URL.Query().Get("limit"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 && n <= 200 {
+			limit = n
+		}
+	}
+
+	q := `SELECT id, action, actor, details, occurred_at
+	      FROM audit_event
+	      ORDER BY occurred_at DESC
+	      LIMIT $1`
+	rows, err := s.pool.Query(r.Context(), q, limit)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	defer rows.Close()
+
+	type event struct {
+		ID        string          `json:"id"`
+		Type      string          `json:"type"`
+		Principal string          `json:"principal"`
+		Timestamp time.Time       `json:"timestamp"`
+		Data      json.RawMessage `json:"data"`
+	}
+	out := []event{}
+	for rows.Next() {
+		var ev event
+		var raw []byte
+		if err := rows.Scan(&ev.ID, &ev.Type, &ev.Principal, &raw, &ev.Timestamp); err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		if len(raw) == 0 {
+			ev.Data = json.RawMessage("{}")
+		} else {
+			ev.Data = raw
+		}
+		out = append(out, ev)
+	}
+	w.Header().Set("content-type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]any{"events": out})
 }

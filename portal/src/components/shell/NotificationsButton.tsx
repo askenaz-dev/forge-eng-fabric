@@ -67,7 +67,7 @@ export function NotificationsButton() {
         </button>
       </Popover.Trigger>
       <Popover.Portal>
-        <Popover.Content className="pop" style={{ minWidth: 280 }} align="end" sideOffset={6}>
+        <Popover.Content className="pop" style={{ minWidth: 280 }} align="end" sideOffset={8} collisionPadding={12}>
           {items.length === 0 ? (
             <div className="pop-item" aria-disabled>
               <small style={{ marginLeft: 0 }}>{t("act_sub")}</small>

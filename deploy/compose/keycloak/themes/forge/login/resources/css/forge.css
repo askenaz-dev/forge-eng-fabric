@@ -1,0 +1,579 @@
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Instrument+Serif&family=JetBrains+Mono:wght@400;500&display=swap");
+
+:root {
+  --bg-app: #FAFAF7;
+  --bg-canvas: #FAFAF7;
+  --bg-card: #FFFFFF;
+  --bg-sunk: #F2EFE8;
+  --bg-hover: #F2EFE8;
+  --bg-active: #EBE7DD;
+  --bg-input: #FFFFFF;
+
+  --fg: #13110F;
+  --fg-2: #57544F;
+  --fg-3: #6F6758;
+  --fg-on-ember: #FFFFFF;
+
+  --border: #E5E0D2;
+  --border-2: #D9D2C5;
+  --border-strong: #BBB2A0;
+
+  --primary: #FF6A33;
+  --primary-h: #FF8253;
+
+  --r-2: 6px;
+  --r-3: 8px;
+  --r-4: 12px;
+  --r-5: 16px;
+
+  --shadow-pop: 0 1px 0 rgba(19,17,15,.04), 0 10px 28px -10px rgba(19,17,15,.18), 0 2px 6px -2px rgba(19,17,15,.06);
+
+  --f-sans: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --f-display: "Instrument Serif", "Cormorant Garamond", Georgia, serif;
+  --f-mono: "JetBrains Mono", "SF Mono", ui-monospace, Menlo, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-app: #0C0B0A;
+    --bg-canvas: #0C0B0A;
+    --bg-card: #141210;
+    --bg-sunk: #0A0908;
+    --bg-hover: #1A1714;
+    --bg-active: #221E1A;
+    --bg-input: #100E0C;
+
+    --fg: #F2EDE2;
+    --fg-2: #B0A797;
+    --fg-3: #908A80;
+    --fg-on-ember: #0C0B0A;
+
+    --border: #2D2823;
+    --border-2: #2D2823;
+    --border-strong: #423A32;
+
+    --primary-h: #FF8253;
+
+    --shadow-pop: 0 12px 30px -8px rgba(0,0,0,.65), 0 2px 6px rgba(0,0,0,.45);
+  }
+}
+
+/* ============================================================
+   Page shell — flow from top with padding (no clipping)
+   ============================================================ */
+html, body {
+  height: auto !important;
+  min-height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+}
+
+body#keycloak-bg,
+.login-pf,
+.login-pf body {
+  background: var(--bg-app) !important;
+  background-image: none !important;
+  color: var(--fg) !important;
+  font-family: var(--f-sans) !important;
+  min-height: 100vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  padding: 64px 16px !important;
+  box-sizing: border-box !important;
+}
+
+/* ============================================================
+   Brand header
+   ============================================================ */
+#kc-header,
+.login-pf-page-header {
+  width: 100% !important;
+  max-width: 30rem !important;
+  margin: 0 auto 24px !important;
+  text-align: center !important;
+  background: transparent !important;
+  color: var(--fg) !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  padding: 0 !important;
+}
+
+#kc-header-wrapper {
+  display: block !important;
+  width: 100% !important;
+  font-family: var(--f-display) !important;
+  font-weight: 400 !important;
+  font-size: 2rem !important;
+  letter-spacing: 0 !important;
+  line-height: 1.15 !important;
+  text-transform: none !important;
+  color: var(--fg) !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  text-align: center !important;
+  background: transparent !important;
+}
+
+/* ============================================================
+   Login container — kill PatternFly v5's full-viewport flex grid
+   By default .pf-v5-c-login has min-height: 100vh + display: flex +
+   justify-content: center, which reserves the whole viewport and
+   vertically centers the card inside, creating a huge gap with our
+   page header. We override to a simple block.
+   ============================================================ */
+.pf-v5-c-login {
+  display: block !important;
+  flex: unset !important;
+  align-items: unset !important;
+  justify-content: unset !important;
+  min-height: 0 !important;
+  height: auto !important;
+  width: 100% !important;
+  max-width: 30rem !important;
+  margin: 0 auto !important;
+  padding: 0 !important;
+  padding-block-start: 0 !important;
+  padding-block-end: 0 !important;
+  padding-inline-start: 0 !important;
+  padding-inline-end: 0 !important;
+  background: transparent !important;
+}
+
+.pf-v5-c-login__container {
+  display: block !important;
+  grid-template-areas: unset !important;
+  grid-template-columns: unset !important;
+  grid-template-rows: unset !important;
+  grid-column-gap: 0 !important;
+  grid-row-gap: 0 !important;
+  width: 100% !important;
+  max-width: 30rem !important;
+  margin: 0 auto !important;
+  padding: 0 !important;
+  padding-inline-start: 0 !important;
+  padding-inline-end: 0 !important;
+  background: transparent !important;
+}
+
+/* Kill auto-padding PatternFly injects on the first/last child of __main */
+.pf-v5-c-login__main > :first-child,
+.pf-v5-c-login__main > :first-child:not(.pf-v5-c-login__main-header),
+.pf-v5-c-login__main > :last-child,
+.pf-v5-c-login__main > :last-child:not(.pf-v5-c-login__main-footer) {
+  padding-block-start: 0 !important;
+  padding-block-end: 0 !important;
+}
+
+/* Reset main-header grid layout */
+.pf-v5-c-login__main-header {
+  display: block !important;
+  grid-template-columns: unset !important;
+  column-gap: 0 !important;
+  row-gap: 0 !important;
+  padding-block-start: 0 !important;
+  padding-block-end: 20px !important;
+  padding-inline-start: 0 !important;
+  padding-inline-end: 0 !important;
+}
+
+/* Reset main-body internal padding (we control padding on __main) */
+.pf-v5-c-login__main-body {
+  padding-block-start: 0 !important;
+  padding-block-end: 0 !important;
+  padding-inline-start: 0 !important;
+  padding-inline-end: 0 !important;
+}
+
+.pf-v5-c-login__main-footer {
+  padding-block-start: 16px !important;
+  padding-block-end: 0 !important;
+  padding-inline-start: 0 !important;
+  padding-inline-end: 0 !important;
+}
+
+/* ============================================================
+   THE CARD — only one wrapper gets the card styling.
+   Everything inside is plain (transparent / no border).
+   ============================================================ */
+.pf-v5-c-login__main,
+main.pf-v5-c-login__main {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--r-5) !important;
+  box-shadow: var(--shadow-pop) !important;
+  padding: 32px !important;
+  width: 100% !important;
+  max-width: 30rem !important;
+  margin: 0 auto !important;
+  box-sizing: border-box !important;
+}
+
+.pf-v5-c-login__main-header,
+.pf-v5-c-login__main-body,
+.pf-v5-c-login__main-footer {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+.pf-v5-c-login__main-header { padding-bottom: 20px !important; }
+.pf-v5-c-login__main-footer { padding-top: 16px !important; }
+
+/* Remove ALL card styling from inner form (was creating nested box) */
+#kc-form,
+#kc-content,
+#kc-content-wrapper,
+#kc-form-wrapper,
+.card-pf {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Strip any pseudo-element bars at the top of cards */
+.card-pf::before,
+.pf-v5-c-login__main::before,
+.pf-v5-c-login::before { display: none !important; content: none !important; }
+
+/* ============================================================
+   Title — "Sign in to your account"
+   ============================================================ */
+#kc-page-title,
+h1#kc-page-title,
+.pf-v5-c-title.pf-m-3xl,
+.pf-v5-c-title {
+  font-family: var(--f-display) !important;
+  font-weight: 400 !important;
+  font-size: 1.625rem !important;
+  color: var(--fg) !important;
+  margin: 0 !important;
+  text-align: center !important;
+  line-height: 1.2 !important;
+}
+
+/* ============================================================
+   Form layout — vertical rhythm
+   ============================================================ */
+form#kc-form-login,
+.pf-v5-c-form {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.pf-v5-c-form__group {
+  margin: 0 !important;
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+}
+
+/* ============================================================
+   Labels
+   ============================================================ */
+label,
+.pf-v5-c-form__label,
+.pf-v5-c-form__label-text {
+  color: var(--fg-2) !important;
+  font-family: var(--f-sans) !important;
+  font-weight: 500 !important;
+  font-size: 0.875rem !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: block !important;
+}
+
+/* ============================================================
+   INPUTS — username field (standalone .pf-v5-c-form-control span)
+   ============================================================ */
+
+/* When .pf-v5-c-form-control wraps an input directly (NOT inside an input-group) */
+span.pf-v5-c-form-control,
+div.pf-v5-c-form-control {
+  display: block !important;
+  background: var(--bg-input) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--r-3) !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  box-shadow: none !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  --pf-v5-c-form-control--BorderBottomColor: transparent !important;
+  --pf-v5-c-form-control--focus--BorderBottomColor: transparent !important;
+  --pf-v5-c-form-control--BackgroundColor: var(--bg-input) !important;
+  --pf-v5-c-form-control--Color: var(--fg) !important;
+}
+
+span.pf-v5-c-form-control > input,
+div.pf-v5-c-form-control > input {
+  width: 100% !important;
+  background: transparent !important;
+  border: 0 !important;
+  outline: none !important;
+  padding: 10px 12px !important;
+  color: var(--fg) !important;
+  font-family: var(--f-sans) !important;
+  font-size: 0.95rem !important;
+  box-shadow: none !important;
+  display: block !important;
+  box-sizing: border-box !important;
+}
+
+/* Fallback: any bare input that escaped wrapper styling */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="tel"],
+input[type="number"] {
+  background: transparent !important;
+  border: 0 !important;
+  outline: none !important;
+  color: var(--fg) !important;
+  font-family: var(--f-sans) !important;
+  font-size: 0.95rem !important;
+  box-shadow: none !important;
+  padding: 10px 12px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Focus state — apply on the wrapper */
+span.pf-v5-c-form-control:focus-within,
+div.pf-v5-c-form-control:focus-within {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--primary), transparent 78%) !important;
+}
+
+/* Invalid */
+span.pf-v5-c-form-control[aria-invalid="true"],
+div.pf-v5-c-form-control[aria-invalid="true"],
+input[aria-invalid="true"] {
+  border-color: #B33620 !important;
+  box-shadow: 0 0 0 3px color-mix(in oklch, #B33620, transparent 80%) !important;
+}
+
+/* Browser autofill */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-text-fill-color: var(--fg) !important;
+  -webkit-box-shadow: 0 0 0 1000px var(--bg-input) inset !important;
+  box-shadow: 0 0 0 1000px var(--bg-input) inset !important;
+  caret-color: var(--fg) !important;
+  transition: background-color 99999s ease-in-out 0s !important;
+}
+
+/* ============================================================
+   INPUT GROUP — password + eye toggle (single cohesive control)
+   ============================================================ */
+.pf-v5-c-input-group {
+  display: flex !important;
+  align-items: stretch !important;
+  background: var(--bg-input) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--r-3) !important;
+  overflow: hidden !important;
+  width: 100% !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.pf-v5-c-input-group:focus-within {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--primary), transparent 78%) !important;
+}
+
+/* Inside input-group: kill inner wrapper border/background, keep input flush */
+.pf-v5-c-input-group > .pf-v5-c-form-control,
+.pf-v5-c-input-group > span.pf-v5-c-form-control,
+.pf-v5-c-input-group > div.pf-v5-c-form-control {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  flex: 1 1 auto !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  display: block !important;
+}
+
+.pf-v5-c-input-group > .pf-v5-c-form-control:focus-within {
+  box-shadow: none !important;
+  border-color: transparent !important;
+}
+
+/* The eye toggle button */
+.pf-v5-c-input-group > .pf-v5-c-button,
+.pf-v5-c-button.pf-m-control {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: 0 !important;
+  border-left: 1px solid var(--border) !important;
+  color: var(--fg-2) !important;
+  padding: 0 12px !important;
+  min-width: 40px !important;
+  border-radius: 0 !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: none !important;
+}
+
+.pf-v5-c-input-group > .pf-v5-c-button:hover,
+.pf-v5-c-button.pf-m-control:hover {
+  background: var(--bg-hover) !important;
+  color: var(--fg) !important;
+}
+
+.pf-v5-c-input-group > .pf-v5-c-button:focus,
+.pf-v5-c-button.pf-m-control:focus {
+  outline: none !important;
+  background: var(--bg-hover) !important;
+  box-shadow: inset 0 0 0 2px var(--primary) !important;
+}
+
+.pf-v5-c-button.pf-m-control svg,
+.pf-v5-c-button.pf-m-control i,
+.pf-v5-c-input-group > .pf-v5-c-button svg,
+.pf-v5-c-input-group > .pf-v5-c-button i {
+  fill: currentColor !important;
+  color: currentColor !important;
+  font-size: 1rem !important;
+}
+
+/* ============================================================
+   Form options row (checkbox + forgot password)
+   ============================================================ */
+#kc-form-options,
+.login-pf-settings,
+.pf-v5-c-form__group.login-pf-settings {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+#kc-form-options .checkbox { margin: 0 !important; }
+
+/* When there's only the forgot-password link, center it */
+.pf-v5-c-form__group.login-pf-settings:has(> div:empty) {
+  justify-content: center !important;
+}
+
+/* ============================================================
+   Primary button (Sign In)
+   ============================================================ */
+#kc-form-buttons {
+  margin: 8px 0 0 !important;
+  padding: 0 !important;
+}
+
+.btn-primary,
+.pf-v5-c-button.pf-m-primary,
+button.pf-v5-c-button.pf-m-primary,
+button.pf-v5-c-button.pf-m-primary.pf-m-block,
+button[type="submit"],
+input[type="submit"],
+#kc-login {
+  background: var(--primary) !important;
+  background-image: none !important;
+  background-color: var(--primary) !important;
+  border: 1px solid var(--primary) !important;
+  color: var(--fg-on-ember) !important;
+  font-family: var(--f-sans) !important;
+  font-weight: 600 !important;
+  font-size: 0.95rem !important;
+  border-radius: var(--r-3) !important;
+  padding: 12px 16px !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
+  width: 100% !important;
+  transition: background-color 120ms cubic-bezier(.2,.6,.3,1);
+  cursor: pointer !important;
+}
+
+.btn-primary:hover,
+.pf-v5-c-button.pf-m-primary:hover,
+button[type="submit"]:hover,
+#kc-login:hover {
+  background: var(--primary-h) !important;
+  background-color: var(--primary-h) !important;
+  border-color: var(--primary-h) !important;
+}
+
+.btn-primary:focus,
+.pf-v5-c-button.pf-m-primary:focus,
+button[type="submit"]:focus,
+#kc-login:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--primary), transparent 70%) !important;
+}
+
+/* ============================================================
+   Links
+   ============================================================ */
+a, .login-pf-page a, #kc-info a, #kc-registration a, .kc-form-options a {
+  color: var(--primary) !important;
+  text-decoration: none !important;
+}
+a:hover { color: var(--primary-h) !important; text-decoration: underline !important; }
+
+/* ============================================================
+   Alerts / feedback
+   ============================================================ */
+.checkbox label, .pf-v5-c-check__label { color: var(--fg-2) !important; font-weight: 400 !important; }
+#kc-info, .kc-feedback-area { color: var(--fg-3) !important; text-align: center !important; }
+
+.alert-success,
+.pf-v5-c-alert.pf-m-success {
+  background: color-mix(in oklch, #4F8C76, transparent 88%) !important;
+  border: 1px solid #4F8C76 !important;
+  color: var(--fg) !important;
+  border-radius: var(--r-3) !important;
+}
+.alert-warning,
+.pf-v5-c-alert.pf-m-warning {
+  background: color-mix(in oklch, #E8B100, transparent 88%) !important;
+  border: 1px solid #E8B100 !important;
+  color: var(--fg) !important;
+  border-radius: var(--r-3) !important;
+}
+.alert-error, .alert-danger,
+.pf-v5-c-alert.pf-m-danger,
+.pf-v5-c-form__helper-text.pf-m-error,
+.kc-feedback-text {
+  color: #B33620 !important;
+  font-family: var(--f-sans) !important;
+  font-size: 0.85rem !important;
+}
+
+/* Hide PatternFly v5 form-control success/error icons (they clash with our look) */
+.pf-v5-c-form-control > .pf-v5-c-form-control__icon { display: none !important; }
+
+/* Locale dropdown */
+#kc-locale,
+#kc-locale-wrapper {
+  text-align: right !important;
+  margin-top: 8px !important;
+}
+#kc-locale-dropdown a,
+#kc-locale-dropdown button { color: var(--fg-2) !important; }

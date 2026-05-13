@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { PageHead } from "@/components/page/PageHead";
 import { Card } from "@/components/primitives";
+import { ScopeSelect } from "@/components/scope/ScopeSelect";
 
 type SearchParams = { result?: string; session_id?: string; error?: string };
 
@@ -98,7 +99,7 @@ export default async function AlfredPage({ searchParams }: { searchParams: Searc
       <form action={submitConsole} className="space-y-4 rounded border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
         <label className="grid gap-1 text-sm">
           <span className="font-medium">Workspace ID</span>
-          <input name="workspace_id" required className="rounded border border-neutral-300 bg-transparent px-3 py-2 dark:border-neutral-700" />
+          <ScopeSelect kind="workspace" name="workspace_id" required className="rounded border border-neutral-300 bg-transparent px-3 py-2 dark:border-neutral-700" />
         </label>
         <label className="grid gap-1 text-sm">
           <span className="font-medium">Intent or slash command</span>

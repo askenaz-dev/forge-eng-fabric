@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Chev, Github, Search } from "../icons";
@@ -29,13 +30,25 @@ export function TopBar({
     }
   }, []);
 
+  const sectionHref = active ? active.href.split(/[?#]/)[0].replace(/\/$/, "") || "/" : "/";
+  const currentPath = pathname.replace(/\/$/, "") || "/";
+  const onSection = active ? currentPath === sectionHref : false;
+
   return (
     <header className="top" role="banner">
-      <div className="top-crumb">
-        <span>{workspaceLabel}</span>
+      <nav className="top-crumb" aria-label="Breadcrumb">
+        <Link href="/" className="crumb-link">{workspaceLabel}</Link>
         <Chev className="sep" style={{ width: 12, height: 12 }} />
-        <b>{active ? t(active.labelKey) : "—"}</b>
-      </div>
+        {active ? (
+          onSection ? (
+            <b>{t(active.labelKey)}</b>
+          ) : (
+            <Link href={sectionHref} className="crumb-link">{t(active.labelKey)}</Link>
+          )
+        ) : (
+          <b>—</b>
+        )}
+      </nav>
 
       <button
         type="button"

@@ -1,0 +1,6 @@
+{
+  "name": "generate-test-cases",
+  "description": "Given a Forge OpenSpec id, propose a checklist of test cases that exercise each requirement scenario.",
+  "mcp": ["openspec"],
+  "body": "# generate-test-cases\n\nThis skill turns an OpenSpec into a checklist of testable scenarios an agent can implement.\n\n## When to use\n\nWhen the user references an OpenSpec id (`spec-7`, `mcp-and-skills`, etc.) and wants test coverage planned before any code.\n\n## How it works\n\n1. Resolve the OpenSpec via the `openspec` MCP (`mcp:openspec.get`).\n2. For each `### Requirement` block in the spec, walk every `#### Scenario`.\n3. For each scenario, emit one test-case entry with the WHEN/THEN restated as a Given/When/Then triple.\n\n## Output\n\nMarkdown checklist suitable for pasting into a PR description or a tracking issue."
+}

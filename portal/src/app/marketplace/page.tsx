@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { PageHead } from "@/components/page/PageHead";
 import { Badge, Button, Card } from "@/components/primitives";
+import { ScopeSelect } from "@/components/scope/ScopeSelect";
 
 type Listing = {
   id: string;
@@ -93,8 +94,8 @@ export default async function MarketplacePage({ searchParams }: { searchParams: 
         sub="Browse workflows shared in your Tenant. Install pins to an exact version."
         actions={
           <form method="get" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <input name="tenant_id" defaultValue={tenantId} placeholder="Tenant ID" className="top-search" style={{ height: 32, width: 160 }} />
-            <input name="workspace_id" defaultValue={workspaceId} placeholder="Workspace ID" className="top-search" style={{ height: 32, width: 180 }} />
+            <ScopeSelect kind="tenant" name="tenant_id" defaultValue={tenantId} className="top-search" style={{ height: 32, width: 160 }} />
+            <ScopeSelect kind="workspace" name="workspace_id" defaultValue={workspaceId} className="top-search" style={{ height: 32, width: 180 }} />
             <select
               name="visibility"
               defaultValue={searchParams.visibility ?? ""}

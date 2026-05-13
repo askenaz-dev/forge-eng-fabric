@@ -1,0 +1,61 @@
+image:
+  repository: ghcr.io/forge-eng-fabric/skill-gateway
+  tag: ""              # defaults to .Chart.AppVersion
+  pullPolicy: IfNotPresent
+
+replicaCount: 2
+
+service:
+  type: ClusterIP
+  port: 8120
+
+ingress:
+  enabled: true
+  className: nginx
+  # Per-tenant subdomain pattern decided in design.md decision 4.
+  host: gw.forge.dev
+  tls:
+    secretName: skill-gateway-tls
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "8m"
+    nginx.ingress.kubernetes.io/limit-rps: "60"
+    nginx.ingress.kubernetes.io/limit-burst-multiplier: "2"
+    # mTLS-optional: clients may present a cert but it is not required.
+    nginx.ingress.kubernetes.io/auth-tls-verify-client: "optional"
+
+env:
+  ADDR: ":8120"
+  ENV: "production"
+  POSTGRES_URL: ""              # filled by external secret
+  REDIS_URL: ""                 # filled by external secret
+  KAFKA_BROKERS: "kafka:9092"
+  EVENTS_TOPIC: "forge.events"
+  REGISTRY_URL: "http://registry:8082"
+  REGISTRY_SYSTEM_TOKEN: ""     # filled by external secret
+  ALLOWED_ORIGINS: ""           # comma-separated browser-allowed origins
+  RATE_CAPACITY: "60"
+  RATE_WINDOW: "1m"
+  OTEL_EXPORTER_OTLP_ENDPOINT: "otel-collector:4317"
+
+resources:
+  requests: { cpu: 100m, memory: 128Mi }
+  limits:   { cpu: 1,    memory: 512Mi }
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+
+probes:
+  liveness:
+    httpGet: { path: /healthz, port: 8120 }
+    initialDelaySeconds: 5
+  readiness:
+    httpGet: { path: /readyz, port: 8120 }
+    initialDelaySeconds: 5
+
+# External secret refs (one secret with all values, mounted as env).
+externalSecret:
+  enabled: true
+  name: skill-gateway-secrets

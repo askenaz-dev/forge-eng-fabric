@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "skill-gateway.fullname" . }}
+  labels: {{- include "skill-gateway.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - name: http
+      port: {{ .Values.service.port }}
+      targetPort: http
+  selector: {{- include "skill-gateway.selectorLabels" . | nindent 4 }}

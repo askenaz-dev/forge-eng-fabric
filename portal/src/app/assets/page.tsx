@@ -3,6 +3,10 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { PageHead } from "@/components/page/PageHead";
 import { Button, Card } from "@/components/primitives";
+import { ScopeSelect } from "@/components/scope/ScopeSelect";
+import { RegisterButton } from "./RegisterButton";
+import { LifecycleActions } from "./LifecycleActions";
+import type { AssetKind } from "./RegisterDrawer";
 
 type Asset = {
   id: string;
@@ -18,7 +22,22 @@ type Asset = {
   metadata?: Record<string, unknown>;
 };
 
-type SearchParams = { workspace_id?: string; asset_id?: string; range?: string };
+type SearchParams = { workspace_id?: string; asset_id?: string; range?: string; kind?: string };
+
+const VALID_KINDS: AssetKind[] = ["mcp", "skill", "agent", "workflow", "prompt_template"];
+
+const KIND_HEADING: Record<AssetKind, { title: string; titleEm: string; sub: string }> = {
+  skill: { title: "Skill", titleEm: "registry", sub: "Reusable capabilities your agents and workflows can call." },
+  agent: { title: "Agent", titleEm: "registry", sub: "Autonomous agents with their inputs, evals and lifecycle." },
+  mcp: { title: "MCP", titleEm: "registry", sub: "MCP tool servers exposed to agents and workflows." },
+  workflow: { title: "Workflow", titleEm: "registry", sub: "Versioned workflows orchestrating agents, skills and tools." },
+  prompt_template: { title: "Prompt", titleEm: "templates", sub: "Reusable prompt templates with parameter schemas." },
+};
+
+function parseKind(raw: string | undefined): AssetKind | undefined {
+  if (!raw) return undefined;
+  return (VALID_KINDS as string[]).includes(raw) ? (raw as AssetKind) : undefined;
+}
 
 type AssetMetrics = {
   asset_id: string;
@@ -52,8 +71,9 @@ async function getToken() {
   return (session as { accessToken?: string }).accessToken;
 }
 
-async function fetchAssets(workspaceId: string, token?: string) {
-  const response = await fetch(`${registryUrl()}/v1/workspaces/${workspaceId}/assets`, {
+async function fetchAssets(workspaceId: string, kind: AssetKind | undefined, token?: string) {
+  const query = kind ? `?type=${encodeURIComponent(kind)}` : "";
+  const response = await fetch(`${registryUrl()}/v1/workspaces/${workspaceId}/assets${query}`, {
     headers: token ? { authorization: `Bearer ${token}` } : {},
     cache: "no-store",
   });
@@ -78,50 +98,76 @@ export default async function AssetsPage({ searchParams }: { searchParams: Searc
   const token = await getToken();
   const workspaceId = searchParams.workspace_id?.trim() ?? "";
   const range = searchParams.range ?? "24h";
+  const kind = parseKind(searchParams.kind);
   let assets: Asset[] = [];
   let error: string | null = null;
   if (workspaceId) {
     try {
-      assets = await fetchAssets(workspaceId, token);
+      assets = await fetchAssets(workspaceId, kind, token);
     } catch (e) {
       error = e instanceof Error ? e.message : "failed to load assets";
     }
   }
   const selected = assets.find((asset) => asset.id === searchParams.asset_id) ?? assets[0] ?? null;
   const metrics = selected ? await fetchAssetMetrics(selected.id, range, token) : null;
+  const heading = kind ? KIND_HEADING[kind] : { title: "Asset", titleEm: "registry", sub: "Lifecycle, trust level, eval trend and production invocation readiness." };
+  const linkParams = (extra: Record<string, string>) => {
+    const params = new URLSearchParams();
+    params.set("workspace_id", workspaceId);
+    if (kind) params.set("kind", kind);
+    for (const [k, v] of Object.entries(extra)) params.set(k, v);
+    return params.toString();
+  };
 
   return (
     <>
       <PageHead
-        eyebrow="Platform · Asset Registry"
-        title="Asset"
-        titleEm="registry"
-        sub="Lifecycle, trust level, eval trend and production invocation readiness."
+        eyebrow={kind ? `Platform · ${heading.title} registry` : "Platform · Asset Registry"}
+        title={heading.title}
+        titleEm={heading.titleEm}
+        sub={heading.sub}
         actions={
-          <form method="get" style={{ display: "flex", gap: 8 }}>
-            <input name="workspace_id" defaultValue={workspaceId} placeholder="Workspace ID" className="top-search" style={{ height: 32, width: 200 }} />
-            <Button variant="primary" type="submit">Load</Button>
-          </form>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <form method="get" style={{ display: "flex", gap: 8 }}>
+              {kind && <input type="hidden" name="kind" value={kind} />}
+              <ScopeSelect kind="workspace" name="workspace_id" defaultValue={workspaceId} className="top-search" style={{ height: 32, width: 200 }} />
+              <Button variant="secondary" type="submit">Load</Button>
+            </form>
+            <RegisterButton workspaceId={workspaceId} lockedKind={kind} />
+          </div>
         }
       />
       {error && <Card style={{ marginBottom: 16 }}><div style={{ padding: 14, color: "var(--rust)" }}>{error}</div></Card>}
       <div className="grid gap-5 lg:grid-cols-[340px_1fr]">
         <aside className="space-y-2 rounded border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
           {assets.map((asset) => (
-            <a key={`${asset.id}@${asset.version}`} href={`/assets?workspace_id=${workspaceId}&asset_id=${encodeURIComponent(asset.id)}`} className="block rounded border border-neutral-200 px-3 py-2 text-sm hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-800">
+            <a key={`${asset.id}@${asset.version}`} href={`/assets?${linkParams({ asset_id: asset.id })}`} className="block rounded border border-neutral-200 px-3 py-2 text-sm hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-800">
               <span className="block font-medium">{asset.name}</span>
               <span className="text-xs opacity-60">{asset.type} · {asset.version} · {asset.lifecycle_state}</span>
             </a>
           ))}
-          {assets.length === 0 && <p className="text-sm opacity-70">No assets loaded.</p>}
+          {assets.length === 0 && (
+            <p className="text-sm opacity-70">
+              {workspaceId ? (kind ? `No ${kind} assets in this workspace yet.` : "No assets loaded.") : "Paste a Workspace ID and press Load."}
+            </p>
+          )}
         </aside>
         {selected ? (
           <div className="space-y-5">
             <AssetDetail asset={selected} />
+            <LifecycleActions
+              assetId={selected.id}
+              version={selected.version}
+              lifecycleState={selected.lifecycle_state as Parameters<typeof LifecycleActions>[0]["lifecycleState"]}
+              trustLevel={(selected.trust_level || "T0") as Parameters<typeof LifecycleActions>[0]["trustLevel"]}
+              evalScores={selected.eval_scores ?? {}}
+            />
             <ObservabilityTab asset={selected} metrics={metrics} workspaceId={workspaceId} range={range} />
           </div>
         ) : (
-          <div className="rounded border border-dashed border-neutral-300 p-6 text-sm opacity-70 dark:border-neutral-800">Select an asset to inspect lifecycle and evals.</div>
+          <div className="rounded border border-dashed border-neutral-300 p-6 text-sm opacity-70 dark:border-neutral-800">
+            {workspaceId ? "Select an asset to inspect lifecycle and evals." : "Load a workspace to see its assets."}
+          </div>
         )}
       </div>
     </>

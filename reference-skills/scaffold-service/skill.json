@@ -1,0 +1,6 @@
+{
+  "name": "scaffold-service",
+  "description": "Bootstrap a new Forge service from an approved repo template — handles repo creation, OpenSpec link and CI baseline.",
+  "mcp": ["github", "openspec"],
+  "body": "# scaffold-service\n\nThis skill orchestrates the golden-path onboarding for a new Forge service.\n\n## When to use\n\nWhen the developer asks to start a new microservice / agent runtime / MCP server inside an existing Workspace, and an approved repo template applies.\n\n## How it works\n\n1. Resolve the active Workspace and OpenSpec the new service implements (ask the user if ambiguous).\n2. Use `mcp:openspec.get` to validate the spec is `approved` and lifecycle is OK.\n3. Use `mcp:github.create_repo` (with the requested template id) to provision the repo.\n4. Use `mcp:github.set_branch_protection` to apply Workspace defaults.\n5. Print the onboarding URL the developer should follow up at.\n\n## Output\n\nA short status block with the created repo URL, the linked OpenSpec id, and the onboarding request id."
+}

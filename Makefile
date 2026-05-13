@@ -5,7 +5,7 @@
 SHELL := /bin/sh
 COMPOSE := docker compose -f deploy/compose/docker-compose.yaml
 
-.PHONY: help bootstrap lint test codegen up down logs ps smoke clean fmt sizing-check helm-lint verify-runtime demo-intent-to-deploy retention-policy-check portal-rebrand-e2e audit-no-mocks dev-up seed-portal portal-lint
+.PHONY: help bootstrap lint test codegen up down logs ps smoke clean fmt sizing-check helm-lint verify-runtime demo-intent-to-deploy retention-policy-check portal-rebrand-e2e audit-no-mocks dev-up seed-portal portal-lint package-skill
 
 help:
 	@echo "Forge — make targets:"
@@ -53,6 +53,11 @@ test:
 
 codegen:
 	@bash contracts/openapi/codegen.sh
+
+# Package a skill from a YAML spec into an Agent Skills bundle.
+# Usage: make package-skill SPEC=path/to/skill.yaml OUT=path/to/out.tar.zst
+package-skill:
+	@cd pkg/skill-packager && go run ./cmd/package-skill -spec="$(SPEC)" -out="$(OUT)"
 
 up:
 	$(COMPOSE) up -d

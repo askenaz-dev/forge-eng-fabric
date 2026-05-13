@@ -39,6 +39,24 @@ type Invocation struct {
 	BusinessMetric  *float64  `json:"business_metric,omitempty"`
 	BusinessKey     string    `json:"business_metric_key,omitempty"`
 	CorrelationID   string    `json:"correlation_id,omitempty"`
+	// Source identifies where the invocation came from: "runtime" (default
+	// in-platform), "workflow", or "gateway" (developer skill gateway).
+	// Used by per-source rollups so gateway traffic is queryable on its
+	// own and drift detection can identify a contributing source.
+	Source          string    `json:"source,omitempty"`
+}
+
+// Install is one record of an external client installing an asset via the
+// gateway. Keyed by (developer_sub, asset_id, client); a repeat install
+// updates last_seen_at and the version pointer instead of inserting a row.
+type Install struct {
+	AssetID       string    `json:"asset_id"`
+	AssetVersion  string    `json:"asset_version"`
+	TenantID      string    `json:"tenant_id"`
+	DeveloperSub  string    `json:"developer_sub"`
+	Client        string    `json:"client"`
+	PackageDigest string    `json:"package_digest,omitempty"`
+	InstalledAt   time.Time `json:"installed_at"`
 }
 
 // MetricRange selects the time window for queries.
@@ -78,22 +96,45 @@ type MetricPoint struct {
 	BusinessKey     string    `json:"business_metric_key,omitempty"`
 }
 
+// SourceRollup is a per-source breakdown of a window's invocations.
+type SourceRollup struct {
+	Source       string  `json:"source"`
+	Invocations  int     `json:"invocations"`
+	Successes    int     `json:"successes"`
+	Failures     int     `json:"failures"`
+	SuccessRate  float64 `json:"success_rate"`
+	CostTotalUSD float64 `json:"cost_total_usd"`
+	EvalScoreAvg *float64 `json:"eval_score_avg,omitempty"`
+}
+
+// InstallSummary is the per-asset rollup of gateway-originated installs.
+type InstallSummary struct {
+	Total      int            `json:"total"`
+	Active     int            `json:"active"`
+	ByVersion  map[string]int `json:"by_version,omitempty"`
+	ByClient   map[string]int `json:"by_client,omitempty"`
+}
+
 // MetricSeries is a sorted series of MetricPoints plus rollup totals.
 type MetricSeries struct {
-	AssetID     string        `json:"asset_id"`
-	AssetType   AssetType     `json:"asset_type"`
-	Range       MetricRange   `json:"range"`
-	Granularity Granularity   `json:"granularity"`
-	Points      []MetricPoint `json:"points"`
-	Totals      MetricPoint   `json:"totals"`
-	TopFailing  []string      `json:"top_failing_steps,omitempty"`
-	DriftAlert  bool          `json:"drift_alert"`
+	AssetID     string         `json:"asset_id"`
+	AssetType   AssetType      `json:"asset_type"`
+	Range       MetricRange    `json:"range"`
+	Granularity Granularity    `json:"granularity"`
+	Points      []MetricPoint  `json:"points"`
+	Totals      MetricPoint    `json:"totals"`
+	TopFailing  []string       `json:"top_failing_steps,omitempty"`
+	DriftAlert  bool           `json:"drift_alert"`
+	DriftSource string         `json:"drift_source,omitempty"`
+	BySource    []SourceRollup `json:"by_source,omitempty"`
+	Installs    *InstallSummary `json:"installs,omitempty"`
 }
 
 // Store retains invocations in memory keyed by asset.
 type Store struct {
 	mu          sync.RWMutex
 	byAsset     map[string][]Invocation
+	installs    map[string]map[string]Install // assetID -> dedup key -> install
 	driftWindow int
 	driftDelta  float64
 }
@@ -102,12 +143,13 @@ type Store struct {
 func NewStore() *Store {
 	return &Store{
 		byAsset:     map[string][]Invocation{},
+		installs:    map[string]map[string]Install{},
 		driftWindow: 3,
 		driftDelta:  0.05,
 	}
 }
 
-// Ingest records an invocation.
+// Ingest records an invocation. Sets a default Source when omitted.
 func (s *Store) Ingest(inv Invocation) {
 	if inv.AssetID == "" {
 		return
@@ -115,9 +157,31 @@ func (s *Store) Ingest(inv Invocation) {
 	if inv.StartedAt.IsZero() {
 		inv.StartedAt = time.Now().UTC()
 	}
+	if inv.Source == "" {
+		inv.Source = "runtime"
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.byAsset[inv.AssetID] = append(s.byAsset[inv.AssetID], inv)
+}
+
+// RecordInstall idempotently records (or refreshes) a gateway install.
+// Repeat installs of the same (developer, asset, client) update the version
+// pointer and InstalledAt without inflating the active count.
+func (s *Store) RecordInstall(in Install) {
+	if in.AssetID == "" || in.DeveloperSub == "" || in.Client == "" {
+		return
+	}
+	if in.InstalledAt.IsZero() {
+		in.InstalledAt = time.Now().UTC()
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.installs[in.AssetID] == nil {
+		s.installs[in.AssetID] = map[string]Install{}
+	}
+	key := in.DeveloperSub + "|" + in.Client
+	s.installs[in.AssetID][key] = in
 }
 
 // Errors.
@@ -125,22 +189,33 @@ var (
 	ErrUnknownRange = errors.New("unknown_range")
 )
 
-// Aggregate produces a MetricSeries for an asset and range.
-func (s *Store) Aggregate(assetID string, rng MetricRange, gran Granularity, now time.Time) (*MetricSeries, error) {
+// Aggregate produces a MetricSeries for an asset and range. The optional
+// sourceFilter narrows the rollup to a single source (e.g. "gateway"). When
+// empty, the union of all sources is used and BySource is populated.
+func (s *Store) Aggregate(assetID string, rng MetricRange, gran Granularity, now time.Time, sourceFilter ...string) (*MetricSeries, error) {
 	window, err := windowFor(rng)
 	if err != nil {
 		return nil, err
+	}
+	source := ""
+	if len(sourceFilter) > 0 {
+		source = sourceFilter[0]
 	}
 	bucket := bucketFor(gran)
 	cutoff := now.Add(-window)
 	s.mu.RLock()
 	invs := append([]Invocation(nil), s.byAsset[assetID]...)
+	installs := append([]Install(nil), valuesFor(s.installs[assetID])...)
 	s.mu.RUnlock()
 	filtered := []Invocation{}
 	for _, inv := range invs {
-		if inv.StartedAt.After(cutoff) {
-			filtered = append(filtered, inv)
+		if !inv.StartedAt.After(cutoff) {
+			continue
 		}
+		if source != "" && inv.Source != source {
+			continue
+		}
+		filtered = append(filtered, inv)
 	}
 	sort.Slice(filtered, func(i, j int) bool { return filtered[i].StartedAt.Before(filtered[j].StartedAt) })
 	buckets := map[time.Time][]Invocation{}
@@ -160,7 +235,7 @@ func (s *Store) Aggregate(assetID string, rng MetricRange, gran Granularity, now
 	totals := summarize(cutoff, filtered)
 	totals.Bucket = cutoff
 	topFailing := topFailingSteps(filtered)
-	driftAlert := s.detectDrift(filtered)
+	driftAlert, driftSource := s.detectDriftWithSource(filtered)
 	out := &MetricSeries{
 		AssetID:     assetID,
 		AssetType:   inferType(filtered),
@@ -170,8 +245,70 @@ func (s *Store) Aggregate(assetID string, rng MetricRange, gran Granularity, now
 		Totals:      totals,
 		TopFailing:  topFailing,
 		DriftAlert:  driftAlert,
+		DriftSource: driftSource,
+	}
+	if source == "" {
+		out.BySource = sourceRollups(filtered)
+		out.Installs = installSummary(installs, now)
 	}
 	return out, nil
+}
+
+func valuesFor(m map[string]Install) []Install {
+	if len(m) == 0 {
+		return nil
+	}
+	out := make([]Install, 0, len(m))
+	for _, v := range m {
+		out = append(out, v)
+	}
+	return out
+}
+
+func sourceRollups(invs []Invocation) []SourceRollup {
+	bySource := map[string][]Invocation{}
+	for _, inv := range invs {
+		bySource[inv.Source] = append(bySource[inv.Source], inv)
+	}
+	out := make([]SourceRollup, 0, len(bySource))
+	for src, group := range bySource {
+		s := summarize(time.Time{}, group)
+		var evalAvg *float64
+		if s.EvalScoreAvg != nil {
+			evalAvg = s.EvalScoreAvg
+		}
+		out = append(out, SourceRollup{
+			Source:       src,
+			Invocations:  s.Invocations,
+			Successes:    s.Successes,
+			Failures:     s.Failures,
+			SuccessRate:  s.SuccessRate,
+			CostTotalUSD: s.CostTotalUSD,
+			EvalScoreAvg: evalAvg,
+		})
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Source < out[j].Source })
+	return out
+}
+
+func installSummary(installs []Install, now time.Time) *InstallSummary {
+	if len(installs) == 0 {
+		return nil
+	}
+	out := &InstallSummary{
+		ByVersion: map[string]int{},
+		ByClient:  map[string]int{},
+	}
+	cutoff := now.Add(-30 * 24 * time.Hour)
+	for _, in := range installs {
+		out.Total++
+		if in.InstalledAt.After(cutoff) {
+			out.Active++
+		}
+		out.ByVersion[in.AssetVersion]++
+		out.ByClient[in.Client]++
+	}
+	return out
 }
 
 func summarize(bucket time.Time, invs []Invocation) MetricPoint {
@@ -276,18 +413,45 @@ func topFailingSteps(invs []Invocation) []string {
 }
 
 func (s *Store) detectDrift(invs []Invocation) bool {
+	ok, _ := s.detectDriftWithSource(invs)
+	return ok
+}
+
+// detectDriftWithSource returns (alert, source) — the source is the per-source
+// series whose tail drove the alert, or "" when the union triggered.
+func (s *Store) detectDriftWithSource(invs []Invocation) (bool, string) {
 	scores := []float64{}
 	for _, inv := range invs {
 		if inv.EvalScore != nil {
 			scores = append(scores, *inv.EvalScore)
 		}
 	}
-	if len(scores) < s.driftWindow*2 {
-		return false
+	if len(scores) >= s.driftWindow*2 {
+		baseline := mean(scores[:len(scores)-s.driftWindow])
+		recent := mean(scores[len(scores)-s.driftWindow:])
+		if baseline-recent > s.driftDelta {
+			return true, ""
+		}
 	}
-	baseline := mean(scores[:len(scores)-s.driftWindow])
-	recent := mean(scores[len(scores)-s.driftWindow:])
-	return baseline-recent > s.driftDelta
+	// Per-source detection: a regression in only one source counts.
+	bySource := map[string][]float64{}
+	for _, inv := range invs {
+		if inv.EvalScore == nil {
+			continue
+		}
+		bySource[inv.Source] = append(bySource[inv.Source], *inv.EvalScore)
+	}
+	for src, vals := range bySource {
+		if len(vals) < s.driftWindow*2 {
+			continue
+		}
+		baseline := mean(vals[:len(vals)-s.driftWindow])
+		recent := mean(vals[len(vals)-s.driftWindow:])
+		if baseline-recent > s.driftDelta {
+			return true, src
+		}
+	}
+	return false, ""
 }
 
 func inferType(invs []Invocation) AssetType {

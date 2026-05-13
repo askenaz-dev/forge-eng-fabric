@@ -48,6 +48,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { id: "agents",      href: "/assets?kind=agent", labelKey: "nav_agents",      icon: Agents, countSource: "agents" },
       { id: "skills",      href: "/assets?kind=skill", labelKey: "nav_skills",      icon: Skills, countSource: "skills" },
       { id: "mcp",         href: "/assets?kind=mcp",   labelKey: "nav_mcp",         icon: Mcp,    countSource: "mcp" },
+      { id: "gateway",     href: "/gateway",           labelKey: "nav_gateway",     icon: Globe },
       { id: "workflows",   href: "/workflows",         labelKey: "nav_workflows",   icon: Workflows },
       { id: "marketplace", href: "/marketplace",       labelKey: "nav_marketplace", icon: Plus },
       { id: "templates",   href: "/templates",         labelKey: "nav_templates",   icon: Specs },
@@ -87,6 +88,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { id: "settings",    href: "/settings/github",          labelKey: "nav_settings",    icon: Settings },
       { id: "permissions", href: "/permissions",              labelKey: "nav_permissions", icon: User, permission: "admin" },
+      { id: "tenants",     href: "/admin/tenants",            labelKey: "nav_tenants",     icon: Globe, permission: "admin" },
       { id: "assets",      href: "/assets",                   labelKey: "nav_assets",      icon: Specs },
     ],
   },

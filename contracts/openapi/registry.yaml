@@ -74,6 +74,34 @@ paths:
               schema: { $ref: "#/components/schemas/Asset" }
         "404": { description: not found }
 
+  /v1/assets/{assetId}/versions/{version}/lifecycle-hooks/gateway-publish:
+    parameters:
+      - { name: assetId, in: path, required: true, schema: { type: string } }
+      - { name: version, in: path, required: true, schema: { type: string, pattern: "^[0-9]+\\.[0-9]+\\.[0-9]+$" } }
+    post:
+      summary: Publish an approved asset to the developer skill gateway
+      description: |
+        Atomically registers the packaged bundle (for skill/agent) or remote-transport
+        contract (for mcp), flips `distribution.gateway_published=true`, and emits
+        `com.forge.asset.gateway_published.v1`. The asset must be `approved` and
+        `trust_level >= T1`. Auto-unpublish on lifecycle transition to deprecated/retired
+        is handled by the transition endpoints.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/GatewayPublishRequest" }
+      responses:
+        "200":
+          description: published
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Asset" }
+        "400": { description: invalid input (signature_invalid, not_packageable, invalid_channel) }
+        "403": { description: forbidden }
+        "404": { description: asset not found }
+        "409": { description: distribution invariant violated or remote_transport required }
+
 components:
   securitySchemes:
     bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
@@ -116,6 +144,44 @@ components:
           additionalProperties: true
         created_at: { type: string, format: date-time }
         created_by: { type: string }
+        distribution: { $ref: "#/components/schemas/Distribution" }
+    Distribution:
+      type: object
+      required: [gateway_published, gateway_channel]
+      properties:
+        gateway_published: { type: boolean, default: false }
+        gateway_channel:
+          type: string
+          enum: [stable, beta]
+          default: stable
+        package_digest: { type: string, nullable: true, description: "sha256 of the packaged Agent Skills bundle (skill/agent only)" }
+        package_signed_at: { type: string, format: date-time, nullable: true }
+        deprecation_pointer: { type: string, nullable: true, description: "asset_id@version pointing to the recommended replacement" }
+    GatewayPublishRequest:
+      type: object
+      required: [channel]
+      properties:
+        channel: { type: string, enum: [stable, beta], default: stable }
+        package_digest:
+          type: string
+          description: "sha256 of the bundle (required for skill/agent)"
+        signature_id:
+          type: string
+          description: "cosign signature reference (required for skill/agent)"
+        attestation_id:
+          type: string
+          description: "in-toto attestation reference (required for skill/agent)"
+        bytes_uri:
+          type: string
+          description: "S3-compatible URI where the packaged bundle is stored (required for skill/agent)"
+        size_bytes:
+          type: integer
+          format: int64
+          minimum: 0
+        remote_transport:
+          type: object
+          description: "remote transport contract (required for mcp)"
+          additionalProperties: true
     AssetCreate:
       type: object
       required: [type, name, version, owner_team, inputs_schema, outputs_schema]

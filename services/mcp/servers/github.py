@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from forge_mcp import MCPServer, ToolRequest
+from forge_mcp import MCPServer, RemoteTransport, ToolRequest
 
 from servers.github_guardrails import GuardrailEngine
 from servers.github_tokens import TokenIssuer
@@ -39,7 +39,14 @@ def policy_hook(request: ToolRequest) -> tuple[bool, str]:
     return decision.allowed, decision.rationale
 
 
-server = MCPServer(name="github", policy_hook=policy_hook)
+server = MCPServer(
+    name="github",
+    policy_hook=policy_hook,
+    remote_transport=RemoteTransport(
+        http_path_template="/v1/invoke",
+        sse_path_template="/v1/invoke/stream",
+    ),
+)
 
 
 @server.tool("mcp:github.repo_metadata")

@@ -3,6 +3,17 @@
   "type_definitions": [
     { "type": "user" },
     {
+      "type": "external_developer",
+      "relations": {
+        "tenant": { "this": {} }
+      },
+      "metadata": {
+        "relations": {
+          "tenant": { "directly_related_user_types": [{ "type": "tenant" }] }
+        }
+      }
+    },
+    {
       "type": "tenant",
       "relations": {
         "admin": { "this": {} },
@@ -68,14 +79,16 @@
         },
         "can_view": { "computedUserset": { "object": "", "relation": "viewer" } },
         "can_edit": { "computedUserset": { "object": "", "relation": "editor" } },
-        "can_admin": { "computedUserset": { "object": "", "relation": "owner" } }
+        "can_admin": { "computedUserset": { "object": "", "relation": "owner" } },
+        "assignable_developer": { "this": {} }
       },
       "metadata": {
         "relations": {
           "business_unit": { "directly_related_user_types": [{ "type": "business_unit" }] },
           "owner": { "directly_related_user_types": [{ "type": "user" }] },
           "editor": { "directly_related_user_types": [{ "type": "user" }] },
-          "viewer": { "directly_related_user_types": [{ "type": "user" }] }
+          "viewer": { "directly_related_user_types": [{ "type": "user" }] },
+          "assignable_developer": { "directly_related_user_types": [{ "type": "user" }, { "type": "external_developer" }] }
         }
       }
     },

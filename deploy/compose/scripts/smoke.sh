@@ -36,12 +36,12 @@ else
   echo "skipped via SKIP_MILVUS_SMOKE=1"
 fi
 
-step "Login as alice via Keycloak (forge-cli direct grant)"
+step "Login as askenaz via Keycloak (forge-cli direct grant)"
 TOKEN=$(curl -sf -X POST "${KC}/realms/forge/protocol/openid-connect/token" \
   -H "content-type: application/x-www-form-urlencoded" \
   -d "client_id=forge-cli" \
-  -d "username=alice" \
-  -d "password=alice" \
+  -d "username=askenaz" \
+  -d "password=askenaz" \
   -d "grant_type=password" \
   -d "scope=openid profile email" | python -c 'import sys,json;print(json.load(sys.stdin)["access_token"])')
 echo "got token (len=${#TOKEN})"
@@ -62,7 +62,7 @@ echo "bu=${BU_ID}"
 step "Create workspace"
 WS=$(curl -sf -X POST "${CP}/v1/business-units/${BU_ID}/workspaces" "${AUTH[@]}" \
   -H "content-type: application/json" \
-  -d '{"name":"hello-forge","description":"smoke test workspace","owners":["alice"]}')
+  -d '{"name":"hello-forge","description":"smoke test workspace","owners":["askenaz"]}')
 WS_ID=$(echo "$WS" | python -c 'import sys,json;print(json.load(sys.stdin)["id"])')
 echo "workspace=${WS_ID}"
 
@@ -83,14 +83,14 @@ fi
 step "Register asset"
 ASSET=$(curl -sf -X POST "${RG}/v1/workspaces/${WS_ID}/assets" "${AUTH[@]}" \
   -H "content-type: application/json" \
-  -d '{"type":"prompt_template","name":"hello-prompt","version":"0.1.0","owner_team":"platform","inputs_schema":{"type":"object","properties":{"name":{"type":"string"}}},"outputs_schema":{"type":"object","properties":{"message":{"type":"string"}}},"visibility":"workspace","owners":["alice"],"metadata":{"text":"hi"}}')
+  -d '{"type":"prompt_template","name":"hello-prompt","version":"0.1.0","owner_team":"platform","inputs_schema":{"type":"object","properties":{"name":{"type":"string"}}},"outputs_schema":{"type":"object","properties":{"message":{"type":"string"}}},"visibility":"workspace","owners":["askenaz"],"metadata":{"text":"hi"}}')
 ASSET_ID=$(echo "$ASSET" | python -c 'import sys,json;print(json.load(sys.stdin)["id"])')
 echo "asset=${ASSET_ID}"
 
 step "Verify duplicate asset version is rejected"
 DUP_STATUS=$(curl -s -o /tmp/forge-duplicate-asset.json -w "%{http_code}" -X POST "${RG}/v1/workspaces/${WS_ID}/assets" "${AUTH[@]}" \
   -H "content-type: application/json" \
-  -d '{"type":"prompt_template","name":"hello-prompt","version":"0.1.0","owner_team":"platform","inputs_schema":{"type":"object"},"outputs_schema":{"type":"object"},"visibility":"workspace","owners":["alice"],"metadata":{"text":"hi"}}')
+  -d '{"type":"prompt_template","name":"hello-prompt","version":"0.1.0","owner_team":"platform","inputs_schema":{"type":"object"},"outputs_schema":{"type":"object"},"visibility":"workspace","owners":["askenaz"],"metadata":{"text":"hi"}}')
 if [[ "${DUP_STATUS}" != "409" ]]; then
   echo "expected duplicate asset publish to return 409, got ${DUP_STATUS}"
   cat /tmp/forge-duplicate-asset.json

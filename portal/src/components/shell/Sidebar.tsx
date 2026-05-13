@@ -118,25 +118,32 @@ export function Sidebar({
                 <span>{groupLabel}</span>
                 <ChevDown className="caret" aria-hidden />
               </button>
-              <div id={sectionId} className="side-group-items" hidden={!expanded}>
-                {items.map((item) => {
-                  const isActive = isLinkActive(pathname, item.href);
-                  const Icon = item.icon;
-                  const count =
-                    item.countSource != null ? counts[item.countSource] : undefined;
-                  return (
-                    <Link
-                      key={item.id}
-                      href={item.href}
-                      className={cx("side-link", isActive && "active")}
-                      aria-current={isActive ? "page" : undefined}
-                    >
-                      <Icon />
-                      <span>{t(item.labelKey)}</span>
-                      {count != null && <span className="ct">{count}</span>}
-                    </Link>
-                  );
-                })}
+              <div
+                id={sectionId}
+                className="side-group-items"
+                aria-hidden={!expanded}
+              >
+                <div className="side-group-items-inner">
+                  {items.map((item) => {
+                    const isActive = isLinkActive(pathname, item.href);
+                    const Icon = item.icon;
+                    const count =
+                      item.countSource != null ? counts[item.countSource] : undefined;
+                    return (
+                      <Link
+                        key={item.id}
+                        href={item.href}
+                        className={cx("side-link", isActive && "active")}
+                        aria-current={isActive ? "page" : undefined}
+                        tabIndex={expanded ? undefined : -1}
+                      >
+                        <Icon />
+                        <span>{t(item.labelKey)}</span>
+                        {count != null && <span className="ct">{count}</span>}
+                      </Link>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           );
@@ -158,7 +165,7 @@ export function Sidebar({
             </button>
           </DropdownMenu.Trigger>
           <DropdownMenu.Portal>
-            <DropdownMenu.Content className="pop" align="end" side="top" sideOffset={6}>
+            <DropdownMenu.Content className="pop" align="end" side="right" sideOffset={8} collisionPadding={12}>
               <div className="pop-header">
                 <b>{displayName}</b>
                 <small>{subtitle}</small>

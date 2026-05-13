@@ -4,9 +4,12 @@ import os
 
 import httpx
 
-from forge_mcp import MCPServer, ToolRequest
+from forge_mcp import MCPServer, RemoteTransport, ToolRequest
 
-server = MCPServer(name="openspec")
+server = MCPServer(
+    name="openspec",
+    remote_transport=RemoteTransport(http_path_template="/v1/invoke"),
+)
 
 
 def _base_url() -> str:

@@ -25,6 +25,12 @@ tuples:
   - user: environment:dev
     relation: environment
     object: deployment:deployment-a
+  - user: tenant:acme
+    relation: tenant
+    object: external_developer:dev-bob@acme
+  - user: user:bob
+    relation: assignable_developer
+    object: workspace:workspace-a
 tests:
   - name: workspace owners can view their own workspace
     check:
@@ -61,3 +67,17 @@ tests:
         object: deployment:deployment-a
         assertions:
           can_view: true
+  - name: external developer can be assigned to a workspace
+    check:
+      - user: user:bob
+        object: workspace:workspace-a
+        assertions:
+          assignable_developer: true
+          can_view: false
+          can_edit: false
+  - name: external developer cannot reach a non-assigned workspace
+    check:
+      - user: user:bob
+        object: workspace:workspace-b
+        assertions:
+          assignable_developer: false

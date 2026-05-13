@@ -33,7 +33,7 @@ export function ThemeMenu() {
         </button>
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
-        <DropdownMenu.Content className="pop" align="end" sideOffset={6}>
+        <DropdownMenu.Content className="pop" align="end" sideOffset={8} collisionPadding={12}>
           {items.map((item) => {
             const Glyph = item.icon;
             const active = pref === item.id;

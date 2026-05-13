@@ -4,6 +4,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { Sidebar, useStickyCollapse } from "./Sidebar";
 import { TopBar } from "./TopBar";
+import { NavigationProgress } from "./NavigationProgress";
 import { ToastRail } from "../primitives/ToastRail";
 import { CommandPalette } from "../palette/CommandPalette";
 import { useLang } from "../providers/LangProvider";
@@ -59,6 +60,7 @@ export function PortalShell({
 
   return (
     <>
+      <NavigationProgress />
       <div className={cx("app", collapsed && "app--collapsed")}>
         <Sidebar
           tenantSlug={tenantSlug}

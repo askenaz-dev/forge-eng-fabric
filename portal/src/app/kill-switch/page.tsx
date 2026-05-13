@@ -2,6 +2,7 @@ import { authOptions } from "@/auth";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { PageHead } from "@/components/page/PageHead";
+import { ScopeSelect } from "@/components/scope/ScopeSelect";
 
 type KillSwitchState = { active: boolean };
 
@@ -62,7 +63,7 @@ export default async function KillSwitchPage({ searchParams }: { searchParams: {
         <input type="hidden" name="active" value={state.active ? "false" : "true"} />
         <label className="grid gap-1 text-sm">
           <span>Workspace ID (leave blank for global)</span>
-          <input name="workspace_id" defaultValue={workspaceId} className="rounded border border-neutral-300 bg-transparent px-3 py-2 dark:border-neutral-700" />
+          <ScopeSelect kind="workspace" name="workspace_id" defaultValue={workspaceId} className="rounded border border-neutral-300 bg-transparent px-3 py-2 dark:border-neutral-700" />
         </label>
         <label className="grid gap-1 text-sm">
           <span>Reason (mandatory)</span>

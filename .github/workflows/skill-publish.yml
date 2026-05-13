@@ -1,0 +1,104 @@
+# Reusable workflow: package a Forge skill, sign with cosign keyless, build an
+# in-toto attestation, upload the bundle to the skill object store and call the
+# registry's gateway-publish hook.
+#
+# Callers point this at a skill source directory in their repo. The actual
+# cosign / fulcio / rekor URLs and the `gateway-publish` URL come from the
+# calling repo's secrets/variables.
+name: forge-skill-publish
+
+on:
+  workflow_call:
+    inputs:
+      skill_spec:
+        required: true
+        type: string
+        description: "Path to the skill JSON spec in the calling repo"
+      asset_id:
+        required: true
+        type: string
+      asset_version:
+        required: true
+        type: string
+      channel:
+        type: string
+        default: stable
+    secrets:
+      forge_publish_token:
+        required: true
+
+permissions:
+  id-token: write   # required for cosign keyless
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      FORGE_REGISTRY_URL: ${{ vars.FORGE_REGISTRY_URL }}
+      FORGE_PACKAGE_BUCKET: ${{ vars.FORGE_PACKAGE_BUCKET }}
+      AWS_REGION: ${{ vars.AWS_REGION }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with: { go-version: "1.22" }
+
+      - name: Package the skill (deterministic)
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          go run ./pkg/skill-packager/cmd/package-skill \
+            -spec "${{ inputs.skill_spec }}" \
+            -out  "out/${{ inputs.asset_id }}@${{ inputs.asset_version }}.tar.zst"
+          DIGEST=$(cat "out/${{ inputs.asset_id }}@${{ inputs.asset_version }}.tar.zst.digest")
+          echo "DIGEST=$DIGEST" >> "$GITHUB_ENV"
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+        with: { cosign-release: "v2.2.4" }
+
+      - name: Sign bundle (keyless)
+        env:
+          COSIGN_EXPERIMENTAL: "true"
+        run: |
+          set -euo pipefail
+          BUNDLE="out/${{ inputs.asset_id }}@${{ inputs.asset_version }}.tar.zst"
+          cosign sign-blob --yes "$BUNDLE" \
+            --output-signature "$BUNDLE.sig" \
+            --output-certificate "$BUNDLE.crt"
+          echo "SIGNATURE_ID=$(sha256sum "$BUNDLE.sig" | awk '{print $1}')" >> "$GITHUB_ENV"
+
+      - name: Attest provenance (SLSA / in-toto)
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: out/${{ inputs.asset_id }}@${{ inputs.asset_version }}.tar.zst
+        id: attest
+
+      - name: Upload bundle to object store
+        run: |
+          set -euo pipefail
+          BUNDLE="out/${{ inputs.asset_id }}@${{ inputs.asset_version }}.tar.zst"
+          aws s3 cp "$BUNDLE" \
+            "s3://${FORGE_PACKAGE_BUCKET}/${{ inputs.asset_id }}/${{ inputs.asset_version }}.tar.zst"
+          echo "BYTES_URI=s3://${FORGE_PACKAGE_BUCKET}/${{ inputs.asset_id }}/${{ inputs.asset_version }}.tar.zst" >> "$GITHUB_ENV"
+
+      - name: Call gateway-publish hook
+        env:
+          TOKEN: ${{ secrets.forge_publish_token }}
+        run: |
+          set -euo pipefail
+          SIZE=$(wc -c < "out/${{ inputs.asset_id }}@${{ inputs.asset_version }}.tar.zst")
+          curl --fail-with-body -sS \
+            -X POST \
+            -H "Authorization: Bearer ${TOKEN}" \
+            -H "content-type: application/json" \
+            "${FORGE_REGISTRY_URL}/v1/assets/${{ inputs.asset_id }}/versions/${{ inputs.asset_version }}/lifecycle-hooks/gateway-publish" \
+            -d "{
+              \"channel\": \"${{ inputs.channel }}\",
+              \"package_digest\": \"${DIGEST}\",
+              \"signature_id\": \"${SIGNATURE_ID}\",
+              \"attestation_id\": \"${{ steps.attest.outputs.attestation-id }}\",
+              \"bytes_uri\": \"${BYTES_URI}\",
+              \"size_bytes\": ${SIZE}
+            }"

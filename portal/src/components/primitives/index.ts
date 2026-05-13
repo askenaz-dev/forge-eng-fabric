@@ -28,4 +28,7 @@ export { Terminal, Code } from "./Terminal";
 
 export { ToastRail } from "./ToastRail";
 
+export { UpstreamError, classifyUpstreamError } from "./UpstreamError";
+export type { UpstreamErrorKind, UpstreamErrorProps } from "./UpstreamError";
+
 export { cx } from "./cx";

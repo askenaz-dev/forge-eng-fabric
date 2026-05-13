@@ -1,0 +1,9 @@
+{
+  "name": "generate-test-cases",
+  "description": "Given an OpenSpec, propose test cases that exercise its requirements.",
+  "mcp": ["openspec"],
+  "body": "# generate-test-cases\n\nThis skill turns an OpenSpec into a checklist of test cases an agent can implement.\n\n## Usage\n\nPass the OpenSpec id and the asset_id of the implementation; the skill returns one test case per requirement scenario.",
+  "files": [
+    { "path": "scripts/run.sh", "body": "#!/usr/bin/env bash\necho hi\n", "executable": true }
+  ]
+}

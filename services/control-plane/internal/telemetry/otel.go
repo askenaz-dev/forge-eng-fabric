@@ -22,14 +22,14 @@ func Init(ctx context.Context, serviceName, environment, endpoint string) (func(
 	if err != nil {
 		return nil, err
 	}
-	res, err := resource.Merge(resource.Default(), resource.NewWithAttributes(
-		semconv.SchemaURL,
+	// resource.Default() may use a different semconv SchemaURL than the one
+	// we import; resource.Merge surfaces that as a hard error. Use a
+	// schemaless resource so the service still starts when SDK + semconv
+	// drift across go.opentelemetry.io module versions.
+	res := resource.NewSchemaless(
 		semconv.ServiceName(serviceName),
 		attribute.String("deployment.environment", environment),
-	))
-	if err != nil {
-		return nil, err
-	}
+	)
 	provider := sdktrace.NewTracerProvider(sdktrace.WithBatcher(exporter), sdktrace.WithResource(res))
 	otel.SetTracerProvider(provider)
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))

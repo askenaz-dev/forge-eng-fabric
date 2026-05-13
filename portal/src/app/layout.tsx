@@ -70,7 +70,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     // Legacy shell path — keeps the rebrand controllable in production until
     // cutover. The legacy module simply re-exports the previous v1 layout.
     return (
-      <html lang={prefs.lang}>
+      <html lang={prefs.lang} suppressHydrationWarning>
         <body className={geist.className}>
           <Providers initialTheme={prefs.theme} initialDensity={prefs.density} initialLang={prefs.lang}>
             <LegacyShell>{children}</LegacyShell>
@@ -102,6 +102,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       data-theme={dataTheme}
       data-density={prefs.density}
       className={fontClassNames}
+      suppressHydrationWarning
     >
       <body>
         <Providers initialTheme={prefs.theme} initialDensity={prefs.density} initialLang={prefs.lang}>

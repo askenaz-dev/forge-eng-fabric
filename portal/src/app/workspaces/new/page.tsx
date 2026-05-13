@@ -74,7 +74,7 @@ export default async function NewWorkspacePage() {
           </label>
           <label className="grid gap-1 text-sm">
             <span style={{ fontWeight: 500 }}>Owners</span>
-            <input name="owners" required placeholder="alice,bob" className="top-search" style={{ height: 36 }} />
+            <input name="owners" required placeholder="askenaz,developer" className="top-search" style={{ height: 36 }} />
             <span style={{ fontSize: 11, color: "var(--fg-3)" }}>Comma-separated local usernames or subject identifiers.</span>
           </label>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>

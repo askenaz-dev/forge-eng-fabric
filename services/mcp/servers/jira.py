@@ -274,7 +274,13 @@ def policy_hook(request: ToolRequest) -> tuple[bool, str]:
     return decision.allowed, decision.rationale
 
 
-server = MCPServer(name="jira", policy_hook=policy_hook)
+from forge_mcp import RemoteTransport  # noqa: E402
+
+server = MCPServer(
+    name="jira",
+    policy_hook=policy_hook,
+    remote_transport=RemoteTransport(http_path_template="/v1/invoke"),
+)
 
 
 def _jira_call(operation: str, request: ToolRequest) -> dict[str, Any]:

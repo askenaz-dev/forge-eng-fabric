@@ -9,6 +9,7 @@
   "sslRequired": "none",
   "accessTokenLifespan": 900,
   "refreshTokenMaxReuse": 0,
+  "loginTheme": "forge",
   "roles": {
     "realm": [
       { "name": "platform-admin", "description": "Platform-wide administrator" },
@@ -22,27 +23,27 @@
   ],
   "users": [
     {
-      "username": "alice",
+      "username": "askenaz",
       "enabled": true,
-      "email": "alice@forge.local",
-      "firstName": "Alice",
+      "email": "askenaz@forge.local",
+      "firstName": "Askenaz",
       "lastName": "Admin",
       "emailVerified": true,
       "credentials": [
-        { "type": "password", "value": "alice", "temporary": false }
+        { "type": "password", "value": "askenaz", "temporary": false }
       ],
       "realmRoles": ["platform-admin", "tenant-admin", "developer"],
       "groups": ["/forge-admins"]
     },
     {
-      "username": "bob",
+      "username": "developer",
       "enabled": true,
-      "email": "bob@forge.local",
-      "firstName": "Bob",
-      "lastName": "Developer",
+      "email": "developer@forge.local",
+      "firstName": "Developer",
+      "lastName": "User",
       "emailVerified": true,
       "credentials": [
-        { "type": "password", "value": "bob", "temporary": false }
+        { "type": "password", "value": "developer", "temporary": false }
       ],
       "realmRoles": ["developer"],
       "groups": ["/forge-developers"]

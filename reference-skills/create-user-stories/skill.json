@@ -1,0 +1,6 @@
+{
+  "name": "create-user-stories",
+  "description": "Turn a product brief into a small set of user stories with INVEST-style acceptance criteria.",
+  "mcp": ["openspec"],
+  "body": "# create-user-stories\n\nThis skill helps decompose a product brief into 3-7 user stories with acceptance criteria.\n\n## When to use\n\nWhen the user is starting a new feature and only has a high-level brief or a single sentence; they want to land on a tractable set of stories before architecture or code.\n\n## How it works\n\n1. Read the brief from the conversation context (do NOT fetch external systems).\n2. Identify the primary user, secondary user(s), and the value being delivered.\n3. Emit 3-7 stories in the form `As a <user>, I want <capability>, so that <outcome>`.\n4. For each story, attach 2-4 acceptance criteria in Given/When/Then form.\n\n## Output\n\nMarkdown with one heading per story and a nested list of acceptance criteria."
+}

@@ -32,7 +32,13 @@ async function refreshAccessToken(token: any) {
       error: undefined,
     };
   } catch {
-    return { ...token, error: "RefreshAccessTokenError" };
+    return {
+      ...token,
+      accessToken: undefined,
+      refreshToken: undefined,
+      accessTokenExpires: 0,
+      error: "RefreshAccessTokenError",
+    };
   }
 }
 

@@ -2,6 +2,7 @@
 // report (per task 2.13 of platform-gaps-closure). When the runtime-registry
 // API is unreachable this falls back to a placeholder so the route still renders.
 
+import Link from "next/link";
 import { PageHead } from "@/components/page/PageHead";
 import { Card } from "@/components/primitives";
 
@@ -66,7 +67,11 @@ export default async function RuntimeDetailPage({ params }: { params: { id: stri
   return (
     <>
       <PageHead
-        eyebrow="Observability · Runtime"
+        eyebrow={
+          <Link href="/runtimes" className="back-link">
+            ← Back to runtimes
+          </Link>
+        }
         title={runtime?.name ?? params.id}
         titleEm="detail"
         sub={params.id}
