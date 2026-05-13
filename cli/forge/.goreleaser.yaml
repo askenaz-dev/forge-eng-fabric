@@ -1,0 +1,70 @@
+version: 2
+
+project_name: forge
+
+before:
+  hooks:
+    - go mod download
+
+builds:
+  - id: forge
+    main: ./cmd/forge
+    binary: forge
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X main.version={{ .Version }}
+      - -X main.commit={{ .Commit }}
+      - -X main.signed=goreleaser
+    goos: [darwin, linux, windows]
+    goarch: [amd64, arm64]
+    ignore:
+      - goos: windows
+        goarch: arm64
+
+archives:
+  - id: forge
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    formats: ["tar.gz"]
+    format_overrides:
+      - goos: windows
+        formats: ["zip"]
+
+checksum:
+  name_template: "checksums.txt"
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+
+brews:
+  - name: forge
+    repository:
+      owner: askenaz-dev
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    commit_author:
+      name: forge-release-bot
+      email: release-bot@askenaz-dev.github.io
+    homepage: https://github.com/askenaz-dev/forge-eng-fabric
+    description: "Forge developer CLI — install governed Forge skills into your agent (Claude Code, Copilot, Codex, Cursor, …)"
+    license: Apache-2.0
+    test: |
+      system "#{bin}/forge", "--version"
+
+release:
+  github:
+    owner: askenaz-dev
+    name: forge-eng-fabric
+  draft: false
+  prerelease: auto

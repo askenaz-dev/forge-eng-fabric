@@ -1,0 +1,51 @@
+# Release the forge CLI on every `v*` tag:
+#   - cross-build binaries for darwin/linux/windows × amd64/arm64 (goreleaser)
+#   - create a GitHub Release with archives + checksums
+#   - update the homebrew tap at askenaz-dev/homebrew-tap
+#   - publish forge-cli + 5 platform sub-packages to npm
+name: cli-release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org/'
+
+      - name: goreleaser release
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          distribution: goreleaser
+          version: '~> v2'
+          args: release --clean
+          workdir: cli/forge
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
+
+      - name: publish to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: 'true'
+          VERSION: ${{ github.ref_name }}
+          DIST: ${{ github.workspace }}/cli/forge/dist
+        run: node cli/forge/npm/publish.mjs
