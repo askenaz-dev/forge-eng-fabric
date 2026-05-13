@@ -284,6 +284,7 @@ button { font-family: inherit; cursor: pointer; }
   flex-direction: column;
   gap: 2px;
 }
+.side-group-items[hidden] { display: none; }
 .side-section {
   appearance: none;
   background: transparent;
