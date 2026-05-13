@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://forge.local/contracts/events/portal.theme.changed.v1.json",
+  "title": "portal.theme.changed.v1",
+  "description": "Emitted when an authenticated user changes their Portal theme preference (light / dark / system).",
+  "type": "object",
+  "required": ["type", "principal", "timestamp", "data", "correlation_id"],
+  "properties": {
+    "type": { "type": "string", "const": "portal.theme.changed.v1" },
+    "principal": { "type": "string", "description": "User email or service principal id" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "correlation_id": { "type": "string" },
+    "data": {
+      "type": "object",
+      "required": ["to"],
+      "properties": {
+        "to":   { "type": "string", "enum": ["light", "dark", "system"] },
+        "from": { "type": "string", "enum": ["light", "dark", "system"] }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

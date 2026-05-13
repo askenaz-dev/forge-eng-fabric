@@ -1,6 +1,8 @@
 import { authOptions } from "@/auth";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
+import { PageHead } from "@/components/page/PageHead";
+import { Button } from "@/components/primitives";
 
 type Incident = {
   id: string;
@@ -118,21 +120,36 @@ export default async function IncidentsPage({ searchParams }: { searchParams: Se
   const diagnosis = selected ? await fetchDiagnosis(selected, token) : null;
 
   return (
-    <section className="space-y-6">
-      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h2 className="text-2xl font-semibold">Incidents</h2>
-          <p className="mt-1 text-sm opacity-70">Detection → diagnosis → healing → postmortem timeline (Phase 6).</p>
-        </div>
-        <form className="flex gap-2" method="get">
-          <select name="status" defaultValue={status} className="rounded border border-neutral-300 bg-transparent px-3 py-2 text-sm dark:border-neutral-700">
-            <option value="">All</option>
-            <option value="open">Open</option>
-            <option value="resolved">Resolved</option>
-          </select>
-          <button className="rounded bg-neutral-900 px-4 py-2 text-sm text-white dark:bg-neutral-100 dark:text-neutral-900">Filter</button>
-        </form>
-      </div>
+    <>
+      <PageHead
+        eyebrow="Observability · Incidents"
+        title="Incident"
+        titleEm="timeline"
+        sub="Detection → diagnosis → healing → postmortem (Phase 6)."
+        actions={
+          <form method="get" style={{ display: "flex", gap: 8 }}>
+            <select
+              name="status"
+              defaultValue={status}
+              style={{
+                height: 32,
+                background: "var(--bg-card)",
+                border: "1px solid var(--border)",
+                borderRadius: "var(--r-2)",
+                padding: "0 10px",
+                color: "var(--fg)",
+                fontFamily: "var(--f-sans)",
+                fontSize: 13,
+              }}
+            >
+              <option value="">All</option>
+              <option value="open">Open</option>
+              <option value="resolved">Resolved</option>
+            </select>
+            <Button variant="primary" type="submit">Filter</Button>
+          </form>
+        }
+      />
 
       <div className="grid gap-5 xl:grid-cols-[320px_1fr]">
         <aside className="space-y-2 rounded border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900" data-testid="incident-list">
@@ -162,7 +179,7 @@ export default async function IncidentsPage({ searchParams }: { searchParams: Se
           )}
         </div>
       </div>
-    </section>
+    </>
   );
 }
 
@@ -280,7 +297,7 @@ function PostmortemLink({ incident }: { incident: Incident }) {
     <div className="rounded border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
       <h3 className="font-medium">Postmortem</h3>
       <p className="mt-2 text-sm">
-        Postmortem for <code>{incident.id}</code> is auto-generated on <code>incident.resolved.v1</code>. Once published it appears in Confluence and is linked from the affected asset's OpenSpec.
+        Postmortem for <code>{incident.id}</code> is auto-generated on <code>incident.resolved.v1</code>. Once published it appears in Confluence and is linked from the affected asset&apos;s OpenSpec.
       </p>
     </div>
   );

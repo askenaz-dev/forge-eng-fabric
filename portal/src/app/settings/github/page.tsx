@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/auth";
+import { PageHead } from "@/components/page/PageHead";
 
 type GitHubRepository = {
   name: string;
@@ -67,11 +68,13 @@ export default async function GitHubSettingsPage({ searchParams }: { searchParam
   const repoResult = workspaceId && token ? await fetchRepositories(workspaceId, token) : null;
 
   return (
-    <section className="max-w-3xl space-y-5">
-      <div>
-        <h2 className="text-2xl font-semibold">Connect GitHub</h2>
-        <p className="mt-1 text-sm opacity-70">Install the Forge GitHub App or record a local fixture installation for Phase 0 smoke testing.</p>
-      </div>
+    <div style={{ maxWidth: 720 }}>
+      <PageHead
+        eyebrow="Account · Settings"
+        title="Connect"
+        titleEm="GitHub"
+        sub="Install the Forge GitHub App or record a local fixture installation for Phase 0 smoke testing."
+      />
 
       {searchParams.connected && (
         <p className="rounded border border-green-300 bg-green-50 p-3 text-sm text-green-800 dark:border-green-800 dark:bg-green-950 dark:text-green-200">
@@ -145,6 +148,6 @@ export default async function GitHubSettingsPage({ searchParams }: { searchParam
           </div>
         )}
       </div>
-    </section>
+    </div>
   );
 }

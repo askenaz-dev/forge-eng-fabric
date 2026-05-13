@@ -1,43 +1,92 @@
-const runtimes = [
-  { id: "rt-dev-1", name: "local-minikube", type: "minikube", mode: "byo", status: "ready", env: "dev" },
-  { id: "rt-prod-gke", name: "pilot-prod", type: "gke", mode: "byo", status: "preflight_required", env: "prod" },
-  { id: "rt-stage-cr", name: "stage-cloudrun", type: "cloudrun", mode: "provisioned", status: "ready", env: "stage" },
-];
+import Link from "next/link";
+import { authToken, correlationId, endpoint, proxyJson } from "@/lib/api";
+import { PageHead } from "@/components/page/PageHead";
+import { Badge, Button, Card } from "@/components/primitives";
 
-export default function RuntimesPage() {
+type Runtime = {
+  id: string;
+  name: string;
+  type: string;
+  mode: "byo" | "provisioned";
+  status: string;
+  env: string;
+};
+
+async function fetchRuntimes(): Promise<Runtime[]> {
+  const { token } = await authToken();
+  try {
+    const data = await proxyJson<{ runtimes: Runtime[] }>(
+      `${endpoint("CONTROL_PLANE_URL")}/v1/runtimes?limit=50`,
+      { token, correlation: correlationId() },
+    );
+    return data.runtimes ?? [];
+  } catch {
+    return [];
+  }
+}
+
+function statusTone(status: string): "ok" | "warn" | "err" | "default" {
+  if (status === "ready" || status === "healthy") return "ok";
+  if (status === "preflight_required" || status === "degraded") return "warn";
+  if (status === "down" || status === "error") return "err";
+  return "default";
+}
+
+export default async function RuntimesPage() {
+  const runtimes = await fetchRuntimes();
   return (
-    <section className="space-y-5">
-      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <div>
-          <p className="text-sm font-medium uppercase tracking-wide text-neutral-500">Runtimes</p>
-          <h2 className="text-2xl font-semibold">Deploy targets</h2>
-          <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-300">Register BYO targets, run preflight, or track Forge-provisioned runtimes.</p>
-        </div>
-        <button className="rounded bg-neutral-900 px-4 py-2 text-sm font-medium text-white dark:bg-neutral-100 dark:text-neutral-900">Register BYO runtime</button>
-      </div>
-
-      <div className="grid gap-3 lg:grid-cols-3">
+    <>
+      <PageHead
+        eyebrow="Observability · Runtimes"
+        title="Deploy"
+        titleEm="targets"
+        sub="Register BYO targets, run preflight, or track Forge-provisioned runtimes."
+        actions={<Button variant="primary">Register BYO runtime</Button>}
+      />
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 12 }}>
+        {runtimes.length === 0 && (
+          <Card>
+            <div className="note" style={{ padding: 24, textAlign: "center" }}>
+              No runtimes registered yet.
+            </div>
+          </Card>
+        )}
         {runtimes.map((runtime) => (
-          <article key={runtime.id} className="rounded border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h3 className="font-semibold">{runtime.name}</h3>
-                <p className="text-xs text-neutral-500">{runtime.id}</p>
+          <Card key={runtime.id}>
+            <div style={{ padding: 16 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+                <div>
+                  <h3 style={{ fontFamily: "var(--f-display)", fontStyle: "italic", fontSize: 20, margin: 0, letterSpacing: "-0.015em" }}>
+                    {runtime.name}
+                  </h3>
+                  <p style={{ fontFamily: "var(--f-mono)", fontSize: 11, color: "var(--fg-3)", margin: "2px 0 0" }}>{runtime.id}</p>
+                </div>
+                <Badge tone={statusTone(runtime.status)}>{runtime.status}</Badge>
               </div>
-              <span className="rounded-full bg-neutral-100 px-2 py-1 text-xs dark:bg-neutral-800">{runtime.status}</span>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginTop: 14, fontSize: 13 }}>
+                <div>
+                  <div className="h-eyebrow" style={{ margin: 0 }}>Type</div>
+                  <div>{runtime.type}</div>
+                </div>
+                <div>
+                  <div className="h-eyebrow" style={{ margin: 0 }}>Mode</div>
+                  <div>{runtime.mode}</div>
+                </div>
+                <div>
+                  <div className="h-eyebrow" style={{ margin: 0 }}>Env</div>
+                  <div>{runtime.env}</div>
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 6, marginTop: 16 }}>
+                <Link href={`/runtimes/${runtime.id}`}>
+                  <Button variant="secondary" size="xs">Run preflight</Button>
+                </Link>
+                <Button variant="danger" size="xs">Delete</Button>
+              </div>
             </div>
-            <dl className="mt-4 grid grid-cols-3 gap-2 text-sm">
-              <div><dt className="text-xs text-neutral-500">Type</dt><dd>{runtime.type}</dd></div>
-              <div><dt className="text-xs text-neutral-500">Mode</dt><dd>{runtime.mode}</dd></div>
-              <div><dt className="text-xs text-neutral-500">Env</dt><dd>{runtime.env}</dd></div>
-            </dl>
-            <div className="mt-4 flex gap-2">
-              <button className="rounded border border-neutral-300 px-3 py-1.5 text-sm dark:border-neutral-700">Run preflight</button>
-              <button className="rounded border border-red-300 px-3 py-1.5 text-sm text-red-700 dark:border-red-800 dark:text-red-300">Delete</button>
-            </div>
-          </article>
+          </Card>
         ))}
       </div>
-    </section>
+    </>
   );
 }

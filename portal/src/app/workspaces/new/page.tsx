@@ -1,6 +1,9 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/auth";
+import Link from "next/link";
+import { PageHead } from "@/components/page/PageHead";
+import { Button, Card } from "@/components/primitives";
 
 async function createWorkspace(formData: FormData) {
   "use server";
@@ -35,37 +38,51 @@ export default async function NewWorkspacePage() {
   if (!session) redirect("/api/auth/signin");
 
   return (
-    <section className="max-w-2xl space-y-5">
-      <div>
-        <h2 className="text-2xl font-semibold">New workspace</h2>
-        <p className="mt-1 text-sm opacity-70">Create a workspace in an existing Business Unit.</p>
-      </div>
+    <div style={{ maxWidth: 640 }}>
+      <PageHead
+        eyebrow="Platform · Workspaces"
+        title="New"
+        titleEm="workspace"
+        sub="Create a workspace in an existing Business Unit."
+      />
 
-      <form action={createWorkspace} className="space-y-4 rounded border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
-        <label className="grid gap-1 text-sm">
-          <span className="font-medium">Business Unit ID</span>
-          <input name="business_unit_id" required className="rounded border border-neutral-300 bg-transparent px-3 py-2 dark:border-neutral-700" />
-        </label>
-        <label className="grid gap-1 text-sm">
-          <span className="font-medium">Workspace name</span>
-          <input name="name" required className="rounded border border-neutral-300 bg-transparent px-3 py-2 dark:border-neutral-700" />
-        </label>
-        <label className="grid gap-1 text-sm">
-          <span className="font-medium">Description</span>
-          <textarea name="description" rows={3} className="rounded border border-neutral-300 bg-transparent px-3 py-2 dark:border-neutral-700" />
-        </label>
-        <label className="grid gap-1 text-sm">
-          <span className="font-medium">Owners</span>
-          <input name="owners" required placeholder="alice,bob" className="rounded border border-neutral-300 bg-transparent px-3 py-2 dark:border-neutral-700" />
-          <span className="text-xs opacity-60">Comma-separated local usernames or subject identifiers.</span>
-        </label>
-        <div className="flex items-center gap-3">
-          <button type="submit" className="rounded bg-neutral-900 px-4 py-2 text-sm font-medium text-white dark:bg-neutral-100 dark:text-neutral-900">
-            Create workspace
-          </button>
-          <a href="/" className="text-sm underline opacity-70">Cancel</a>
-        </div>
-      </form>
-    </section>
+      <Card>
+        <form action={createWorkspace} style={{ padding: 16, display: "flex", flexDirection: "column", gap: 14 }}>
+          <label className="grid gap-1 text-sm">
+            <span style={{ fontWeight: 500 }}>Business Unit ID</span>
+            <input name="business_unit_id" required className="top-search" style={{ height: 36 }} />
+          </label>
+          <label className="grid gap-1 text-sm">
+            <span style={{ fontWeight: 500 }}>Workspace name</span>
+            <input name="name" required className="top-search" style={{ height: 36 }} />
+          </label>
+          <label className="grid gap-1 text-sm">
+            <span style={{ fontWeight: 500 }}>Description</span>
+            <textarea
+              name="description"
+              rows={3}
+              style={{
+                background: "var(--bg-card)",
+                border: "1px solid var(--border)",
+                borderRadius: "var(--r-2)",
+                padding: "8px 10px",
+                color: "var(--fg)",
+                fontFamily: "var(--f-sans)",
+                fontSize: 13,
+              }}
+            />
+          </label>
+          <label className="grid gap-1 text-sm">
+            <span style={{ fontWeight: 500 }}>Owners</span>
+            <input name="owners" required placeholder="alice,bob" className="top-search" style={{ height: 36 }} />
+            <span style={{ fontSize: 11, color: "var(--fg-3)" }}>Comma-separated local usernames or subject identifiers.</span>
+          </label>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <Button variant="primary" type="submit">Create workspace</Button>
+            <Link href="/" style={{ color: "var(--fg-2)", fontSize: 13 }}>Cancel</Link>
+          </div>
+        </form>
+      </Card>
+    </div>
   );
 }

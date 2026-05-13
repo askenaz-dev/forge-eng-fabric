@@ -1,0 +1,32 @@
+name: portal-lint
+
+on:
+  pull_request:
+    paths:
+      - "portal/**"
+      - "scripts/audit-no-mocks.sh"
+      - ".github/workflows/portal-lint.yml"
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - run: pnpm --filter @forge/portal install --frozen-lockfile=false
+      - name: ESLint
+        run: pnpm --filter @forge/portal lint
+      - name: Stylelint
+        run: pnpm --filter @forge/portal stylelint
+      - name: I18n parity
+        run: pnpm --filter @forge/portal i18n:check
+      - name: Glossary audit
+        run: pnpm --filter @forge/portal i18n:glossary-audit
+      - name: No mocks audit
+        run: bash scripts/audit-no-mocks.sh

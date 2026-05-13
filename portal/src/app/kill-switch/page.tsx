@@ -1,6 +1,7 @@
 import { authOptions } from "@/auth";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
+import { PageHead } from "@/components/page/PageHead";
 
 type KillSwitchState = { active: boolean };
 
@@ -43,11 +44,13 @@ export default async function KillSwitchPage({ searchParams }: { searchParams: {
   const state = await fetchState(workspaceId, token);
 
   return (
-    <section className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-semibold">Kill switch</h2>
-        <p className="mt-1 text-sm opacity-70">Activate to immediately degrade ALL healing actions to L1 (Notify-only). Requires <code>platform-admin</code> or <code>security-approver</code>.</p>
-      </div>
+    <>
+      <PageHead
+        eyebrow="Governance · Kill switch"
+        title="Healing"
+        titleEm="kill switch"
+        sub="Activate to immediately degrade ALL healing actions to L1 (Notify-only). Requires platform-admin or security-approver."
+      />
 
       <div className={`rounded border p-5 ${state.active ? "border-red-400 bg-red-50 dark:border-red-700 dark:bg-red-950/30" : "border-emerald-400 bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-950/30"}`} data-testid="kill-switch-state">
         <p className="font-medium">Status: <span data-testid="kill-switch-status">{state.active ? "ACTIVE" : "INACTIVE"}</span></p>
@@ -72,8 +75,8 @@ export default async function KillSwitchPage({ searchParams }: { searchParams: {
 
       <div className="rounded border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
         <h3 className="font-medium">Audit log</h3>
-        <p className="mt-1 text-sm opacity-70">All toggles emit <code>healing.kill_switch.toggled.v1</code> CloudEvents — see Audit Service or Grafana dashboard "Phase 6 — Autonomous Ops".</p>
+        <p className="mt-1 text-sm opacity-70">All toggles emit <code>healing.kill_switch.toggled.v1</code> CloudEvents — see Audit Service or Grafana dashboard &ldquo;Phase 6 — Autonomous Ops&rdquo;.</p>
       </div>
-    </section>
+    </>
   );
 }

@@ -133,14 +133,16 @@ export default async function AlfredWizardPage({ searchParams }: { searchParams:
 
   if (!wizardEnabled) {
     return (
-      <section className="space-y-3">
-        <h2 className="text-2xl font-semibold">Alfred Wizard</h2>
-        <p className="text-sm text-neutral-600 dark:text-neutral-300">
+      <>
+        <h1 className="page-title">
+          Alfred <em>Wizard</em>
+        </h1>
+        <p className="page-sub">
           The conversational wizard is feature-flagged. Enable it for this session by appending{" "}
-          <code className="rounded bg-neutral-100 px-1 dark:bg-neutral-800">?wizard=1</code> to the URL, or use the{" "}
-          <a className="underline" href="/alfred">slash-command Alfred Console</a> instead.
+          <code style={{ background: "var(--bg-hover)", padding: "1px 6px", borderRadius: 4 }}>?wizard=1</code> to the URL, or use the{" "}
+          <a style={{ color: "var(--primary)" }} href="/alfred">slash-command Alfred Console</a> instead.
         </p>
-      </section>
+      </>
     );
   }
 
@@ -150,9 +152,11 @@ export default async function AlfredWizardPage({ searchParams }: { searchParams:
 
   if (!draftId) {
     return (
-      <section className="space-y-4">
-        <h2 className="text-2xl font-semibold">Alfred Wizard</h2>
-        <p className="text-sm text-neutral-600 dark:text-neutral-300">
+      <>
+        <h1 className="page-title">
+          Alfred <em>Wizard</em>
+        </h1>
+        <p className="page-sub" style={{ marginBottom: 16 }}>
           Describe what you want to build. Alfred will ask follow-up questions and assemble a structured specification for review.
         </p>
         {error && (
@@ -183,19 +187,21 @@ export default async function AlfredWizardPage({ searchParams }: { searchParams:
             Start the wizard
           </button>
         </form>
-      </section>
+      </>
     );
   }
 
   const draftBody = await fetchDraft(draftId, token);
   if (!draftBody) {
     return (
-      <section className="space-y-3">
-        <h2 className="text-2xl font-semibold">Alfred Wizard</h2>
-        <div className="rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
-          Draft not found. <a className="underline" href="/alfred/wizard?wizard=1">Start a new draft</a>.
+      <>
+        <h1 className="page-title">
+          Alfred <em>Wizard</em>
+        </h1>
+        <div style={{ padding: 14, background: "color-mix(in oklch, var(--spark), transparent 80%)", borderRadius: "var(--r-3)", color: "var(--spark)" }}>
+          Draft not found. <a style={{ color: "var(--primary)" }} href="/alfred/wizard?wizard=1">Start a new draft</a>.
         </div>
-      </section>
+      </>
     );
   }
 
@@ -205,12 +211,12 @@ export default async function AlfredWizardPage({ searchParams }: { searchParams:
   const ready = !nextQuestion;
 
   return (
-    <section className="grid gap-6 lg:grid-cols-[1fr_320px]">
+    <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
       <div className="space-y-4">
         <header>
-          <p className="text-sm font-medium uppercase tracking-wide text-neutral-500">Wizard</p>
-          <h2 className="text-2xl font-semibold">Capturing intent — {draft.title || "(untitled)"}</h2>
-          <p className="text-xs text-neutral-500">draft_id: {draft.draft_id} · turns: {draft.turn_count}</p>
+          <div className="h-eyebrow">Wizard</div>
+          <h1 className="page-title">Capturing intent — <em>{draft.title || "(untitled)"}</em></h1>
+          <p style={{ fontFamily: "var(--f-mono)", fontSize: 11, color: "var(--fg-3)" }}>draft_id: {draft.draft_id} · turns: {draft.turn_count}</p>
         </header>
 
         {error && (
@@ -290,6 +296,6 @@ export default async function AlfredWizardPage({ searchParams }: { searchParams:
           ))}
         </div>
       </aside>
-    </section>
+    </div>
   );
 }

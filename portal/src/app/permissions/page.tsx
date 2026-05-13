@@ -1,6 +1,8 @@
 import { authOptions } from "@/auth";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
+import { PageHead } from "@/components/page/PageHead";
+import { Card } from "@/components/primitives";
 
 type Grant = {
   id: string;
@@ -90,14 +92,16 @@ export default async function PermissionsPage({ searchParams }: { searchParams: 
   }
 
   return (
-    <section className="space-y-5">
-      <div>
-        <h2 className="text-2xl font-semibold">Delegated Permissions</h2>
-        <p className="mt-1 text-sm opacity-70">Grant and revoke scoped Alfred permissions with audit history and expiration.</p>
-      </div>
-      {searchParams.saved && <p className="rounded border border-green-300 bg-green-50 p-3 text-sm text-green-800 dark:border-green-800 dark:bg-green-950 dark:text-green-200">Grant created.</p>}
-      {searchParams.revoked && <p className="rounded border border-green-300 bg-green-50 p-3 text-sm text-green-800 dark:border-green-800 dark:bg-green-950 dark:text-green-200">Grant revoked.</p>}
-      {error && <p className="rounded border border-red-300 bg-red-50 p-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200">{error}</p>}
+    <>
+      <PageHead
+        eyebrow="Governance · Permissions"
+        title="Delegated"
+        titleEm="permissions"
+        sub="Grant and revoke scoped Alfred permissions with audit history and expiration."
+      />
+      {searchParams.saved && <Card style={{ marginBottom: 16 }}><div style={{ padding: 14, color: "var(--thread)" }}>Grant created.</div></Card>}
+      {searchParams.revoked && <Card style={{ marginBottom: 16 }}><div style={{ padding: 14, color: "var(--thread)" }}>Grant revoked.</div></Card>}
+      {error && <Card style={{ marginBottom: 16 }}><div style={{ padding: 14, color: "var(--rust)" }}>{error}</div></Card>}
 
       <div className="grid gap-5 lg:grid-cols-[360px_1fr]">
         <form action={createGrant} className="space-y-4 rounded border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
@@ -139,7 +143,7 @@ export default async function PermissionsPage({ searchParams }: { searchParams: 
           {grants.length === 0 && !error && <p className="rounded border border-dashed border-neutral-300 p-6 text-sm opacity-70 dark:border-neutral-800">No grants found.</p>}
         </div>
       </div>
-    </section>
+    </>
   );
 }
 

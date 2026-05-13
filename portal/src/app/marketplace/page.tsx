@@ -1,6 +1,8 @@
 import { authOptions } from "@/auth";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
+import { PageHead } from "@/components/page/PageHead";
+import { Badge, Button, Card } from "@/components/primitives";
 
 type Listing = {
   id: string;
@@ -83,100 +85,93 @@ export default async function MarketplacePage({ searchParams }: { searchParams: 
   }
 
   return (
-    <section className="space-y-6">
-      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h2 className="text-2xl font-semibold">Marketplace</h2>
-          <p className="mt-1 text-sm opacity-70">Browse workflows shared in your Tenant. Install pins to an exact version.</p>
-        </div>
-        <form className="flex flex-wrap gap-2" method="get">
-          <input
-            name="tenant_id"
-            defaultValue={tenantId}
-            placeholder="Tenant ID"
-            className="min-w-0 rounded border border-neutral-300 bg-transparent px-3 py-2 text-sm dark:border-neutral-700"
-          />
-          <input
-            name="workspace_id"
-            defaultValue={workspaceId}
-            placeholder="Workspace ID"
-            className="min-w-0 rounded border border-neutral-300 bg-transparent px-3 py-2 text-sm dark:border-neutral-700"
-          />
-          <select
-            name="visibility"
-            defaultValue={searchParams.visibility ?? ""}
-            className="rounded border border-neutral-300 bg-transparent px-2 py-2 text-sm dark:border-neutral-700"
-          >
-            <option value="">any visibility</option>
-            <option value="workspace">workspace</option>
-            <option value="tenant">tenant</option>
-            <option value="forge-certified">forge-certified</option>
-          </select>
-          <input
-            name="q"
-            defaultValue={searchParams.q ?? ""}
-            placeholder="search"
-            className="rounded border border-neutral-300 bg-transparent px-3 py-2 text-sm dark:border-neutral-700"
-          />
-          <button className="rounded bg-neutral-900 px-4 py-2 text-sm text-white dark:bg-neutral-100 dark:text-neutral-900">Search</button>
-        </form>
-      </div>
+    <>
+      <PageHead
+        eyebrow="Platform · Marketplace"
+        title="Forge"
+        titleEm="marketplace"
+        sub="Browse workflows shared in your Tenant. Install pins to an exact version."
+        actions={
+          <form method="get" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <input name="tenant_id" defaultValue={tenantId} placeholder="Tenant ID" className="top-search" style={{ height: 32, width: 160 }} />
+            <input name="workspace_id" defaultValue={workspaceId} placeholder="Workspace ID" className="top-search" style={{ height: 32, width: 180 }} />
+            <select
+              name="visibility"
+              defaultValue={searchParams.visibility ?? ""}
+              style={{
+                height: 32,
+                background: "var(--bg-card)",
+                border: "1px solid var(--border)",
+                borderRadius: "var(--r-2)",
+                padding: "0 10px",
+                color: "var(--fg)",
+                fontFamily: "var(--f-sans)",
+                fontSize: 13,
+              }}
+            >
+              <option value="">any visibility</option>
+              <option value="workspace">workspace</option>
+              <option value="tenant">tenant</option>
+              <option value="forge-certified">forge-certified</option>
+            </select>
+            <input name="q" defaultValue={searchParams.q ?? ""} placeholder="search" className="top-search" style={{ height: 32, width: 160 }} />
+            <Button variant="primary" type="submit">Search</Button>
+          </form>
+        }
+      />
 
       {searchParams.installed && (
-        <p className="rounded border border-green-300 bg-green-50 p-3 text-sm text-green-800 dark:border-green-800 dark:bg-green-950 dark:text-green-200">
-          Installed.
-        </p>
+        <Card style={{ marginBottom: 16 }}><div style={{ padding: 14, color: "var(--thread)" }}>Installed.</div></Card>
       )}
       {error && (
-        <p className="rounded border border-red-300 bg-red-50 p-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200">
-          {error}
-        </p>
+        <Card style={{ marginBottom: 16 }}><div style={{ padding: 14, color: "var(--rust)" }}>{error}</div></Card>
       )}
 
-      <ul className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 12 }}>
         {listings.map((l) => (
-          <li key={l.id} className="rounded border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
-            <header className="flex items-start justify-between gap-2">
-              <div>
-                <h3 className="font-medium">{l.name}</h3>
-                <p className="text-xs opacity-60">
-                  {l.workflow_id}@{l.version}
-                </p>
+          <Card key={l.id}>
+            <div style={{ padding: 14, display: "flex", flexDirection: "column", gap: 8 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start" }}>
+                <div>
+                  <h3 style={{ fontFamily: "var(--f-display)", fontStyle: "italic", fontSize: 20, margin: 0, letterSpacing: "-0.015em" }}>{l.name}</h3>
+                  <p style={{ fontFamily: "var(--f-mono)", fontSize: 11, color: "var(--fg-3)", margin: "2px 0 0" }}>{l.workflow_id}@{l.version}</p>
+                </div>
+                <Badge>{l.visibility}</Badge>
               </div>
-              <span className="rounded bg-neutral-100 px-2 py-0.5 text-xs dark:bg-neutral-800">{l.visibility}</span>
-            </header>
-            <p className="mt-2 text-sm">{l.description}</p>
-            {l.tags && l.tags.length > 0 && (
-              <p className="mt-2 text-xs opacity-70">{l.tags.join(" · ")}</p>
-            )}
-            {l.eval_outcome && (
-              <p className="mt-1 text-xs">
-                eval: <strong>{l.eval_outcome}</strong>
-                {l.eval_run_id ? ` · ${l.eval_run_id}` : ""}
-              </p>
-            )}
-            <p className="mt-1 text-xs opacity-60">approval: {l.approval_state}</p>
-            <form action={installListing} className="mt-3 flex flex-wrap gap-2 text-sm">
-              <input type="hidden" name="tenant_id" value={l.tenant_id} />
-              <input type="hidden" name="listing_id" value={l.id} />
-              <input
-                name="target_workspace_id"
-                defaultValue={workspaceId}
-                placeholder="target workspace"
-                required
-                className="min-w-0 rounded border border-neutral-300 bg-transparent px-2 py-1 dark:border-neutral-700"
-              />
-              <button className="rounded bg-neutral-900 px-3 py-1 text-white dark:bg-neutral-100 dark:text-neutral-900">Install</button>
-            </form>
-          </li>
+              <p style={{ fontSize: 13, color: "var(--fg-2)", margin: 0 }}>{l.description}</p>
+              {l.tags && l.tags.length > 0 && <p style={{ fontFamily: "var(--f-mono)", fontSize: 11, color: "var(--fg-3)", margin: 0 }}>{l.tags.join(" · ")}</p>}
+              {l.eval_outcome && (
+                <p style={{ fontFamily: "var(--f-mono)", fontSize: 11, margin: 0 }}>
+                  eval: <strong style={{ color: "var(--fg)" }}>{l.eval_outcome}</strong>
+                  {l.eval_run_id ? ` · ${l.eval_run_id}` : ""}
+                </p>
+              )}
+              <p style={{ fontFamily: "var(--f-mono)", fontSize: 11, color: "var(--fg-3)", margin: 0 }}>approval: {l.approval_state}</p>
+              <form action={installListing} style={{ display: "flex", gap: 6, marginTop: 6 }}>
+                <input type="hidden" name="tenant_id" value={l.tenant_id} />
+                <input type="hidden" name="listing_id" value={l.id} />
+                <input
+                  name="target_workspace_id"
+                  defaultValue={workspaceId}
+                  placeholder="target workspace"
+                  required
+                  className="top-search"
+                  style={{ height: 28, minWidth: 0, flex: 1 }}
+                />
+                <Button variant="primary" size="xs" type="submit">Install</Button>
+              </form>
+            </div>
+          </Card>
         ))}
         {tenantId && listings.length === 0 && !error && (
-          <li className="rounded border border-dashed border-neutral-300 p-6 text-sm opacity-70 dark:border-neutral-800">
-            No listings match. Publish a workflow at visibility=tenant to surface it here.
-          </li>
+          <Card>
+            <div className="note" style={{ padding: 24, textAlign: "center" }}>
+              No listings match. Publish a workflow at visibility=tenant to surface it here.
+            </div>
+          </Card>
         )}
-      </ul>
-    </section>
+      </div>
+    </>
   );
 }
 

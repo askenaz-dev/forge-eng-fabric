@@ -108,3 +108,30 @@ See `openspec/changes/phase-0-foundations/tasks.md` for the complete list. The l
 - No Loki/Tempo dashboards — Grafana ships empty.
 
 These are tracked as open tasks for follow-up changes.
+
+## Portal — local UI
+
+The Portal ships the Forge Engineering Fabric brand and is built with Next.js
+14, NextAuth (Keycloak provider) and a CSS-variable design system. To run it
+against the local compose stack:
+
+```sh
+make up                       # bring up the platform services
+cd portal && pnpm install     # one-off
+PORTAL_REBRAND=1 pnpm dev     # start the Portal on :3000
+```
+
+Top-bar affordances:
+
+- **⌘K (macOS) / Ctrl K (other)** — open the global command palette. Search
+  agents, runs, skills, specs; toggle theme / density / language; switch
+  workspace; sign out.
+- **ES / EN pill** — toggle locale (default Spanish). Persists in
+  `localStorage` and `POST /api/i18n/preference`.
+- **Theme menu** — `Claro / Oscuro / Sistema`. System follows
+  `prefers-color-scheme`.
+- **Notifications bell** — subscribes to `/api/notifications/stream` (SSE
+  proxy to `audit-stream`).
+
+See [docs/portal/design-system.md](portal/design-system.md) for the token
+reference, accessibility contract and component inventory.
