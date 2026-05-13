@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://forge.local/contracts/events/portal.command.invoked.v1.json",
+  "title": "portal.command.invoked.v1",
+  "description": "Emitted when an authenticated user invokes a command via the global ⌘K command palette.",
+  "type": "object",
+  "required": ["type", "principal", "timestamp", "data", "correlation_id"],
+  "properties": {
+    "type": { "type": "string", "const": "portal.command.invoked.v1" },
+    "principal": { "type": "string" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "correlation_id": { "type": "string" },
+    "data": {
+      "type": "object",
+      "required": ["source", "target_id"],
+      "properties": {
+        "source": {
+          "type": "string",
+          "enum": ["nav", "agents", "skills", "mcp", "runs", "approvals", "specs", "workspaces", "tenants", "actions", "unknown"]
+        },
+        "target_id": { "type": "string" },
+        "query":     { "type": "string", "maxLength": 200, "description": "Redacted user query string, max 200 chars" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

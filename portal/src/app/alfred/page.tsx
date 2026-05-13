@@ -2,6 +2,8 @@ import { authOptions } from "@/auth";
 import { randomUUID } from "crypto";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
+import { PageHead } from "@/components/page/PageHead";
+import { Card } from "@/components/primitives";
 
 type SearchParams = { result?: string; session_id?: string; error?: string };
 
@@ -82,14 +84,16 @@ async function submitConsole(formData: FormData) {
 export default async function AlfredPage({ searchParams }: { searchParams: SearchParams }) {
   await getToken();
   return (
-    <section className="mx-auto max-w-5xl space-y-5">
-      <div>
-        <h2 className="text-2xl font-semibold">Alfred Console</h2>
-        <p className="mt-1 text-sm opacity-70">Submit natural-language intents or use slash commands to create and edit structured specifications.</p>
-      </div>
+    <div style={{ maxWidth: 1024, margin: "0 auto" }}>
+      <PageHead
+        eyebrow="Platform · Alfred"
+        title="Alfred"
+        titleEm="console"
+        sub="Submit natural-language intents or use slash commands to create and edit structured specifications."
+      />
 
-      {searchParams.result && <p className="rounded border border-green-300 bg-green-50 p-3 text-sm text-green-800 dark:border-green-800 dark:bg-green-950 dark:text-green-200">{searchParams.result}: <code>{searchParams.session_id}</code></p>}
-      {searchParams.error && <p className="rounded border border-red-300 bg-red-50 p-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200">{searchParams.error}</p>}
+      {searchParams.result && <Card style={{ marginBottom: 16 }}><div style={{ padding: 14, color: "var(--thread)" }}>{searchParams.result}: <code>{searchParams.session_id}</code></div></Card>}
+      {searchParams.error && <Card style={{ marginBottom: 16 }}><div style={{ padding: 14, color: "var(--rust)" }}>{searchParams.error}</div></Card>}
 
       <form action={submitConsole} className="space-y-4 rounded border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
         <label className="grid gap-1 text-sm">
@@ -106,14 +110,14 @@ export default async function AlfredPage({ searchParams }: { searchParams: Searc
       <div className="grid gap-3 rounded border border-dashed border-neutral-300 bg-white p-5 text-sm dark:border-neutral-800 dark:bg-neutral-900 md:grid-cols-2">
         <div>
           <h3 className="font-medium">Create specification</h3>
-          <code className="mt-2 block rounded bg-neutral-100 p-2 text-xs dark:bg-neutral-800">/openspec create title="Payments" intent="Reduce failures" requirement="Retry failed payments" jira=PAY-123 confluence=https://confluence.example/payments</code>
+          <code className="mt-2 block rounded bg-neutral-100 p-2 text-xs dark:bg-neutral-800">{`/openspec create title="Payments" intent="Reduce failures" requirement="Retry failed payments" jira=PAY-123 confluence=https://confluence.example/payments`}</code>
         </div>
         <div>
           <h3 className="font-medium">Edit specification</h3>
-          <code className="mt-2 block rounded bg-neutral-100 p-2 text-xs dark:bg-neutral-800">/openspec edit id=payments title="Payments v2" problem="Retries are inconsistent"</code>
+          <code className="mt-2 block rounded bg-neutral-100 p-2 text-xs dark:bg-neutral-800">{`/openspec edit id=payments title="Payments v2" problem="Retries are inconsistent"`}</code>
         </div>
       </div>
-    </section>
+    </div>
   );
 }
 

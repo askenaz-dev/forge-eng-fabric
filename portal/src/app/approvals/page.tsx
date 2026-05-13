@@ -1,6 +1,9 @@
 import { authOptions } from "@/auth";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
+import { PageHead } from "@/components/page/PageHead";
+import { Card, CardHeader, Badge, Button } from "@/components/primitives";
+import { Code } from "@/components/primitives";
 
 type Approval = {
   id: string;
@@ -80,60 +83,110 @@ export default async function ApprovalsPage({ searchParams }: { searchParams: Se
   }
 
   return (
-    <section className="space-y-5">
-      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h2 className="text-2xl font-semibold">Approvals Inbox</h2>
-          <p className="mt-1 text-sm opacity-70">Review policy pauses with intent, OpenSpec, action and telemetry context.</p>
-        </div>
-        <form className="flex flex-wrap gap-2 text-sm" method="get">
-          <input name="approver" defaultValue={approver} className="rounded border border-neutral-300 bg-transparent px-3 py-2 dark:border-neutral-700" />
-          <select name="status" defaultValue={status} className="rounded border border-neutral-300 bg-transparent px-3 py-2 dark:border-neutral-700">
-            <option value="pending">pending</option>
-            <option value="approved">approved</option>
-            <option value="rejected">rejected</option>
-            <option value="expired">expired</option>
-          </select>
-          <button className="rounded bg-neutral-900 px-4 py-2 text-white dark:bg-neutral-100 dark:text-neutral-900">Load</button>
-        </form>
-      </div>
+    <>
+      <PageHead
+        eyebrow="Governance · Approvals"
+        title="Cola de"
+        titleEm="aprobación"
+        sub="Pausas de política con contexto de intención, OpenSpec, acción y telemetría."
+        actions={
+          <form method="get" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <input
+              name="approver"
+              defaultValue={approver}
+              className="top-search"
+              style={{ height: 32, width: 220 }}
+            />
+            <select
+              name="status"
+              defaultValue={status}
+              style={{
+                height: 32,
+                background: "var(--bg-card)",
+                border: "1px solid var(--border)",
+                borderRadius: "var(--r-2)",
+                padding: "0 10px",
+                color: "var(--fg)",
+                fontFamily: "var(--f-sans)",
+                fontSize: 13,
+              }}
+            >
+              <option value="pending">pending</option>
+              <option value="approved">approved</option>
+              <option value="rejected">rejected</option>
+              <option value="expired">expired</option>
+            </select>
+            <Button variant="primary" type="submit">
+              Load
+            </Button>
+          </form>
+        }
+      />
 
-      {searchParams.decided && <p className="rounded border border-green-300 bg-green-50 p-3 text-sm text-green-800 dark:border-green-800 dark:bg-green-950 dark:text-green-200">Approval decision recorded.</p>}
-      {error && <p className="rounded border border-red-300 bg-red-50 p-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200">{error}</p>}
+      {searchParams.decided && (
+        <Card style={{ marginBottom: 16 }}>
+          <div style={{ padding: 14, color: "var(--thread)" }}>Approval decision recorded.</div>
+        </Card>
+      )}
 
-      <div className="grid gap-4">
+      {error && (
+        <Card style={{ marginBottom: 16 }}>
+          <div style={{ padding: 14, color: "var(--rust)" }}>{error}</div>
+        </Card>
+      )}
+
+      <div className="stack">
         {approvals.map((approval) => (
-          <article key={approval.id} className="rounded border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
-            <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-              <div>
-                <h3 className="font-medium">{approval.action}</h3>
-                <p className="mt-1 text-sm opacity-70">{approval.rationale}</p>
-                <p className="mt-2 text-xs opacity-60">Workspace <code>{approval.workspace_id}</code> · correlation <code>{approval.correlation_id}</code></p>
+          <Card key={approval.id}>
+            <CardHeader
+              title={approval.action}
+              sub={`${approval.workspace_id} · ${approval.correlation_id}`}
+              right={<Badge tone={approval.status === "pending" ? "warn" : "default"}>{approval.status}</Badge>}
+            />
+            <div style={{ padding: "14px 18px", display: "grid", gap: 12 }}>
+              <p style={{ color: "var(--fg-2)", margin: 0 }}>{approval.rationale}</p>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, fontFamily: "var(--f-mono)", fontSize: 12 }}>
+                <span>
+                  <span style={{ color: "var(--fg-3)" }}>principal</span> {approval.principal}
+                </span>
+                <span>
+                  <span style={{ color: "var(--fg-3)" }}>criticality</span> {approval.criticality}
+                </span>
+                <span>
+                  <span style={{ color: "var(--fg-3)" }}>expires</span> {new Date(approval.expires_at).toLocaleString()}
+                </span>
               </div>
-              <span className="rounded bg-neutral-100 px-2 py-1 text-xs uppercase tracking-wide dark:bg-neutral-800">{approval.status}</span>
+              {approval.workflow_context && <WorkflowContext context={approval.workflow_context} />}
+              {approval.status === "pending" && (
+                <form action={decideApproval} style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <input type="hidden" name="approval_id" value={approval.id} />
+                  <input type="hidden" name="actor" value={approver} />
+                  <input
+                    name="comment"
+                    placeholder="Decision comment"
+                    className="top-search"
+                    style={{ minWidth: 0, flex: 1, height: 32 }}
+                  />
+                  <Button variant="primary" name="decision" value="approved" type="submit">
+                    Approve
+                  </Button>
+                  <Button variant="danger" name="decision" value="rejected" type="submit">
+                    Reject
+                  </Button>
+                </form>
+              )}
             </div>
-            <div className="mt-4 grid gap-3 text-sm md:grid-cols-3">
-              <p><span className="font-medium">Principal:</span> {approval.principal}</p>
-              <p><span className="font-medium">Criticality:</span> {approval.criticality}</p>
-              <p><span className="font-medium">Expires:</span> {new Date(approval.expires_at).toLocaleString()}</p>
-            </div>
-            {approval.workflow_context && (
-              <WorkflowContext context={approval.workflow_context} />
-            )}
-            {approval.status === "pending" && (
-              <form action={decideApproval} className="mt-4 flex flex-col gap-2 md:flex-row">
-                <input type="hidden" name="approval_id" value={approval.id} />
-                <input type="hidden" name="actor" value={approver} />
-                <input name="comment" placeholder="Decision comment" className="min-w-0 flex-1 rounded border border-neutral-300 bg-transparent px-3 py-2 text-sm dark:border-neutral-700" />
-                <button name="decision" value="approved" className="rounded bg-green-700 px-4 py-2 text-sm text-white">Approve</button>
-                <button name="decision" value="rejected" className="rounded bg-red-700 px-4 py-2 text-sm text-white">Reject</button>
-              </form>
-            )}
-          </article>
+          </Card>
         ))}
-        {approvals.length === 0 && !error && <p className="rounded border border-dashed border-neutral-300 p-6 text-sm opacity-70 dark:border-neutral-800">No approvals match this inbox filter.</p>}
+        {approvals.length === 0 && !error && (
+          <Card>
+            <div className="note" style={{ padding: 24, textAlign: "center" }}>
+              No approvals match this inbox filter.
+            </div>
+          </Card>
+        )}
       </div>
-    </section>
+    </>
   );
 }
 
@@ -145,16 +198,24 @@ function required(formData: FormData, key: string) {
 
 function WorkflowContext({ context }: { context: NonNullable<Approval["workflow_context"]> }) {
   return (
-    <section className="mt-4 rounded border border-blue-300 bg-blue-50 p-3 text-sm dark:border-blue-800 dark:bg-blue-950">
-      <p className="font-medium">Workflow context</p>
-      <p className="text-xs opacity-70">
+    <div
+      style={{
+        background: "color-mix(in oklch, var(--info), transparent 90%)",
+        border: "1px solid color-mix(in oklch, var(--info), transparent 70%)",
+        borderRadius: "var(--r-3)",
+        padding: "12px 14px",
+        fontSize: 13,
+      }}
+    >
+      <p style={{ margin: 0, fontWeight: 500 }}>Workflow context</p>
+      <p style={{ margin: "4px 0", fontFamily: "var(--f-mono)", fontSize: 11, color: "var(--fg-3)" }}>
         {context.workflow_id ? `${context.workflow_id}@${context.workflow_version ?? ""}` : ""}
         {context.step_id ? ` · step ${context.step_id}` : ""}
       </p>
       {context.previous_steps && context.previous_steps.length > 0 && (
-        <div className="mt-2">
-          <p className="text-xs uppercase opacity-60">Previous steps</p>
-          <ul className="text-xs">
+        <div style={{ marginTop: 8 }}>
+          <div className="h-eyebrow" style={{ margin: 0 }}>Previous steps</div>
+          <ul style={{ fontFamily: "var(--f-mono)", fontSize: 11.5, margin: "4px 0", paddingLeft: 18 }}>
             {context.previous_steps.map((s) => (
               <li key={s.id}>
                 <code>{s.id}</code> {s.outputs ? `→ ${JSON.stringify(s.outputs)}` : ""}
@@ -164,25 +225,24 @@ function WorkflowContext({ context }: { context: NonNullable<Approval["workflow_
         </div>
       )}
       {context.next_steps && context.next_steps.length > 0 && (
-        <div className="mt-2">
-          <p className="text-xs uppercase opacity-60">Next step</p>
-          <ul className="text-xs">
+        <div style={{ marginTop: 8 }}>
+          <div className="h-eyebrow" style={{ margin: 0 }}>Next step</div>
+          <ul style={{ fontFamily: "var(--f-mono)", fontSize: 11.5, margin: "4px 0", paddingLeft: 18 }}>
             {context.next_steps.map((s) => (
               <li key={s.id}>
-                <code>{s.id}</code> ({s.type ?? "?"}){s.inputs ? ` ← ${JSON.stringify(s.inputs)}` : ""}
+                <code>{s.id}</code> ({s.type ?? "?"})
+                {s.inputs ? ` ← ${JSON.stringify(s.inputs)}` : ""}
               </li>
             ))}
           </ul>
         </div>
       )}
       {context.proposed_inputs && (
-        <div className="mt-2">
-          <p className="text-xs uppercase opacity-60">Proposed inputs (you can modify before approving)</p>
-          <pre className="mt-1 overflow-auto rounded bg-neutral-950 p-2 font-mono text-xs text-neutral-100">
-            {JSON.stringify(context.proposed_inputs, null, 2)}
-          </pre>
+        <div style={{ marginTop: 8 }}>
+          <div className="h-eyebrow" style={{ margin: 0 }}>Proposed inputs</div>
+          <Code style={{ marginTop: 4 }}>{JSON.stringify(context.proposed_inputs, null, 2)}</Code>
         </div>
       )}
-    </section>
+    </div>
   );
 }

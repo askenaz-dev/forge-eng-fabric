@@ -5,7 +5,7 @@
 SHELL := /bin/sh
 COMPOSE := docker compose -f deploy/compose/docker-compose.yaml
 
-.PHONY: help bootstrap lint test codegen up down logs ps smoke clean fmt sizing-check helm-lint verify-runtime demo-intent-to-deploy retention-policy-check
+.PHONY: help bootstrap lint test codegen up down logs ps smoke clean fmt sizing-check helm-lint verify-runtime demo-intent-to-deploy retention-policy-check portal-rebrand-e2e audit-no-mocks dev-up seed-portal portal-lint
 
 help:
 	@echo "Forge — make targets:"
@@ -94,3 +94,29 @@ demo-intent-to-deploy:
 
 retention-policy-check:
 	@python scripts/check-retention-policy.py
+
+# Bring up the dev compose stack used by the Portal e2e suite.
+dev-up: up
+	@echo ">> dev-up: docker stack started"
+
+# Seed deterministic data the Portal e2e suite expects (workspaces, agents,
+# runs, approvals, audit events, KPIs). Idempotent.
+seed-portal:
+	@bash deploy/compose/scripts/seed-portal.sh
+
+# Forge Portal rebrand e2e: brings up the dev stack, seeds, then runs
+# Playwright against the live cluster. No MSW, no fixtures.
+portal-rebrand-e2e: dev-up seed-portal
+	@cd portal && pnpm install --frozen-lockfile=false
+	@cd portal && pnpm exec playwright install --with-deps chromium
+	@cd portal && PORTAL_REBRAND=1 pnpm exec playwright test
+
+# Audit script that enforces the "real data only" policy in portal/src/.
+audit-no-mocks:
+	@bash scripts/audit-no-mocks.sh
+
+# Convenience target that runs ESLint + Stylelint + the no-mocks audit.
+portal-lint:
+	@cd portal && pnpm lint
+	@cd portal && pnpm stylelint
+	@bash scripts/audit-no-mocks.sh

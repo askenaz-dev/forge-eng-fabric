@@ -1,6 +1,7 @@
 import { authOptions } from "@/auth";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
+import { PageHead } from "@/components/page/PageHead";
 
 type Suggestion = { kind: string; title: string; detail: string; openspec_ref?: string };
 type Proposal = {
@@ -76,11 +77,13 @@ export default async function EvolutionInboxPage() {
   const [proposals, stats] = await Promise.all([fetchProposals(token), fetchStats(token)]);
 
   return (
-    <section className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-semibold">Evolution Inbox</h2>
-        <p className="mt-1 text-sm opacity-70">OpenSpec change proposals derived from postmortems by the autonomous loop. Each requires human review before becoming a normal change.</p>
-      </div>
+    <>
+      <PageHead
+        eyebrow="Observability · Evolution"
+        title="Evolution"
+        titleEm="inbox"
+        sub="OpenSpec change proposals derived from postmortems by the autonomous loop. Each requires human review before becoming a normal change."
+      />
 
       <div className="grid gap-3 sm:grid-cols-4" data-testid="evolution-stats">
         <Stat label="Total" value={stats.total} />
@@ -132,7 +135,7 @@ export default async function EvolutionInboxPage() {
         ))}
         {proposals.length === 0 && <p className="rounded border border-dashed border-neutral-300 p-6 text-sm opacity-70 dark:border-neutral-800">No proposals waiting for review.</p>}
       </ul>
-    </section>
+    </>
   );
 }
 

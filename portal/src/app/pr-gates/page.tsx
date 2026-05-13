@@ -1,5 +1,7 @@
 import { fetchPipelineGates, requirePortalIdentity } from "@/lib/onboarding";
 import type { PipelineGateResult } from "@/lib/onboarding-types";
+import { PageHead } from "@/components/page/PageHead";
+import { Button, Card } from "@/components/primitives";
 
 type SearchParams = { workspace_id?: string; repo?: string; pr?: string };
 
@@ -15,25 +17,27 @@ export default async function PRGatesPage({ searchParams }: { searchParams: Sear
   const stages = groupByStage(results);
 
   return (
-    <section className="space-y-5">
-      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h2 className="text-2xl font-semibold">PR gates</h2>
-          <p className="mt-1 text-sm opacity-70">Quality, security, SBOM and signing gate results by stage with links to raw logs.</p>
-        </div>
-        <form className="flex flex-wrap gap-2 text-sm" method="get">
-          <input name="workspace_id" defaultValue={searchParams.workspace_id ?? ""} placeholder="Workspace ID" className="rounded border border-neutral-300 bg-transparent px-3 py-2 dark:border-neutral-700" />
-          <input name="repo" defaultValue={searchParams.repo ?? ""} placeholder="org/repo" className="rounded border border-neutral-300 bg-transparent px-3 py-2 dark:border-neutral-700" />
-          <input name="pr" defaultValue={searchParams.pr ?? ""} placeholder="PR" className="w-24 rounded border border-neutral-300 bg-transparent px-3 py-2 dark:border-neutral-700" />
-          <button className="rounded bg-neutral-900 px-4 py-2 text-white dark:bg-neutral-100 dark:text-neutral-900">Load</button>
-        </form>
-      </div>
-      {error && <p className="rounded border border-red-300 bg-red-50 p-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200">{error}</p>}
+    <>
+      <PageHead
+        eyebrow="Governance · PR gates"
+        title="PR"
+        titleEm="gates"
+        sub="Quality, security, SBOM and signing gate results by stage with links to raw logs."
+        actions={
+          <form method="get" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <input name="workspace_id" defaultValue={searchParams.workspace_id ?? ""} placeholder="Workspace ID" className="top-search" style={{ height: 32, width: 180 }} />
+            <input name="repo" defaultValue={searchParams.repo ?? ""} placeholder="org/repo" className="top-search" style={{ height: 32, width: 180 }} />
+            <input name="pr" defaultValue={searchParams.pr ?? ""} placeholder="PR" className="top-search" style={{ height: 32, width: 80 }} />
+            <Button variant="primary" type="submit">Load</Button>
+          </form>
+        }
+      />
+      {error && <Card style={{ marginBottom: 16 }}><div style={{ padding: 14, color: "var(--rust)" }}>{error}</div></Card>}
       <div className="grid gap-4">
         {Object.entries(stages).map(([stage, gates]) => <StageCard key={stage} stage={stage} gates={gates} />)}
         {results.length === 0 && !error && <p className="rounded border border-dashed border-neutral-300 p-6 text-sm opacity-70 dark:border-neutral-800">No gate results match this PR filter.</p>}
       </div>
-    </section>
+    </>
   );
 }
 

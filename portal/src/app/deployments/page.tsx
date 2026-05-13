@@ -1,51 +1,117 @@
-const deployments = [
-  { id: "dep-1007", asset: "app-foo", env: "prod", status: "verified", revision: "rev-1007", runtime: "rt-prod-gke", image: "sha256:abc", stage: "notify" },
-  { id: "dep-1006", asset: "app-foo", env: "prod", status: "rolled_back", revision: "rev-1006", runtime: "rt-prod-gke", image: "sha256:def", stage: "rollback" },
-  { id: "dep-42", asset: "worker-bar", env: "dev", status: "running", revision: "rev-42", runtime: "rt-dev-1", image: "sha256:999", stage: "verify" },
-];
+import { authToken, correlationId, endpoint, proxyJson } from "@/lib/api";
+import { PageHead } from "@/components/page/PageHead";
+import { Card, Badge, Button } from "@/components/primitives";
 
-const stages = ["preflight", "policy", "image-verify", "render", "apply", "verify", "notify"];
+type Deployment = {
+  id: string;
+  asset: string;
+  env: string;
+  status: string;
+  revision: string;
+  runtime: string;
+  image: string;
+  stage: string;
+};
 
-export default function DeploymentsPage() {
+const STAGES = ["preflight", "policy", "image-verify", "render", "apply", "verify", "notify"];
+
+async function fetchDeployments(): Promise<Deployment[]> {
+  const { token } = await authToken();
+  try {
+    const data = await proxyJson<{ deployments: Deployment[] }>(
+      `${endpoint("DEPLOY_URL")}/v1/deployments?limit=50`,
+      { token, correlation: correlationId() },
+    );
+    return data.deployments ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export default async function DeploymentsPage() {
+  const deployments = await fetchDeployments();
   return (
-    <section className="space-y-5">
-      <div>
-        <p className="text-sm font-medium uppercase tracking-wide text-neutral-500">Deployments</p>
-        <h2 className="text-2xl font-semibold">Release history and live status</h2>
-        <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-300">Inspect stages, verify image status, and rollback to the previous revision with an audited reason.</p>
-      </div>
-
-      <div className="overflow-hidden rounded border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
+    <>
+      <PageHead
+        eyebrow="Observability · Deployments"
+        title="Release history &"
+        titleEm="live status"
+        sub="Inspect stages, verify image status, and rollback to the previous revision with an audited reason."
+      />
+      <Card>
+        {deployments.length === 0 && (
+          <div className="note" style={{ padding: 24, textAlign: "center" }}>
+            No deployments to display.
+          </div>
+        )}
         {deployments.map((deployment) => (
-          <div key={deployment.id} className="border-b border-neutral-100 p-4 last:border-b-0 dark:border-neutral-800">
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div key={deployment.id} style={{ borderBottom: "1px solid var(--border)", padding: 16 }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center", justifyContent: "space-between" }}>
               <div>
-                <h3 className="font-semibold">{deployment.asset} <span className="text-sm font-normal text-neutral-500">{deployment.env}</span></h3>
-                <p className="text-xs text-neutral-500">{deployment.id} · {deployment.revision} · {deployment.runtime} · {deployment.image}</p>
+                <h3 style={{ fontFamily: "var(--f-display)", fontSize: 22, fontStyle: "italic", margin: 0, letterSpacing: "-0.015em" }}>
+                  {deployment.asset}{" "}
+                  <span style={{ fontFamily: "var(--f-mono)", fontSize: 12, color: "var(--fg-3)", fontStyle: "normal" }}>
+                    {deployment.env}
+                  </span>
+                </h3>
+                <p style={{ fontFamily: "var(--f-mono)", fontSize: 11, color: "var(--fg-3)", margin: "4px 0 0" }}>
+                  {deployment.id} · {deployment.revision} · {deployment.runtime} · {deployment.image}
+                </p>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs text-emerald-700 dark:bg-emerald-950 dark:text-emerald-200">{deployment.status}</span>
-                <button className="rounded border border-neutral-300 px-3 py-1.5 text-sm dark:border-neutral-700">Rollback to previous</button>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <Badge tone={statusTone(deployment.status)}>{deployment.status}</Badge>
+                <Button variant="secondary" size="xs">Rollback to previous</Button>
               </div>
             </div>
-            <div className="mt-4 grid gap-2 md:grid-cols-7">
-              {stages.map((stage) => (
-                <div key={stage} className={`rounded px-2 py-2 text-xs ${stage === deployment.stage ? "bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900" : "bg-neutral-100 dark:bg-neutral-800"}`}>
+            <div style={{ marginTop: 16, display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 8 }}>
+              {STAGES.map((stage) => (
+                <div
+                  key={stage}
+                  style={{
+                    padding: "8px",
+                    borderRadius: "var(--r-2)",
+                    fontFamily: "var(--f-mono)",
+                    fontSize: 11,
+                    background: stage === deployment.stage ? "var(--primary)" : "var(--bg-hover)",
+                    color: stage === deployment.stage ? "var(--on-primary)" : "var(--fg-2)",
+                  }}
+                >
                   {stage}
                 </div>
               ))}
             </div>
-            <details className="mt-3 text-sm">
-              <summary className="cursor-pointer text-neutral-600 dark:text-neutral-300">Rollback confirmation</summary>
-              <div className="mt-2 rounded bg-neutral-50 p-3 dark:bg-neutral-950">
-                <label className="block text-xs font-medium text-neutral-500">Reason</label>
-                <textarea className="mt-1 min-h-20 w-full rounded border border-neutral-300 bg-white p-2 text-sm dark:border-neutral-700 dark:bg-neutral-900" placeholder="Explain customer impact and recovery intent" />
-                <button className="mt-2 rounded bg-red-700 px-3 py-1.5 text-sm text-white">Confirm rollback</button>
+            <details style={{ marginTop: 12, fontSize: 13 }}>
+              <summary style={{ cursor: "pointer", color: "var(--fg-2)" }}>Rollback confirmation</summary>
+              <div style={{ marginTop: 8, background: "var(--bg-sunk)", borderRadius: "var(--r-2)", padding: 12 }}>
+                <label className="h-eyebrow" style={{ display: "block" }}>Reason</label>
+                <textarea
+                  style={{
+                    marginTop: 4,
+                    minHeight: 80,
+                    width: "100%",
+                    border: "1px solid var(--border)",
+                    borderRadius: "var(--r-2)",
+                    background: "var(--bg-card)",
+                    padding: 8,
+                    fontFamily: "var(--f-sans)",
+                    fontSize: 13,
+                    color: "var(--fg)",
+                  }}
+                  placeholder="Explain customer impact and recovery intent"
+                />
+                <Button variant="danger" size="xs" style={{ marginTop: 8 }}>Confirm rollback</Button>
               </div>
             </details>
           </div>
         ))}
-      </div>
-    </section>
+      </Card>
+    </>
   );
+}
+
+function statusTone(status: string): "ok" | "warn" | "err" | "default" {
+  if (status === "verified" || status === "succeeded") return "ok";
+  if (status === "running" || status === "in_progress") return "warn";
+  if (status === "rolled_back" || status === "failed") return "err";
+  return "default";
 }

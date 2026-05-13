@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Forge — Engineering Fabric</title>
+  <meta name="description" content="Forge Engineering Fabric is the AI-native control plane that turns intent into infrastructure. Agentic SDLC, OpenSpec, policy-gated autonomy, and self-healing operations on one fabric.">
+
+  <meta property="og:title" content="Forge — Engineering Fabric">
+  <meta property="og:description" content="From intent to infrastructure. The AI-native control plane for engineering.">
+  <meta property="og:type" content="website">
+
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=JetBrains+Mono:ital@0;1&display=swap">
+  <link rel="stylesheet" href="assets/forge.css">
+
+  <script>
+    // Set initial theme before paint to avoid FOUC.
+    (function () {
+      try {
+        var saved = localStorage.getItem("forge_site_theme");
+        if (saved === "dark" || saved === "light") {
+          document.documentElement.setAttribute("data-theme", saved);
+          return;
+        }
+        if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+          document.documentElement.setAttribute("data-theme", "dark");
+        }
+      } catch (_) { /* ignore */ }
+    })();
+  </script>
+</head>
+
+<body>
+  <!-- ── Top navigation ─────────────────────────────────────────────── -->
+  <header class="site-nav" role="banner">
+    <a class="brand" href="#top" aria-label="Forge Engineering Fabric — home">
+      <svg class="mark" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <path d="M6 4 H24 L26 6 V10 H22 V8 H10 V14 H20 V18 H10 V28 H6 Z" fill="currentColor"/>
+        <circle class="dot" cx="25" cy="25" r="2.4"/>
+      </svg>
+      <span class="wd">
+        <span class="w">Forge</span>
+        <span class="o">Engineering Fabric</span>
+      </span>
+    </a>
+    <nav aria-label="Primary">
+      <a href="#what">What</a>
+      <a href="#pillars">Pillars</a>
+      <a href="#fabric">Fabric</a>
+      <a href="#flow">Flow</a>
+      <a href="#trust">Trust</a>
+      <a class="cta" href="https://github.com/forge-eng-fabric/forge-eng-fabric" target="_blank" rel="noreferrer">View on GitHub →</a>
+    </nav>
+    <button class="theme-toggle" type="button" aria-label="Toggle theme">
+      <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="4"/>
+        <path d="M12 2 V4 M12 20 V22 M4 12 H2 M22 12 H20 M5 5 L6.5 6.5 M17.5 17.5 L19 19 M5 19 L6.5 17.5 M17.5 6.5 L19 5"/>
+      </svg>
+      <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M20 14.5 A8 8 0 0 1 9.5 4 A8 8 0 1 0 20 14.5 Z"/>
+      </svg>
+    </button>
+  </header>
+
+  <!-- ── Hero ───────────────────────────────────────────────────────── -->
+  <section id="top" class="hero">
+    <!-- Lattice / weave background -->
+    <svg class="weave" viewBox="0 0 1440 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <defs>
+        <pattern id="weavePattern" x="0" y="0" width="56" height="56" patternUnits="userSpaceOnUse">
+          <path d="M0 0 L56 56 M56 0 L0 56" stroke="currentColor" stroke-width="0.6" fill="none" opacity="0.18"/>
+          <path d="M0 28 H56 M28 0 V56" stroke="currentColor" stroke-width="0.4" fill="none" opacity="0.14"/>
+        </pattern>
+        <radialGradient id="emberGlow" cx="80%" cy="20%" r="60%">
+          <stop offset="0%" stop-color="var(--primary)" stop-opacity="0.18"/>
+          <stop offset="60%" stop-color="var(--primary)" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#weavePattern)" style="color: var(--fg-2);"/>
+      <rect width="100%" height="100%" fill="url(#emberGlow)"/>
+    </svg>
+
+    <div class="container">
+      <p class="hero-eyebrow">Volume 01 · The engineering fabric</p>
+      <h1>
+        From <em>intent</em><br>
+        to <span class="stroke">infrastructure</span>.
+      </h1>
+      <p class="hero-lede">
+        Forge is the AI-native control plane for software delivery. Describe what you want to build — Alfred translates it into a structured <strong>OpenSpec</strong>, drafts the code, gates the deploy with policy, and stays on call when production wobbles.
+      </p>
+      <div class="hero-actions">
+        <a class="btn btn--primary" href="https://github.com/forge-eng-fabric/forge-eng-fabric" target="_blank" rel="noreferrer">
+          Explore on GitHub
+          <svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12 H19 M13 6 L19 12 L13 18"/></svg>
+        </a>
+        <a class="btn btn--secondary" href="#fabric">See the fabric</a>
+        <span class="kbd">⌘K opens the command palette</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── What is Forge ──────────────────────────────────────────────── -->
+  <section id="what" class="chapter">
+    <div class="container">
+      <p class="chapter-num"><span>Chapter 01 — What Forge is</span><span class="rule"></span></p>
+      <div class="two-col">
+        <div>
+          <p class="label">A platform, not a sidecar</p>
+          <h2>One <em>fabric</em><br>woven from agents,<br>specs, policies and runs.</h2>
+        </div>
+        <div>
+          <p>
+            Modern engineering is fragmented. Specs live in a wiki, code lives in twelve repositories, policies live in a YAML file no-one reads, and incidents live in a Slack channel that fills with screenshots. Forge collapses that fragmentation into a <strong>single, auditable control plane</strong> — driven by a control-plane agent (Alfred), a structured specification format (OpenSpec), composable Workflows, and a Marketplace that ships them across teams.
+          </p>
+          <p>
+            Every action is policy-checked. Every decision is signed. Every workflow can be rolled back. The result is a system where humans set intent, agents execute, and governance is structural — not a quarterly audit.
+          </p>
+          <ul>
+            <li><strong>Spec-driven.</strong> OpenSpec is the source of truth — code, deploys, and tests trace back to it.</li>
+            <li><strong>Agentic by default.</strong> Alfred and specialised agents act within delegated permissions.</li>
+            <li><strong>Policy-gated.</strong> OPA + OpenFGA enforce who can do what, where, when.</li>
+            <li><strong>Human-in-the-loop, by configuration.</strong> Autonomy levels per OpenSpec, per Workspace.</li>
+            <li><strong>Self-healing.</strong> Incidents → diagnosis → action → postmortem → evolution proposal.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="num">14<small> agents</small></div>
+          <div class="lbl">Specialised SDLC agents</div>
+        </div>
+        <div class="stat">
+          <div class="num"><em>98.4</em>%</div>
+          <div class="lbl">24h policy gate success</div>
+        </div>
+        <div class="stat">
+          <div class="num">184<small> ms</small></div>
+          <div class="lbl">p95 control-plane latency</div>
+        </div>
+        <div class="stat">
+          <div class="num">317<small> h</small></div>
+          <div class="lbl">Saved per team / week</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Pillars ─────────────────────────────────────────────────────── -->
+  <section id="pillars" class="chapter alt">
+    <div class="container">
+      <p class="chapter-num"><span>Chapter 02 — The five pillars</span><span class="rule"></span></p>
+      <h2 class="h-section">The platform, <em>distilled</em>.</h2>
+      <p class="lede">Five capabilities, woven together. Each is independently useful. Together they are the engineering fabric.</p>
+
+      <div class="pillars">
+        <article class="pillar">
+          <span class="num">01 / Control plane</span>
+          <h3><em>Alfred</em> — the agent that listens.</h3>
+          <p>A FastAPI agent that interprets natural-language intent, retrieves context via RAG on Milvus, evaluates OPA policy and drives every downstream tool exclusively through LiteLLM. Every decision is logged with the OpenSpec it traces back to.</p>
+          <div class="tags">
+            <span class="tag">FastAPI</span>
+            <span class="tag">LiteLLM</span>
+            <span class="tag">Milvus RAG</span>
+            <span class="tag">OPA</span>
+          </div>
+        </article>
+
+        <article class="pillar">
+          <span class="num">02 / Source of truth</span>
+          <h3><em>OpenSpec</em> — every change is a spec.</h3>
+          <p>Structured proposals with deltas, capabilities, scenarios. Versioned, signable, diff-able. The single contract between humans and agents. Specs link to code, traces, runbooks and FinOps attribution.</p>
+          <div class="tags">
+            <span class="tag">Spec deltas</span>
+            <span class="tag">Versioned</span>
+            <span class="tag">Linked artefacts</span>
+          </div>
+        </article>
+
+        <article class="pillar">
+          <span class="num">03 / Composition</span>
+          <h3>Workflows &amp; <em>Skills</em>.</h3>
+          <p>Compose Skills, MCP tools, prompts, gates, branches and human-in-the-loop steps into versioned workflows. Publish to the Marketplace at workspace, tenant or forge-certified visibility.</p>
+          <div class="tags">
+            <span class="tag">Temporal</span>
+            <span class="tag">MCP</span>
+            <span class="tag">SemVer</span>
+            <span class="tag">Marketplace</span>
+          </div>
+        </article>
+
+        <article class="pillar">
+          <span class="num">04 / Governance</span>
+          <h3>Policy, <em>approvals</em>, audit.</h3>
+          <p>OPA evaluates every action. OpenFGA scopes who can read or write what. Approval queues hold high-criticality work for the right humans. Every audit event is hash-chained, signed, and queryable.</p>
+          <div class="tags">
+            <span class="tag">OPA</span>
+            <span class="tag">OpenFGA</span>
+            <span class="tag">Hash chain</span>
+            <span class="tag">HITL</span>
+          </div>
+        </article>
+
+        <article class="pillar">
+          <span class="num">05 / Autonomous ops</span>
+          <h3>The <em>self-healing</em> loop.</h3>
+          <p>Incidents detected → diagnosed → healed (within delegated permissions) → postmortem auto-generated → improvement proposals routed to the Evolution Inbox for human review. The platform learns from its own incidents.</p>
+          <div class="tags">
+            <span class="tag">Detection</span>
+            <span class="tag">Diagnosis</span>
+            <span class="tag">Healing</span>
+            <span class="tag">Evolution</span>
+          </div>
+        </article>
+
+        <article class="pillar">
+          <span class="num">06 / Cost &amp; portal</span>
+          <h3>The <em>tablero</em>.</h3>
+          <p>A bilingual ES/EN Portal with ⌘K navigation, KPI sparklines, live runs, signed audit timeline and a service-mesh visualisation — built on a token-driven design system. Everything wired to live platform data, never mocks.</p>
+          <div class="tags">
+            <span class="tag">Next.js</span>
+            <span class="tag">ES / EN</span>
+            <span class="tag">⌘K</span>
+            <span class="tag">A11y</span>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── The Fabric (architecture diagram) ──────────────────────────── -->
+  <section id="fabric" class="chapter">
+    <div class="container">
+      <p class="chapter-num"><span>Chapter 03 — The fabric</span><span class="rule"></span></p>
+      <div class="two-col flip">
+        <div class="arch" aria-hidden="true">
+          <div class="top">
+            <span>service mesh</span>
+            <b>orchestrator + 7 services</b>
+          </div>
+          <svg viewBox="0 0 460 240" preserveAspectRatio="xMidYMid meet">
+            <defs>
+              <radialGradient id="ringGlow" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="var(--primary)" stop-opacity="0.18"/>
+                <stop offset="60%" stop-color="var(--primary)" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+            <circle cx="230" cy="120" r="90" fill="url(#ringGlow)"/>
+
+            <!-- spokes -->
+            <g stroke="var(--border-strong)" stroke-width="1" stroke-dasharray="2 3" fill="none">
+              <line x1="230" y1="120" x2="60" y2="50"/>
+              <line x1="230" y1="120" x2="60" y2="120"/>
+              <line x1="230" y1="120" x2="60" y2="190"/>
+              <line x1="230" y1="120" x2="230" y2="210"/>
+              <line x1="230" y1="120" x2="400" y2="190"/>
+              <line x1="230" y1="120" x2="400" y2="120"/>
+              <line x1="230" y1="120" x2="400" y2="50"/>
+            </g>
+
+            <!-- spokes nodes -->
+            <g font-family="var(--f-mono)" font-size="9" letter-spacing="0.04em">
+              <g transform="translate(60,50)">
+                <circle r="7" fill="var(--bg-card)" stroke="var(--thread)" stroke-width="1.5"/>
+                <circle r="3" fill="var(--thread)"/>
+                <text y="-14" text-anchor="middle" fill="var(--fg-2)">policy-svc</text>
+              </g>
+              <g transform="translate(60,120)">
+                <circle r="7" fill="var(--bg-card)" stroke="var(--thread)" stroke-width="1.5"/>
+                <circle r="3" fill="var(--thread)"/>
+                <text y="-14" text-anchor="middle" fill="var(--fg-2)">openfga</text>
+              </g>
+              <g transform="translate(60,190)">
+                <circle r="7" fill="var(--bg-card)" stroke="var(--thread)" stroke-width="1.5"/>
+                <circle r="3" fill="var(--thread)"/>
+                <text y="-14" text-anchor="middle" fill="var(--fg-2)">registry</text>
+              </g>
+              <g transform="translate(230,210)">
+                <circle r="7" fill="var(--bg-card)" stroke="var(--thread)" stroke-width="1.5"/>
+                <circle r="3" fill="var(--thread)"/>
+                <text y="-14" text-anchor="middle" fill="var(--fg-2)">audit</text>
+              </g>
+              <g transform="translate(400,50)">
+                <circle r="7" fill="var(--bg-card)" stroke="var(--thread)" stroke-width="1.5"/>
+                <circle r="3" fill="var(--thread)"/>
+                <text y="-14" text-anchor="middle" fill="var(--fg-2)">pgvector</text>
+              </g>
+              <g transform="translate(400,120)">
+                <circle r="7" fill="var(--bg-card)" stroke="var(--thread)" stroke-width="1.5"/>
+                <circle r="3" fill="var(--thread)"/>
+                <text y="-14" text-anchor="middle" fill="var(--fg-2)">spec-engine</text>
+              </g>
+              <g transform="translate(400,190)">
+                <circle r="7" fill="var(--bg-card)" stroke="var(--spark)" stroke-width="1.5"/>
+                <circle r="3" fill="var(--spark)"/>
+                <text y="-14" text-anchor="middle" fill="var(--fg-2)">context-eng</text>
+              </g>
+            </g>
+
+            <!-- hub -->
+            <circle cx="230" cy="120" r="26" fill="var(--bg-card)" stroke="var(--primary)" stroke-width="1.5"/>
+            <circle cx="230" cy="120" r="8" fill="var(--primary)"/>
+            <text x="230" y="160" font-family="var(--f-mono)" font-size="10" letter-spacing="0.08em" fill="var(--fg)" text-anchor="middle">ORCHESTRATOR</text>
+          </svg>
+          <div class="legend">
+            <div class="item"><span class="dot ember"></span> primary edges</div>
+            <div class="item"><span class="dot thread"></span> healthy</div>
+            <div class="item"><span class="dot steel"></span> auth / policy</div>
+            <div class="item"><span class="dot copper"></span> data plane</div>
+          </div>
+        </div>
+        <div>
+          <p class="label">Built for engineering at scale</p>
+          <h2>A hub-spoke <em>mesh</em>, by design.</h2>
+          <p>
+            The Forge orchestrator routes every intent across a small, opinionated set of services: a policy engine, an authorisation graph, an asset registry, a hash-chained audit log, a context engine that fuses RAG + traces, and a spec engine that holds every change.
+          </p>
+          <p>
+            Services talk over Temporal for durable workflows, Kafka for events, and gRPC for synchronous calls. Postgres holds canonical state. Milvus and pgvector hold RAG embeddings. Tempo + Loki + Prometheus stitch traces, logs and metrics into one observability surface.
+          </p>
+          <p>
+            The shape is deliberately boring — boring shapes are the ones that survive a decade in production.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Intent → deploy flow ──────────────────────────────────────── -->
+  <section id="flow" class="chapter alt">
+    <div class="container">
+      <p class="chapter-num"><span>Chapter 04 — From intent to deploy</span><span class="rule"></span></p>
+      <h2 class="h-section">Five steps. <em>One</em> trace.</h2>
+      <p class="lede">From a sentence on a Tuesday morning to a signed, policy-gated deploy on prod by Wednesday. Every step is a span in one OpenTelemetry trace — auditable from prompt to pod.</p>
+
+      <div class="flow">
+        <div class="step">
+          <span class="num">01</span>
+          <h4>Capture</h4>
+          <p>A non-technical user describes the intent. Alfred asks follow-up questions and assembles a complete OpenSpec.</p>
+        </div>
+        <div class="step">
+          <span class="num">02</span>
+          <h4>Scaffold</h4>
+          <p>The scaffolder picks a template, generates the repo, opens a PR, and registers the new asset.</p>
+        </div>
+        <div class="step">
+          <span class="num">03</span>
+          <h4>Gate</h4>
+          <p>CI gates run — tests, SBOM, image-verify. OPA checks the change against the workspace policy.</p>
+        </div>
+        <div class="step">
+          <span class="num">04</span>
+          <h4>Approve</h4>
+          <p>If the change crosses a criticality threshold, an approver gets a typed approval request with diff, runbook and rollback plan.</p>
+        </div>
+        <div class="step">
+          <span class="num">05</span>
+          <h4>Deploy</h4>
+          <p>The deploy-orchestrator drives a staged rollout with canary, verify, notify. SLOs and FinOps attribution are wired automatically.</p>
+        </div>
+      </div>
+
+      <div class="terminal" style="margin-top: 56px;">
+        <div class="tbar">forge run · intent-to-deploy</div>
+        <div class="body">
+          <div><span class="prompt">$</span> forge run intent <span class="dim">--workspace=engineering</span></div>
+          <div><span class="dim">»</span> alfred.dialogue.started <span class="ok">draft_id=osp_a814</span></div>
+          <div><span class="dim">»</span> alfred.context.retrieved <span class="dim">10 chunks from Milvus</span></div>
+          <div><span class="dim">»</span> openspec.commit <span class="ok">osp_a814 v1</span> <span class="dim">linked: jira PAY-128, confluence #4821</span></div>
+          <div><span class="dim">»</span> scaffolder.scaffold <span class="ok">repo=acme/refunds-svc, template=svc-go-baseline</span></div>
+          <div><span class="dim">»</span> ci.pipeline <span class="ok">all 7 gates passed</span></div>
+          <div><span class="dim">»</span> approvals.requested <span class="warn">criticality=high → release-manager</span></div>
+          <div><span class="dim">»</span> approvals.granted <span class="ok">ana@acme.io</span></div>
+          <div><span class="dim">»</span> deploy-orchestrator.rollout <span class="ok">canary 5% → 50% → 100%</span></div>
+          <div><span class="dim">»</span> audit.events <span class="dim">17 signed events, chain-verified</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Trust / Voice ──────────────────────────────────────────────── -->
+  <section id="trust" class="chapter">
+    <div class="container">
+      <p class="chapter-num"><span>Chapter 05 — Trust, by design</span><span class="rule"></span></p>
+      <h2 class="h-section">Autonomy with <em>brakes</em>.</h2>
+      <p class="lede">Autonomy is a slider, not a switch. Every workspace and every OpenSpec carries its own autonomy ceiling. The platform's defaults err on the side of human approval for irreversible operations.</p>
+
+      <div class="voice">
+        <div class="do">
+          <h4>Do</h4>
+          <p>Let Alfred draft, refactor, propose, observe and self-heal — all within delegated permissions and recorded in audit.</p>
+        </div>
+        <div class="dont">
+          <h4>Don't</h4>
+          <p>Skip approvals for production data migrations, billing changes, IAM grants, or anything that can't be cleanly rolled back.</p>
+        </div>
+      </div>
+
+      <div class="stats" style="margin-top: 64px;">
+        <div class="stat">
+          <div class="num">100<small>%</small></div>
+          <div class="lbl">Actions hash-chained</div>
+        </div>
+        <div class="stat">
+          <div class="num">0</div>
+          <div class="lbl">Direct LLM calls — all via LiteLLM</div>
+        </div>
+        <div class="stat">
+          <div class="num">5</div>
+          <div class="lbl">Autonomy levels per OpenSpec</div>
+        </div>
+        <div class="stat">
+          <div class="num">∞</div>
+          <div class="lbl">Audit retention (governance-driven)</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Built on ──────────────────────────────────────────────────── -->
+  <section class="chapter deep">
+    <div class="container">
+      <p class="chapter-num"><span>Chapter 06 — Built on</span><span class="rule"></span></p>
+      <h2 class="h-section" style="color: var(--paper);">Open foundations, <em>uncompromised</em>.</h2>
+      <p class="lede" style="color: var(--fg-2);">Forge stands on opinionated open infrastructure. Nothing proprietary in the data plane. Everything portable.</p>
+
+      <div class="tech">
+        <div class="item"><b>Temporal</b> · durable workflows</div>
+        <div class="item"><b>OPA</b> · policy engine</div>
+        <div class="item"><b>OpenFGA</b> · relationship-based authz</div>
+        <div class="item"><b>Milvus</b> · RAG vector store</div>
+        <div class="item"><b>LiteLLM</b> · model gateway</div>
+        <div class="item"><b>Postgres</b> · canonical state</div>
+        <div class="item"><b>Kafka</b> · event bus</div>
+        <div class="item"><b>Keycloak</b> · OIDC identity</div>
+        <div class="item"><b>Prometheus + Loki + Tempo</b> · observability</div>
+        <div class="item"><b>OpenSpec</b> · spec backbone</div>
+        <div class="item"><b>MCP</b> · tool protocol</div>
+        <div class="item"><b>Next.js 14</b> · Portal</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── CTA ────────────────────────────────────────────────────────── -->
+  <section class="cta-band">
+    <div class="container">
+      <h2>Weave your <em>fabric</em>.</h2>
+      <p>The platform is open. The fabric is yours.</p>
+      <div class="row">
+        <a class="btn btn--primary" href="https://github.com/forge-eng-fabric/forge-eng-fabric" target="_blank" rel="noreferrer">
+          Read the source on GitHub
+          <svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12 H19 M13 6 L19 12 L13 18"/></svg>
+        </a>
+        <a class="btn btn--secondary" href="https://github.com/forge-eng-fabric/forge-eng-fabric/blob/main/docs/getting-started.md" target="_blank" rel="noreferrer">
+          Run it locally
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Footer ─────────────────────────────────────────────────────── -->
+  <footer class="site-foot">
+    <span>Forge · Engineering Fabric · Volume 01</span>
+    <div class="links">
+      <a href="https://github.com/forge-eng-fabric/forge-eng-fabric" target="_blank" rel="noreferrer">GitHub</a>
+      <a href="https://github.com/forge-eng-fabric/forge-eng-fabric/tree/main/docs/portal/design-system.md" target="_blank" rel="noreferrer">Design system</a>
+      <a href="https://github.com/forge-eng-fabric/forge-eng-fabric/tree/main/openspec/changes" target="_blank" rel="noreferrer">OpenSpec changes</a>
+    </div>
+  </footer>
+
+  <script src="assets/forge.js" defer></script>
+</body>
+</html>

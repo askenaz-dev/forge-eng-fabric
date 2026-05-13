@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://forge.local/contracts/events/portal.density.changed.v1.json",
+  "title": "portal.density.changed.v1",
+  "description": "Emitted when an authenticated user changes their Portal density preference (compact / comfortable / spacious).",
+  "type": "object",
+  "required": ["type", "principal", "timestamp", "data", "correlation_id"],
+  "properties": {
+    "type": { "type": "string", "const": "portal.density.changed.v1" },
+    "principal": { "type": "string" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "correlation_id": { "type": "string" },
+    "data": {
+      "type": "object",
+      "required": ["to"],
+      "properties": {
+        "to":   { "type": "string", "enum": ["compact", "comfortable", "spacious"] },
+        "from": { "type": "string", "enum": ["compact", "comfortable", "spacious"] }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
