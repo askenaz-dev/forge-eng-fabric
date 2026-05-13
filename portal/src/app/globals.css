@@ -278,14 +278,41 @@ button { font-family: inherit; cursor: pointer; }
   gap: 2px;
   flex: 1;
 }
+.side-group { display: contents; }
+.side-group-items {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
 .side-section {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  width: 100%;
+  text-align: left;
   font-family: var(--f-mono);
   font-size: 10px;
   letter-spacing: .14em;
   text-transform: uppercase;
   color: var(--fg-3);
   padding: 14px 10px 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: color var(--t-fast);
 }
+.side-section:hover { color: var(--fg-2); }
+.side-section:disabled { cursor: default; }
+.side-section:focus-visible { outline: none; color: var(--fg); box-shadow: var(--ring); border-radius: var(--r-2); }
+.side-section .caret {
+  width: 12px;
+  height: 12px;
+  margin-left: auto;
+  opacity: .7;
+  transition: transform var(--t-fast);
+}
+.side-group[data-collapsed] .side-section .caret { transform: rotate(-90deg); }
 .side-link {
   display: grid;
   grid-template-columns: 18px 1fr auto;
@@ -1026,6 +1053,38 @@ button { font-family: inherit; cursor: pointer; }
 .pop-item.active { background: var(--bg-active); }
 .pop-item .check { margin-left: auto; color: var(--primary); }
 .pop-item svg.lead { width: 14px; height: 14px; color: var(--fg-2); }
+.pop-item.danger { color: var(--rust); }
+.pop-item.danger:hover { background: color-mix(in oklch, var(--rust), transparent 90%); }
+.pop-item.danger:focus-visible { outline: none; box-shadow: var(--ring); }
+.pop-header {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 10px 6px;
+  min-width: 0;
+}
+.pop-header b {
+  font-weight: 500;
+  font-size: 13px;
+  color: var(--fg);
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pop-header small {
+  display: block;
+  color: var(--fg-3);
+  font-size: 11px;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pop-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px -6px;
+}
 
 /* ── Language pill ─────────────────────────────────────────────────────── */
 .lang-pill {
