@@ -1,0 +1,264 @@
+openapi: 3.1.0
+info:
+  title: Alfred Agent-Mode API
+  version: 0.1.0
+  description: |
+    Long-running, plan-driven Alfred orchestrator routes. Mounted under
+    `/v1/agent-mode` and gated behind `ALFRED_AGENT_MODE_ENABLED=true` and the
+    per-workspace `alfred.dock_enabled` flag. See
+    openspec/changes/alfred-agent-mode-orchestrator/.
+servers:
+  - url: http://localhost:8090
+    description: Local docker-compose
+security:
+  - bearerAuth: []
+paths:
+  /v1/agent-mode/sessions:
+    post:
+      summary: Start a new agent-mode session for a committed OpenSpec
+      description: |
+        Requires `alfred:agent-mode.run` on the workspace and the workspace
+        feature flag `alfred.dock_enabled`. Returns the new session id; the
+        client should subscribe to the SSE stream to follow execution.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StartSessionRequest"
+      responses:
+        "200":
+          description: session started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StartSessionResponse"
+        "403": { description: forbidden }
+        "409": { description: workspace flag disabled }
+        "503": { description: feature flag disabled globally }
+
+  /v1/agent-mode/sessions/{sessionId}:
+    get:
+      summary: Get the current state of an agent-mode session
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: session state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionState"
+        "404": { description: not found }
+
+  /v1/agent-mode/sessions/{sessionId}/decisions:
+    get:
+      summary: List policy/permission decisions tied to an agent-mode session
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: decisions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  decisions:
+                    type: array
+                    items: { $ref: "#/components/schemas/Decision" }
+
+  /v1/agent-mode/sessions/{sessionId}/stream:
+    get:
+      summary: Subscribe to the session's live event stream (SSE)
+      description: |
+        Server-Sent Events. Sends an `id:` per event so clients can reconnect
+        with `Last-Event-ID`. Heartbeats every 15 seconds. Event payloads are
+        a subset of the `alfred.agent_mode.*` CloudEvents shape.
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema: { type: string, format: uuid }
+        - in: header
+          name: Last-Event-ID
+          required: false
+          schema: { type: string }
+      responses:
+        "200":
+          description: event stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  /v1/agent-mode/sessions/{sessionId}/messages:
+    post:
+      summary: Send a follow-up intent to a running session
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FollowUpRequest"
+      responses:
+        "200":
+          description: follow-up accepted; appended_idx is the new step index
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  session_id: { type: string, format: uuid }
+                  status: { type: string }
+                  appended_idx: { type: integer }
+        "403":
+          description: rejected by frozen autonomy ceiling (autonomy.override.rejected.v1)
+
+  /v1/agent-mode/sessions/{sessionId}/cancel:
+    post:
+      summary: Cancel a running or paused agent-mode session
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string }
+      responses:
+        "200":
+          description: session aborted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  session_id: { type: string, format: uuid }
+                  status: { type: string, enum: [aborted, completed, failed] }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    StartSessionRequest:
+      type: object
+      required: [workspace_id, openspec_id, intent]
+      properties:
+        workspace_id: { type: string, format: uuid }
+        openspec_id: { type: string }
+        intent: { type: string }
+        correlation_id: { type: string, nullable: true }
+        metadata: { type: object, additionalProperties: true }
+    StartSessionResponse:
+      type: object
+      properties:
+        session_id: { type: string, format: uuid }
+        status: { type: string }
+        correlation_id: { type: string }
+        plan_revision: { type: integer }
+    FollowUpRequest:
+      type: object
+      required: [intent]
+      properties:
+        intent: { type: string }
+        correlation_id: { type: string, nullable: true }
+    SessionState:
+      type: object
+      properties:
+        session:
+          $ref: "#/components/schemas/AgentModeSession"
+        steps:
+          type: array
+          items: { $ref: "#/components/schemas/AgentModeStep" }
+    AgentModeSession:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        workspace_id: { type: string, format: uuid }
+        openspec_id: { type: string, nullable: true }
+        correlation_id: { type: string }
+        originator_principal: { type: string }
+        model_id: { type: string }
+        plan_revision: { type: integer }
+        plan_json: { type: object }
+        frozen_autonomy_policy: { type: object }
+        status:
+          type: string
+          enum:
+            - planning
+            - running
+            - paused_for_approval
+            - paused_for_budget
+            - completed
+            - aborted
+            - failed
+        started_at: { type: string, format: date-time }
+        paused_at: { type: string, format: date-time, nullable: true }
+        resumed_at: { type: string, format: date-time, nullable: true }
+        completed_at: { type: string, format: date-time, nullable: true }
+        aborted_reason: { type: string, nullable: true }
+        workflow_run_id: { type: string, nullable: true }
+    AgentModeStep:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        idx: { type: integer }
+        kind:
+          type: string
+          enum: [plan, tool, workflow, agent, approval, final]
+        tool_id: { type: string, nullable: true }
+        workflow_id: { type: string, nullable: true }
+        agent_id: { type: string, nullable: true }
+        criticality:
+          type: string
+          enum: [low, medium, high, critical]
+        decision_id: { type: string, format: uuid, nullable: true }
+        status:
+          type: string
+          enum:
+            - pending
+            - running
+            - paused_for_approval
+            - paused_for_budget
+            - succeeded
+            - failed
+            - skipped
+            - cancelled
+        started_at: { type: string, format: date-time, nullable: true }
+        completed_at: { type: string, format: date-time, nullable: true }
+        outcome: { type: object, additionalProperties: true, nullable: true }
+        summary: { type: string }
+    Decision:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        session_id: { type: string, format: uuid }
+        workspace_id: { type: string, format: uuid }
+        actor: { type: string }
+        correlation_id: { type: string }
+        intent: { type: string }
+        tool_kind: { type: string, nullable: true }
+        tool_id: { type: string, nullable: true }
+        outcome: { type: string }
+        outcome_detail: { type: object, nullable: true }
+        occurred_at: { type: string, format: date-time }

@@ -97,6 +97,17 @@ verify-runtime:
 demo-intent-to-deploy:
 	@python scripts/demo_intent_to_deploy.py
 
+# Optimize Alfred SVG marks, copy to portal/public, and regenerate the Alfred
+# section of the standalone brand notebook. svgo is optional — if missing the
+# raw SVGs are copied through unchanged.
+design-export:
+	@python scripts/design_export_alfred.py
+	@echo ">> design-export: alfred marks regenerated"
+
+# Verify design/alfred-identity/ has not drifted from the notebook section.
+design-export-check:
+	@python scripts/design_export_alfred.py --check
+
 retention-policy-check:
 	@python scripts/check-retention-policy.py
 

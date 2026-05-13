@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Sheet } from "@/components/primitives";
+import { ScopeSelect } from "@/components/scope/ScopeSelect";
 import { useToast } from "@/components/providers/ToastProvider";
 
 export type AssetKind = "mcp" | "skill" | "agent" | "workflow" | "prompt_template";
@@ -38,6 +39,7 @@ type FormState = {
   inputs_schema: string;
   outputs_schema: string;
   metadata: string;
+  workspace_id: string;
 };
 
 const EMPTY: FormState = {
@@ -52,29 +54,30 @@ const EMPTY: FormState = {
   inputs_schema: '{ "type": "object" }',
   outputs_schema: '{ "type": "object" }',
   metadata: "",
+  workspace_id: "",
 };
 
 export function RegisterDrawer({ open, onOpenChange, workspaceId, lockedKind }: Props) {
   const router = useRouter();
   const toast = useToast();
-  const [form, setForm] = useState<FormState>(() => ({ ...EMPTY, type: lockedKind ?? EMPTY.type }));
+  const [form, setForm] = useState<FormState>(() => ({ ...EMPTY, type: lockedKind ?? EMPTY.type, workspace_id: workspaceId }));
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (open) {
-      setForm({ ...EMPTY, type: lockedKind ?? EMPTY.type });
+      setForm({ ...EMPTY, type: lockedKind ?? EMPTY.type, workspace_id: workspaceId });
       setError(null);
     }
-  }, [open, lockedKind]);
+  }, [open, lockedKind, workspaceId]);
 
   const canSubmit = useMemo(() => {
-    if (!workspaceId) return false;
+    if (!form.workspace_id.trim()) return false;
     if (!form.name.trim()) return false;
     if (!SEMVER_RE.test(form.version.trim())) return false;
     if (!form.owner_team.trim()) return false;
     return true;
-  }, [form, workspaceId]);
+  }, [form]);
 
   function set<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -108,7 +111,7 @@ export function RegisterDrawer({ open, onOpenChange, workspaceId, lockedKind }: 
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          workspace_id: workspaceId,
+          workspace_id: form.workspace_id.trim(),
           type: form.type,
           name: form.name.trim(),
           version: form.version.trim(),
@@ -146,7 +149,7 @@ export function RegisterDrawer({ open, onOpenChange, workspaceId, lockedKind }: 
       open={open}
       onOpenChange={onOpenChange}
       title={<>Register <em>asset</em></>}
-      subtitle={`workspace ${workspaceId || "—"} · lifecycle_state=proposed`}
+      subtitle={`workspace ${form.workspace_id || "—"} · lifecycle_state=proposed`}
       footer={
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={submitting}>
@@ -158,17 +161,22 @@ export function RegisterDrawer({ open, onOpenChange, workspaceId, lockedKind }: 
         </div>
       }
     >
-      {!workspaceId && (
-        <p className="mb-3 rounded border border-orange-300 bg-orange-50 p-3 text-sm text-orange-800 dark:border-orange-800 dark:bg-orange-950 dark:text-orange-200">
-          Load a workspace first — paste a Workspace ID on the Asset registry header.
-        </p>
-      )}
       {error && (
         <p className="mb-3 rounded border border-red-300 bg-red-50 p-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200">
           {error}
         </p>
       )}
       <div className="grid gap-4">
+        <Row label="Workspace" required hint="Where the asset will live">
+          <ScopeSelect
+            kind="workspace"
+            name="workspace_id"
+            value={form.workspace_id}
+            onChange={(next) => set("workspace_id", next)}
+            required
+            className={selectCls}
+          />
+        </Row>
         <Row label="Type" hint={lockedKind ? "Locked by sidebar filter" : "Select what you are publishing"}>
           <select
             value={form.type}

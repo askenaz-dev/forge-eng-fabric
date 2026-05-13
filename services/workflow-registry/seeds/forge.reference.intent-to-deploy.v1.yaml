@@ -9,10 +9,14 @@ metadata:
   description: >-
     Reference end-to-end orchestration that demonstrates a complete intent-to-deploy
     traversal across alfred → sdlc-orchestrator → scaffolder → app-onboarding → ci →
-    deploy-orchestrator. Production deploy is gated by a HITL approval.
+    deploy-orchestrator. Production deploy is gated by a HITL approval. When
+    ALFRED_AGENT_MODE_ENABLED is set, Alfred is the default operator that
+    triggers, supervises, and reports on this workflow; the workflow contract
+    itself is unchanged.
   tags:
     - reference
     - forge
+    - alfred-agent-mode-default
   owners:
     - platform-architecture
 spec:

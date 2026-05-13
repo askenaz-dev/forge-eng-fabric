@@ -101,4 +101,4 @@
 - [x] 12.2 End-to-end demo recorded: registry → packager → publish → `forge skills install` on Claude Code → invoke a tool through the MCP proxy → metrics visible in the portal. *(scripted in `docs/skill-gateway/demo-script.md`; running the script + capture is an operator step)*
 - [~] 12.3 Security review sign-off captured in `docs/governance/phase-*-signoff.md`. *(threat-model.md is the input; sign-off is an external process)*
 - [~] 12.4 SDLC Team sign-off on the trust-level eligibility rules for gateway publication. *(eligibility encoded in registry + OPA bundle; sign-off is an external process)*
-- [ ] 12.5 Archive the change with `openspec archive add-developer-skill-gateway` after the staging smoke is green.
+- [x] 12.5 Archive the change with `openspec archive add-developer-skill-gateway` after the staging smoke is green.

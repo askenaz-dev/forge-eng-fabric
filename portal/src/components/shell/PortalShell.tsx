@@ -5,6 +5,8 @@ import { useSession } from "next-auth/react";
 import { Sidebar, useStickyCollapse } from "./Sidebar";
 import { TopBar } from "./TopBar";
 import { NavigationProgress } from "./NavigationProgress";
+import { AlfredDock } from "./AlfredDock";
+import { AlfredSessionProvider } from "./AlfredSessionProvider";
 import { ToastRail } from "../primitives/ToastRail";
 import { CommandPalette } from "../palette/CommandPalette";
 import { useLang } from "../providers/LangProvider";
@@ -59,7 +61,7 @@ export function PortalShell({
   }, [status]);
 
   return (
-    <>
+    <AlfredSessionProvider>
       <NavigationProgress />
       <div className={cx("app", collapsed && "app--collapsed")}>
         <Sidebar
@@ -76,11 +78,12 @@ export function PortalShell({
       </div>
       <ToastRail />
       <CommandPalette />
+      <AlfredDock />
       <noscript>
         <div style={{ padding: 16, fontFamily: "var(--f-mono)", fontSize: 12 }}>
           {t("min_width_notice")}
         </div>
       </noscript>
-    </>
+    </AlfredSessionProvider>
   );
 }

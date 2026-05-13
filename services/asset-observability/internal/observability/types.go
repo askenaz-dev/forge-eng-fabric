@@ -149,6 +149,19 @@ func NewStore() *Store {
 	}
 }
 
+// All returns a flat copy of every retained invocation across all assets.
+// Cheap because the store is in-memory; callers MUST treat the result as
+// read-only.
+func (s *Store) All() []Invocation {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	out := make([]Invocation, 0)
+	for _, items := range s.byAsset {
+		out = append(out, items...)
+	}
+	return out
+}
+
 // Ingest records an invocation. Sets a default Source when omitted.
 func (s *Store) Ingest(inv Invocation) {
 	if inv.AssetID == "" {

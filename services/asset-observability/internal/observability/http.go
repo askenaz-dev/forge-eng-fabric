@@ -38,6 +38,15 @@ func (h *Handler) Mount(mux *http.ServeMux) {
 	mux.HandleFunc("POST /v1/gateway/installs", h.ingestInstall)
 	mux.HandleFunc("GET /v1/assets/", h.metrics)
 	mux.HandleFunc("GET /v1/services/health", h.servicesHealth)
+	mux.HandleFunc("GET /v1/alfred/agent-mode/metrics", h.agentModeMetrics)
+}
+
+// agentModeMetrics returns the per-workspace Alfred agent-mode rollup used by
+// the portal dashboard tile (cost p95, success rate, HITL-pause rate).
+func (h *Handler) agentModeMetrics(w http.ResponseWriter, r *http.Request) {
+	workspaceID := r.URL.Query().Get("workspace_id")
+	w.Header().Set("content-type", "application/json")
+	_ = json.NewEncoder(w).Encode(h.Service.AgentModeMetrics(workspaceID))
 }
 
 // knownService describes a service node that the dashboard mesh visualises.

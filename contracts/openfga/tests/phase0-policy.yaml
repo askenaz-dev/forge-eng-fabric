@@ -81,3 +81,17 @@ tests:
         object: workspace:workspace-b
         assertions:
           assignable_developer: false
+  - name: workspace editors and owners can launch agent-mode sessions
+    check:
+      - user: user:alice
+        object: workspace:workspace-a
+        assertions:
+          can_alfred_agent_mode_run: true
+          can_alfred_agent_mode_cancel: true
+  - name: cross-workspace boundaries hold for alfred agent-mode
+    check:
+      - user: user:alice
+        object: workspace:workspace-b
+        assertions:
+          can_alfred_agent_mode_run: false
+          can_alfred_agent_mode_cancel: false

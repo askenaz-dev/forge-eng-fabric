@@ -64,6 +64,51 @@ func (s *Service) IngestGatewayCloudEvent(eventType string, body []byte) error {
 			InstalledAt:   time.Now().UTC(),
 		})
 		return nil
+	case "alfred.agent_mode.session_started.v1",
+		"alfred.agent_mode.step_started.v1",
+		"alfred.agent_mode.step_completed.v1",
+		"alfred.agent_mode.plan_revised.v1",
+		"alfred.agent_mode.paused_for_approval.v1",
+		"alfred.agent_mode.paused_for_budget.v1",
+		"alfred.agent_mode.resumed.v1",
+		"alfred.agent_mode.completed.v1",
+		"alfred.agent_mode.aborted.v1",
+		"alfred.agent_mode.failed.v1":
+		return s.ingestAgentModeEvent(eventType, body)
 	}
+	return nil
+}
+
+// ingestAgentModeEvent rolls Alfred agent-mode events into the per-asset
+// observability store so the workspace can see cost_per_session_p95,
+// HITL-pause rate and success rate per session over time.
+func (s *Service) ingestAgentModeEvent(eventType string, body []byte) error {
+	var ev struct {
+		Data struct {
+			SessionID   string  `json:"session_id"`
+			WorkspaceID string  `json:"workspace_id"`
+			ModelID     string  `json:"model_id"`
+			OpenSpecID  string  `json:"openspec_id"`
+			StepIdx     int     `json:"step_idx"`
+			Kind        string  `json:"kind"`
+			CostUSD     float64 `json:"cost_usd"`
+			LatencyMS   float64 `json:"latency_ms"`
+			Reason      string  `json:"reason"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(body, &ev); err != nil {
+		return err
+	}
+	inv := Invocation{
+		AssetID:      "alfred:agent-mode:" + ev.Data.SessionID,
+		AssetVersion: ev.Data.ModelID,
+		WorkspaceID:  ev.Data.WorkspaceID,
+		StartedAt:    time.Now().UTC(),
+		DurationMS:   ev.Data.LatencyMS,
+		Success:      eventType == "alfred.agent_mode.completed.v1",
+		LLMCostUSD:   ev.Data.CostUSD,
+		Source:       "alfred.agent_mode",
+	}
+	s.Store.Ingest(inv)
 	return nil
 }

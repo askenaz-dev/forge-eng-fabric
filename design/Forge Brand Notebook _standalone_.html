@@ -188,5 +188,344 @@ document.addEventListener('DOMContentLoaded', async function() {
   <script type="__bundler/template">
 "<!DOCTYPE html>\n<html lang=\"es\" data-theme=\"light\" data-density=\"comfortable\"><head>\n  <meta charset=\"utf-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n  <title>Forge — Engineering Fabric · Brand Notebook<\u002Ftitle>\n\n  <link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n  <link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin=\"\">\n  <style>/* cyrillic */\n@font-face {\n  font-family: 'Geist';\n  font-style: normal;\n  font-weight: 400;\n  font-display: swap;\n  src: url(\"78a9f6c6-1ea0-43d1-8f95-fda40c169bd8\") format('woff2');\n  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;\n}\n/* latin-ext */\n@font-face {\n  font-family: 'Geist';\n  font-style: normal;\n  font-weight: 400;\n  font-display: swap;\n  src: url(\"77519998-e5fb-4e04-ae9f-5642056518a9\") format('woff2');\n  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;\n}\n/* latin */\n@font-face {\n  font-family: 'Geist';\n  font-style: normal;\n  font-weight: 400;\n  font-display: swap;\n  src: url(\"63f58c30-c803-4523-8222-1fb9e3b7c0fb\") format('woff2');\n  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;\n}\n/* cyrillic */\n@font-face {\n  font-family: 'Geist';\n  font-style: normal;\n  font-weight: 500;\n  font-display: swap;\n  src: url(\"78a9f6c6-1ea0-43d1-8f95-fda40c169bd8\") format('woff2');\n  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;\n}\n/* latin-ext */\n@font-face {\n  font-family: 'Geist';\n  font-style: normal;\n  font-weight: 500;\n  font-display: swap;\n  src: url(\"77519998-e5fb-4e04-ae9f-5642056518a9\") format('woff2');\n  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;\n}\n/* latin */\n@font-face {\n  font-family: 'Geist';\n  font-style: normal;\n  font-weight: 500;\n  font-display: swap;\n  src: url(\"63f58c30-c803-4523-8222-1fb9e3b7c0fb\") format('woff2');\n  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;\n}\n/* cyrillic */\n@font-face {\n  font-family: 'Geist';\n  font-style: normal;\n  font-weight: 600;\n  font-display: swap;\n  src: url(\"78a9f6c6-1ea0-43d1-8f95-fda40c169bd8\") format('woff2');\n  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;\n}\n/* latin-ext */\n@font-face {\n  font-family: 'Geist';\n  font-style: normal;\n  font-weight: 600;\n  font-display: swap;\n  src: url(\"77519998-e5fb-4e04-ae9f-5642056518a9\") format('woff2');\n  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;\n}\n/* latin */\n@font-face {\n  font-family: 'Geist';\n  font-style: normal;\n  font-weight: 600;\n  font-display: swap;\n  src: url(\"63f58c30-c803-4523-8222-1fb9e3b7c0fb\") format('woff2');\n  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;\n}\n/* latin-ext */\n@font-face {\n  font-family: 'Instrument Serif';\n  font-style: italic;\n  font-weight: 400;\n  font-display: swap;\n  src: url(\"5aafa0cf-efff-431d-9eca-69e465e1e32e\") format('woff2');\n  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;\n}\n/* latin */\n@font-face {\n  font-family: 'Instrument Serif';\n  font-style: italic;\n  font-weight: 400;\n  font-display: swap;\n  src: url(\"401cb0db-90ad-4e49-b16a-35552b790338\") format('woff2');\n  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;\n}\n/* latin-ext */\n@font-face {\n  font-family: 'Instrument Serif';\n  font-style: normal;\n  font-weight: 400;\n  font-display: swap;\n  src: url(\"93b11901-e5c8-4f44-9104-86ac9485beb1\") format('woff2');\n  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;\n}\n/* latin */\n@font-face {\n  font-family: 'Instrument Serif';\n  font-style: normal;\n  font-weight: 400;\n  font-display: swap;\n  src: url(\"af60985a-7733-4300-b0b0-e60bd7953e41\") format('woff2');\n  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;\n}\n/* cyrillic-ext */\n@font-face {\n  font-family: 'JetBrains Mono';\n  font-style: normal;\n  font-weight: 400;\n  font-display: swap;\n  src: url(\"6a8af60c-8d2f-4f25-8974-0e50615aa3d3\") format('woff2');\n  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;\n}\n/* cyrillic */\n@font-face {\n  font-family: 'JetBrains Mono';\n  font-style: normal;\n  font-weight: 400;\n  font-display: swap;\n  src: url(\"7f038698-8a69-469e-8365-8c4c31225600\") format('woff2');\n  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;\n}\n/* greek */\n@font-face {\n  font-family: 'JetBrains Mono';\n  font-style: normal;\n  font-weight: 400;\n  font-display: swap;\n  src: url(\"3d47173a-4eeb-40fa-9fd0-cc0ab0e47d02\") format('woff2');\n  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;\n}\n/* vietnamese */\n@font-face {\n  font-family: 'JetBrains Mono';\n  font-style: normal;\n  font-weight: 400;\n  font-display: swap;\n  src: url(\"3744074a-0a9b-4805-9150-619e5a1f3f4d\") format('woff2');\n  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;\n}\n/* latin-ext */\n@font-face {\n  font-family: 'JetBrains Mono';\n  font-style: normal;\n  font-weight: 400;\n  font-display: swap;\n  src: url(\"d33d2b4b-4065-4e15-aaf5-6b5b16a5ea28\") format('woff2');\n  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;\n}\n/* latin */\n@font-face {\n  font-family: 'JetBrains Mono';\n  font-style: normal;\n  font-weight: 400;\n  font-display: swap;\n  src: url(\"bfe5dafc-2952-4659-a795-3a4e153458fb\") format('woff2');\n  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;\n}\n/* cyrillic-ext */\n@font-face {\n  font-family: 'JetBrains Mono';\n  font-style: normal;\n  font-weight: 500;\n  font-display: swap;\n  src: url(\"6a8af60c-8d2f-4f25-8974-0e50615aa3d3\") format('woff2');\n  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;\n}\n/* cyrillic */\n@font-face {\n  font-family: 'JetBrains Mono';\n  font-style: normal;\n  font-weight: 500;\n  font-display: swap;\n  src: url(\"7f038698-8a69-469e-8365-8c4c31225600\") format('woff2');\n  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;\n}\n/* greek */\n@font-face {\n  font-family: 'JetBrains Mono';\n  font-style: normal;\n  font-weight: 500;\n  font-display: swap;\n  src: url(\"3d47173a-4eeb-40fa-9fd0-cc0ab0e47d02\") format('woff2');\n  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;\n}\n/* vietnamese */\n@font-face {\n  font-family: 'JetBrains Mono';\n  font-style: normal;\n  font-weight: 500;\n  font-display: swap;\n  src: url(\"3744074a-0a9b-4805-9150-619e5a1f3f4d\") format('woff2');\n  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;\n}\n/* latin-ext */\n@font-face {\n  font-family: 'JetBrains Mono';\n  font-style: normal;\n  font-weight: 500;\n  font-display: swap;\n  src: url(\"d33d2b4b-4065-4e15-aaf5-6b5b16a5ea28\") format('woff2');\n  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;\n}\n/* latin */\n@font-face {\n  font-family: 'JetBrains Mono';\n  font-style: normal;\n  font-weight: 500;\n  font-display: swap;\n  src: url(\"bfe5dafc-2952-4659-a795-3a4e153458fb\") format('woff2');\n  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;\n}\n<\u002Fstyle>\n\n  <style>/* ─────────────────────────────────────────────────────────────────────────\n   FORGE — Engineering Fabric\n   Brand Notebook stylesheet\n   ───────────────────────────────────────────────────────────────────────── */\n\n/* ── Tokens (light) ──────────────────────────────────────────────────────── */\n:root {\n  /* Brand palette */\n  --ember-50:  #FDEFE7;\n  --ember-100: #FAD6BD;\n  --ember-200: #F4A77E;\n  --ember-300: #ED7C49;\n  --ember-400: #E45A24;\n  --ember-500: #DC4318;   /* primary */\n  --ember-600: #B7330F;\n  --ember-700: #8A2509;\n  --ember-800: #5C1A06;\n  --ember-900: #2E0D03;\n\n  --ink:       #13110F;\n  --ink-2:     #2A2622;\n  --slate:     #6B6157;\n  --mute:      #9C9489;\n  --hair:      #D9D2C5;\n  --paper:     #F5F1E9;\n  --paper-2:   #EFE9DD;\n  --paper-3:   #FBF8F2;\n  --pure:      #FFFFFF;\n\n  --steel:     #243441;\n  --steel-2:   #3A4F61;\n  --thread:    #4F8C76;   /* verdigris — success */\n  --spark:     #E8B100;   /* spark — warning  */\n  --rust:      #B33620;   /* rust  — danger  */\n  --copper:    #B57340;\n\n  /* Semantic */\n  --bg:        var(--paper);\n  --bg-2:      var(--paper-2);\n  --bg-card:   var(--paper-3);\n  --bg-elev:   var(--pure);\n  --fg:        var(--ink);\n  --fg-2:      var(--slate);\n  --fg-3:      var(--mute);\n  --border:    var(--hair);\n  --border-strong: #B8AE9D;\n  --primary:   var(--ember-500);\n  --primary-fg:#fff;\n  --on-primary:#fff;\n\n  /* Spacing (density) */\n  --u: 4px;\n  --s-1: calc(var(--u) * 1);   /* 4 */\n  --s-2: calc(var(--u) * 2);   /* 8 */\n  --s-3: calc(var(--u) * 3);   /* 12 */\n  --s-4: calc(var(--u) * 4);   /* 16 */\n  --s-5: calc(var(--u) * 5);   /* 20 */\n  --s-6: calc(var(--u) * 6);   /* 24 */\n  --s-8: calc(var(--u) * 8);   /* 32 */\n  --s-10: calc(var(--u) * 10); /* 40 */\n  --s-12: calc(var(--u) * 12); /* 48 */\n  --s-16: calc(var(--u) * 16); /* 64 */\n  --s-20: calc(var(--u) * 20); /* 80 */\n  --s-24: calc(var(--u) * 24); /* 96 */\n\n  /* Type */\n  --f-display: \"Instrument Serif\", \"Cormorant Garamond\", Georgia, serif;\n  --f-sans: \"Geist\", \"Söhne\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", system-ui, sans-serif;\n  --f-mono: \"JetBrains Mono\", \"Berkeley Mono\", \"SF Mono\", ui-monospace, Menlo, monospace;\n\n  /* Radii */\n  --r-1: 3px;\n  --r-2: 6px;\n  --r-3: 10px;\n  --r-4: 14px;\n  --r-pill: 999px;\n\n  /* Shadows */\n  --shadow-1: 0 1px 0 rgba(19,17,15,.04), 0 1px 2px rgba(19,17,15,.06);\n  --shadow-2: 0 1px 0 rgba(19,17,15,.04), 0 6px 18px -8px rgba(19,17,15,.18);\n  --shadow-emb: inset 0 0 0 1px rgba(255,255,255,.4), 0 12px 32px -10px rgba(220,67,24,.35);\n}\n\n/* ── Density variants ────────────────────────────────────────────────────── */\n:root[data-density=\"compact\"]      { --u: 3px; }\n:root[data-density=\"comfortable\"]  { --u: 4px; }\n:root[data-density=\"spacious\"]     { --u: 5px; }\n\n/* ── Dark theme ──────────────────────────────────────────────────────────── */\n:root[data-theme=\"dark\"] {\n  --bg:        #0F0D0B;\n  --bg-2:      #161412;\n  --bg-card:   #1B1815;\n  --bg-elev:   #221E1A;\n  --fg:        #F2EDE2;\n  --fg-2:      #B6AC9A;\n  --fg-3:      #7F7669;\n  --border:    #2A2521;\n  --border-strong: #3F3933;\n  --primary:   #FF6A33;\n  --primary-fg:#0F0D0B;\n  --on-primary:#0F0D0B;\n  --steel:     #6E8195;\n  --thread:    #6FBC9C;\n  --spark:     #FFD24B;\n  --rust:      #E45A40;\n  --copper:    #D89466;\n\n  --shadow-1: 0 1px 0 rgba(0,0,0,.4), 0 1px 2px rgba(0,0,0,.5);\n  --shadow-2: 0 1px 0 rgba(0,0,0,.4), 0 12px 30px -10px rgba(0,0,0,.7);\n  --shadow-emb: inset 0 0 0 1px rgba(255,255,255,.05), 0 14px 36px -10px rgba(255,106,51,.45);\n}\n\n/* ── Reset & base ────────────────────────────────────────────────────────── */\n*, *::before, *::after { box-sizing: border-box; }\nhtml, body { margin: 0; padding: 0; }\nbody {\n  background: var(--bg);\n  color: var(--fg);\n  font-family: var(--f-sans);\n  font-size: 16px;\n  line-height: 1.55;\n  -webkit-font-smoothing: antialiased;\n  text-rendering: optimizeLegibility;\n  font-feature-settings: \"ss01\", \"cv11\";\n}\nimg, svg { display: block; max-width: 100%; }\na { color: inherit; text-decoration: none; }\nbutton { font-family: inherit; }\n\n/* Letterforms / text-wrap */\nh1, h2, h3 { text-wrap: balance; }\np { text-wrap: pretty; }\n\n/* ── Chapter shell ───────────────────────────────────────────────────────── */\n.book {\n  min-height: 100vh;\n  background: var(--bg);\n}\n\n.chapter {\n  position: relative;\n  padding: clamp(60px, 8vw, 120px) clamp(28px, 6vw, 96px);\n  border-bottom: 1px solid var(--border);\n}\n.chapter.alt { background: var(--bg-2); }\n.chapter.deep { background: var(--ink); color: var(--paper); }\n.chapter.deep { --fg: var(--paper); --fg-2: #B6AC9A; --fg-3: #7F7669; --border: #2A2521; }\n\n.chapter-num {\n  font-family: var(--f-mono);\n  font-size: 11px;\n  letter-spacing: .12em;\n  text-transform: uppercase;\n  color: var(--fg-3);\n  display: flex;\n  align-items: baseline;\n  gap: 14px;\n  margin-bottom: var(--s-12);\n}\n.chapter-num .rule { flex: 1; border-top: 1px solid var(--border); }\n\n.chapter-title {\n  font-family: var(--f-display);\n  font-weight: 400;\n  font-size: clamp(56px, 8vw, 112px);\n  line-height: .95;\n  letter-spacing: -0.02em;\n  margin: 0 0 var(--s-8);\n}\n.chapter-title em { font-style: italic; color: var(--primary); }\n\n.chapter-lede {\n  font-family: var(--f-display);\n  font-size: clamp(22px, 2.4vw, 30px);\n  line-height: 1.35;\n  letter-spacing: -0.01em;\n  font-weight: 400;\n  max-width: 56ch;\n  color: var(--fg-2);\n  margin: 0 0 var(--s-12);\n}\n\n.h-eyebrow {\n  font-family: var(--f-mono);\n  font-size: 11px;\n  letter-spacing: .14em;\n  text-transform: uppercase;\n  color: var(--fg-3);\n  margin: 0 0 var(--s-3);\n}\n\n.h-section {\n  font-family: var(--f-display);\n  font-weight: 400;\n  font-size: clamp(36px, 4vw, 52px);\n  letter-spacing: -0.015em;\n  line-height: 1;\n  margin: 0 0 var(--s-3);\n}\n\n.h-section em { font-style: italic; color: var(--primary); }\n\n.body-text {\n  font-size: 16px;\n  line-height: 1.6;\n  color: var(--fg-2);\n  max-width: 64ch;\n}\n.body-text strong { color: var(--fg); font-weight: 500; }\n\n/* ── Utility ─────────────────────────────────────────────────────────────── */\n.kbd {\n  font-family: var(--f-mono);\n  font-size: .85em;\n  padding: 2px 6px;\n  background: var(--bg-card);\n  border: 1px solid var(--border);\n  border-bottom-width: 2px;\n  border-radius: 4px;\n  color: var(--fg);\n}\n\n.mono { font-family: var(--f-mono); }\n.serif { font-family: var(--f-display); }\n\n.hairline { border-top: 1px solid var(--border); }\n\n/* ── Site chrome ─────────────────────────────────────────────────────────── */\n.site-chrome {\n  position: sticky;\n  top: 0;\n  z-index: 100;\n  display: flex;\n  align-items: center;\n  gap: var(--s-4);\n  padding: 12px clamp(20px, 4vw, 48px);\n  background: color-mix(in oklch, var(--bg) 88%, transparent);\n  backdrop-filter: blur(20px) saturate(140%);\n  -webkit-backdrop-filter: blur(20px) saturate(140%);\n  border-bottom: 1px solid var(--border);\n}\n.site-chrome .logo { flex: 0 0 auto; }\n.site-chrome nav {\n  display: flex;\n  gap: 2px;\n  align-items: center;\n  margin-left: auto;\n}\n.site-chrome nav a {\n  font-family: var(--f-mono);\n  font-size: 11px;\n  letter-spacing: .04em;\n  text-transform: uppercase;\n  color: var(--fg-2);\n  padding: 6px 10px;\n  border-radius: var(--r-2);\n}\n.site-chrome nav a:hover { background: var(--bg-2); color: var(--fg); }\n\n.lang-pill {\n  display: inline-flex;\n  border: 1px solid var(--border);\n  border-radius: var(--r-pill);\n  overflow: hidden;\n  font-family: var(--f-mono);\n  font-size: 10px;\n  letter-spacing: .08em;\n  background: var(--bg);\n}\n.lang-pill button {\n  appearance: none;\n  background: transparent;\n  border: 0;\n  padding: 5px 10px;\n  color: var(--fg-2);\n  cursor: pointer;\n  text-transform: uppercase;\n}\n.lang-pill button[aria-pressed=\"true\"] {\n  background: var(--ink);\n  color: var(--paper);\n}\n:root[data-theme=\"dark\"] .lang-pill button[aria-pressed=\"true\"] {\n  background: var(--primary);\n  color: var(--on-primary);\n}\n\n/* ── Cover (Chapter 0) ───────────────────────────────────────────────────── */\n.cover {\n  min-height: calc(100vh - 60px);\n  padding: clamp(40px, 6vw, 80px) clamp(28px, 6vw, 96px) clamp(40px, 6vw, 80px);\n  display: grid;\n  grid-template-rows: auto 1fr auto;\n  gap: var(--s-12);\n  position: relative;\n  overflow: hidden;\n}\n.cover-meta {\n  display: flex;\n  justify-content: space-between;\n  align-items: baseline;\n  gap: var(--s-6);\n  font-family: var(--f-mono);\n  font-size: 11px;\n  letter-spacing: .12em;\n  text-transform: uppercase;\n  color: var(--fg-3);\n}\n.cover-meta .meta-block { display: flex; flex-direction: column; gap: 2px; }\n.cover-meta .meta-block b { color: var(--fg); font-weight: 500; letter-spacing: .12em; }\n\n.cover-display {\n  align-self: center;\n  display: grid;\n  grid-template-columns: 1fr;\n  gap: var(--s-6);\n  position: relative;\n  z-index: 2;\n}\n.cover h1 {\n  font-family: var(--f-display);\n  font-weight: 400;\n  font-size: clamp(72px, 14vw, 220px);\n  line-height: .88;\n  letter-spacing: -0.035em;\n  margin: 0;\n  color: var(--fg);\n}\n.cover h1 .amp { font-style: italic; color: var(--primary); font-weight: 400; }\n.cover h1 .stroke {\n  -webkit-text-stroke: 1.5px var(--fg);\n  color: transparent;\n  font-style: italic;\n}\n.cover-sub {\n  display: flex;\n  justify-content: space-between;\n  align-items: flex-end;\n  gap: var(--s-8);\n  margin-top: var(--s-6);\n}\n.cover-tagline {\n  font-family: var(--f-display);\n  font-style: italic;\n  font-size: clamp(20px, 2vw, 28px);\n  line-height: 1.3;\n  max-width: 28ch;\n  color: var(--fg-2);\n  margin: 0;\n}\n\n.cover-foot {\n  display: flex;\n  justify-content: space-between;\n  align-items: end;\n  gap: var(--s-6);\n  font-family: var(--f-mono);\n  font-size: 11px;\n  letter-spacing: .12em;\n  text-transform: uppercase;\n  color: var(--fg-3);\n}\n\n/* Lattice weave pattern (the \"fabric\") */\n.weave-bg {\n  position: absolute;\n  inset: 0;\n  pointer-events: none;\n  opacity: .35;\n  z-index: 1;\n}\n:root[data-theme=\"dark\"] .weave-bg { opacity: .25; }\n\n/* ── Grid pieces ─────────────────────────────────────────────────────────── */\n.two-col {\n  display: grid;\n  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);\n  gap: clamp(32px, 5vw, 80px);\n  align-items: start;\n}\n.two-col.flip { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); }\n@media (max-width: 880px) {\n  .two-col, .two-col.flip { grid-template-columns: 1fr; }\n}\n\n.grid-3 {\n  display: grid;\n  grid-template-columns: repeat(3, minmax(0, 1fr));\n  gap: var(--s-4);\n}\n.grid-4 {\n  display: grid;\n  grid-template-columns: repeat(4, minmax(0, 1fr));\n  gap: var(--s-4);\n}\n@media (max-width: 880px) {\n  .grid-3 { grid-template-columns: repeat(2, 1fr); }\n  .grid-4 { grid-template-columns: repeat(2, 1fr); }\n}\n\n/* ── Color swatches ──────────────────────────────────────────────────────── */\n.swatch-stack { display: flex; flex-direction: column; gap: var(--s-2); }\n\n.swatch {\n  position: relative;\n  border-radius: var(--r-3);\n  padding: var(--s-4) var(--s-5);\n  min-height: 130px;\n  display: flex;\n  flex-direction: column;\n  justify-content: space-between;\n  font-family: var(--f-mono);\n  font-size: 11px;\n  letter-spacing: .04em;\n  border: 1px solid transparent;\n  box-shadow: var(--shadow-1);\n}\n.swatch.is-light { color: var(--ink); border-color: rgba(19,17,15,.08); }\n.swatch.is-dark  { color: #F5F1E9; }\n.swatch .role {\n  text-transform: uppercase;\n  letter-spacing: .14em;\n  font-size: 10px;\n  opacity: .7;\n}\n.swatch .name {\n  font-family: var(--f-display);\n  font-size: 22px;\n  font-style: italic;\n  letter-spacing: -0.01em;\n  line-height: 1;\n  text-transform: none;\n  margin-top: 2px;\n}\n.swatch .hex {\n  font-size: 11px;\n  letter-spacing: .04em;\n  display: flex;\n  justify-content: space-between;\n  opacity: .85;\n}\n\n.scale-row {\n  display: grid;\n  grid-template-columns: 100px 1fr;\n  gap: var(--s-3);\n  align-items: center;\n}\n.scale-row .label {\n  font-family: var(--f-mono);\n  font-size: 11px;\n  text-transform: uppercase;\n  letter-spacing: .1em;\n  color: var(--fg-2);\n}\n.scale-strip {\n  display: grid;\n  grid-template-columns: repeat(10, 1fr);\n  border-radius: var(--r-2);\n  overflow: hidden;\n  border: 1px solid var(--border);\n}\n.scale-strip > div {\n  aspect-ratio: 1.2 / 1;\n  display: flex;\n  align-items: flex-end;\n  justify-content: flex-start;\n  padding: 6px 6px;\n  font-family: var(--f-mono);\n  font-size: 9px;\n  letter-spacing: .04em;\n}\n\n/* ── Type specimens ─────────────────────────────────────────────────────── */\n.type-specimen {\n  padding: var(--s-6) var(--s-6);\n  background: var(--bg-card);\n  border: 1px solid var(--border);\n  border-radius: var(--r-3);\n}\n.type-specimen + .type-specimen { margin-top: var(--s-4); }\n.type-meta {\n  display: flex;\n  justify-content: space-between;\n  gap: var(--s-6);\n  font-family: var(--f-mono);\n  font-size: 10px;\n  letter-spacing: .12em;\n  text-transform: uppercase;\n  color: var(--fg-3);\n  margin-bottom: var(--s-3);\n}\n.type-meta b { color: var(--fg); font-weight: 500; }\n\n.type-show {\n  line-height: 1.06;\n  letter-spacing: -0.02em;\n  margin: 0;\n  padding-bottom: var(--s-2);\n}\n\n.type-scale {\n  display: flex;\n  flex-direction: column;\n  gap: var(--s-2);\n  border-top: 1px solid var(--border);\n  padding-top: var(--s-4);\n  margin-top: var(--s-4);\n}\n.type-scale .row {\n  display: grid;\n  grid-template-columns: 56px 1fr 80px;\n  align-items: baseline;\n  gap: var(--s-4);\n}\n.type-scale .row .px {\n  font-family: var(--f-mono);\n  font-size: 10px;\n  color: var(--fg-3);\n  letter-spacing: .1em;\n}\n.type-scale .row .specimen { line-height: 1.1; }\n\n/* ── Logo / mark ─────────────────────────────────────────────────────────── */\n.logo {\n  display: inline-flex;\n  align-items: center;\n  gap: 10px;\n  color: var(--fg);\n}\n.logo .mark { width: 24px; height: 24px; }\n.logo .word {\n  font-family: var(--f-display);\n  font-size: 22px;\n  letter-spacing: -0.01em;\n  line-height: 1;\n  font-style: italic;\n}\n\n.logo-card {\n  background: var(--bg-card);\n  border: 1px solid var(--border);\n  border-radius: var(--r-3);\n  padding: var(--s-8);\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  min-height: 180px;\n  position: relative;\n  overflow: hidden;\n}\n.logo-card .lbl {\n  position: absolute;\n  top: 12px;\n  left: 14px;\n  font-family: var(--f-mono);\n  font-size: 10px;\n  letter-spacing: .14em;\n  text-transform: uppercase;\n  color: var(--fg-3);\n}\n.logo-card.inverse { background: var(--ink); color: var(--paper); }\n.logo-card.inverse .lbl { color: rgba(245,241,233,.55); }\n.logo-card.ember { background: var(--primary); color: var(--on-primary); }\n.logo-card.ember .lbl { color: rgba(255,255,255,.7); }\n\n/* ── Components surfaces ─────────────────────────────────────────────────── */\n.surface {\n  background: var(--bg-card);\n  border: 1px solid var(--border);\n  border-radius: var(--r-3);\n  padding: var(--s-5);\n}\n\n.btn {\n  appearance: none;\n  display: inline-flex;\n  align-items: center;\n  gap: 8px;\n  font-family: var(--f-sans);\n  font-size: 14px;\n  font-weight: 500;\n  line-height: 1;\n  padding: 11px 16px;\n  border-radius: var(--r-2);\n  border: 1px solid transparent;\n  cursor: pointer;\n  transition: transform .08s ease, background .15s, border-color .15s;\n}\n.btn:active { transform: translateY(1px); }\n.btn--primary {\n  background: var(--primary);\n  color: var(--on-primary);\n  box-shadow: 0 1px 0 rgba(255,255,255,.25) inset, 0 1px 2px rgba(220,67,24,.3);\n}\n.btn--primary:hover { background: color-mix(in oklch, var(--primary), black 8%); }\n.btn--secondary {\n  background: var(--bg-elev);\n  color: var(--fg);\n  border-color: var(--border-strong);\n}\n.btn--secondary:hover { background: var(--bg-2); }\n.btn--ghost {\n  background: transparent;\n  color: var(--fg);\n}\n.btn--ghost:hover { background: var(--bg-2); }\n.btn--mono {\n  font-family: var(--f-mono);\n  font-size: 12px;\n  letter-spacing: .04em;\n  text-transform: lowercase;\n}\n\n.badge {\n  display: inline-flex;\n  align-items: center;\n  gap: 6px;\n  font-family: var(--f-mono);\n  font-size: 11px;\n  letter-spacing: .04em;\n  padding: 3px 9px;\n  border-radius: var(--r-pill);\n  background: var(--bg-2);\n  color: var(--fg-2);\n  border: 1px solid var(--border);\n  text-transform: lowercase;\n}\n.badge--ok    { background: color-mix(in oklch, var(--thread), transparent 80%); color: var(--thread); border-color: color-mix(in oklch, var(--thread), transparent 60%); }\n.badge--warn  { background: color-mix(in oklch, var(--spark), transparent 80%); color: color-mix(in oklch, var(--spark), black 25%); border-color: color-mix(in oklch, var(--spark), transparent 60%); }\n.badge--err   { background: color-mix(in oklch, var(--rust), transparent 82%); color: var(--rust); border-color: color-mix(in oklch, var(--rust), transparent 65%); }\n.badge--ember { background: color-mix(in oklch, var(--primary), transparent 85%); color: var(--primary); border-color: color-mix(in oklch, var(--primary), transparent 65%); }\n.badge .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }\n\n/* ── Code block ──────────────────────────────────────────────────────────── */\n.code {\n  font-family: var(--f-mono);\n  font-size: 13px;\n  line-height: 1.6;\n  background: var(--ink);\n  color: #E8E2D4;\n  border-radius: var(--r-3);\n  padding: 18px 20px;\n  position: relative;\n  overflow: auto;\n  border: 1px solid #2A2521;\n}\n:root[data-theme=\"dark\"] .code { background: #07060500; background: #0A0907; border-color: #1F1B17; }\n.code .c-key { color: #E8B100; }\n.code .c-str { color: #6FBC9C; }\n.code .c-com { color: #7F7669; font-style: italic; }\n.code .c-em  { color: #FF6A33; }\n.code .c-num { color: #D89466; }\n.code .c-fn  { color: #F5F1E9; }\n.code .prompt { color: #FF6A33; user-select: none; }\n\n.code .top {\n  display: flex;\n  justify-content: space-between;\n  font-family: var(--f-mono);\n  font-size: 10px;\n  letter-spacing: .14em;\n  text-transform: uppercase;\n  color: #7F7669;\n  border-bottom: 1px solid #1F1B17;\n  margin: -8px -4px 12px;\n  padding: 0 4px 8px;\n}\n\n/* ── Status / telemetry pieces ───────────────────────────────────────────── */\n.svc-row {\n  display: grid;\n  grid-template-columns: 24px 1fr 90px 90px 110px 100px;\n  align-items: center;\n  gap: var(--s-3);\n  padding: 12px 14px;\n  border-bottom: 1px solid var(--border);\n  font-family: var(--f-mono);\n  font-size: 12px;\n}\n.svc-row:last-child { border-bottom: 0; }\n.svc-row .svc-name { font-family: var(--f-sans); font-weight: 500; font-size: 13px; color: var(--fg); letter-spacing: -0.005em; }\n.svc-row .svc-name small { display: block; color: var(--fg-3); font-weight: 400; font-size: 11px; }\n.svc-row .pulse {\n  width: 8px; height: 8px; border-radius: 50%;\n  background: var(--thread);\n  box-shadow: 0 0 0 0 color-mix(in oklch, var(--thread), transparent 50%);\n  animation: pulse 1.8s infinite;\n}\n.svc-row .pulse.warn { background: var(--spark); box-shadow: 0 0 0 0 color-mix(in oklch, var(--spark), transparent 50%); }\n.svc-row .pulse.err  { background: var(--rust); animation: blink 1s infinite step-end; }\n.svc-row .pulse.idle { background: var(--mute); animation: none; }\n@keyframes pulse {\n  0% { box-shadow: 0 0 0 0 color-mix(in oklch, var(--thread), transparent 30%); }\n  70% { box-shadow: 0 0 0 8px color-mix(in oklch, var(--thread), transparent 100%); }\n  100% { box-shadow: 0 0 0 0 color-mix(in oklch, var(--thread), transparent 100%); }\n}\n@keyframes blink { 50% { opacity: .3; } }\n\n.bars {\n  display: flex;\n  align-items: flex-end;\n  gap: 2px;\n  height: 22px;\n}\n.bars i {\n  width: 3px;\n  background: var(--fg-2);\n  border-radius: 1px;\n  animation: bar 1.6s ease-in-out infinite;\n}\n.bars i:nth-child(2) { animation-delay: .1s; }\n.bars i:nth-child(3) { animation-delay: .2s; }\n.bars i:nth-child(4) { animation-delay: .3s; }\n.bars i:nth-child(5) { animation-delay: .4s; }\n.bars i:nth-child(6) { animation-delay: .5s; }\n.bars i:nth-child(7) { animation-delay: .6s; }\n.bars i:nth-child(8) { animation-delay: .7s; }\n.bars i:nth-child(9) { animation-delay: .8s; }\n@keyframes bar {\n  0%, 100% { height: 30%; }\n  50% { height: 100%; }\n}\n\n.bars.tone-ok i  { background: var(--thread); }\n.bars.tone-warn i{ background: var(--spark); }\n.bars.tone-ember i { background: var(--primary); }\n\n/* ── Icon grid ───────────────────────────────────────────────────────────── */\n.icon-tile {\n  background: var(--bg-card);\n  border: 1px solid var(--border);\n  border-radius: var(--r-3);\n  padding: var(--s-5);\n  display: flex;\n  flex-direction: column;\n  align-items: flex-start;\n  gap: var(--s-3);\n  min-height: 140px;\n  position: relative;\n  transition: transform .15s, box-shadow .15s, border-color .15s;\n}\n.icon-tile:hover {\n  transform: translateY(-2px);\n  border-color: var(--border-strong);\n  box-shadow: var(--shadow-2);\n}\n.icon-tile svg { width: 28px; height: 28px; color: var(--fg); }\n.icon-tile .nm {\n  font-family: var(--f-sans);\n  font-size: 13px;\n  font-weight: 500;\n  color: var(--fg);\n}\n.icon-tile .nm small {\n  display: block;\n  font-family: var(--f-mono);\n  font-size: 10px;\n  letter-spacing: .08em;\n  color: var(--fg-3);\n  text-transform: uppercase;\n  font-weight: 400;\n  margin-top: 2px;\n}\n.icon-tile .ember-dot {\n  position: absolute;\n  top: 12px;\n  right: 14px;\n  width: 4px; height: 4px;\n  border-radius: 50%;\n  background: var(--primary);\n  opacity: .8;\n}\n\n/* ── Voice / tone callouts ───────────────────────────────────────────────── */\n.voice-card {\n  display: grid;\n  grid-template-columns: 1fr 1fr;\n  border-radius: var(--r-3);\n  overflow: hidden;\n  border: 1px solid var(--border);\n}\n.voice-card > div {\n  padding: var(--s-5) var(--s-6);\n}\n.voice-card .do {\n  background: var(--bg-card);\n  border-right: 1px solid var(--border);\n}\n.voice-card .dont {\n  background: color-mix(in oklch, var(--rust), var(--bg) 88%);\n}\n.voice-card h4 {\n  font-family: var(--f-mono);\n  font-size: 11px;\n  letter-spacing: .14em;\n  text-transform: uppercase;\n  margin: 0 0 var(--s-2);\n  display: flex;\n  align-items: center;\n  gap: 8px;\n}\n.voice-card .do h4 { color: var(--thread); }\n.voice-card .dont h4 { color: var(--rust); }\n.voice-card p {\n  font-family: var(--f-display);\n  font-size: 22px;\n  line-height: 1.25;\n  margin: 0;\n  color: var(--fg);\n}\n@media (max-width: 720px) {\n  .voice-card { grid-template-columns: 1fr; }\n  .voice-card .do { border-right: 0; border-bottom: 1px solid var(--border); }\n}\n\n/* ── Landing app preview ─────────────────────────────────────────────────── */\n.app-frame {\n  background: var(--bg-elev);\n  border: 1px solid var(--border);\n  border-radius: var(--r-4);\n  overflow: hidden;\n  box-shadow: var(--shadow-2);\n}\n.app-frame .app-bar {\n  display: flex;\n  align-items: center;\n  gap: 10px;\n  padding: 10px 14px;\n  border-bottom: 1px solid var(--border);\n  background: var(--bg-2);\n}\n.app-frame .traffic { display: flex; gap: 6px; }\n.app-frame .traffic i { width: 10px; height: 10px; border-radius: 50%; background: var(--border-strong); }\n.app-frame .app-url {\n  flex: 1;\n  font-family: var(--f-mono);\n  font-size: 11px;\n  color: var(--fg-3);\n  text-align: center;\n}\n.app-frame .body {\n  display: grid;\n  grid-template-columns: 220px 1fr;\n}\n.app-frame .side {\n  padding: var(--s-4);\n  border-right: 1px solid var(--border);\n  background: var(--bg-2);\n  min-height: 440px;\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n}\n.app-frame .side .sec {\n  font-family: var(--f-mono);\n  font-size: 10px;\n  letter-spacing: .14em;\n  text-transform: uppercase;\n  color: var(--fg-3);\n  padding: 14px 10px 6px;\n}\n.app-frame .side a {\n  display: flex; align-items: center; gap: 10px;\n  padding: 7px 10px;\n  border-radius: var(--r-2);\n  font-size: 13px;\n  color: var(--fg-2);\n}\n.app-frame .side a.active { background: var(--bg-elev); color: var(--fg); box-shadow: var(--shadow-1); }\n.app-frame .side a svg { width: 14px; height: 14px; }\n.app-frame .main {\n  padding: var(--s-6);\n  display: flex;\n  flex-direction: column;\n  gap: var(--s-5);\n}\n\n.metric-grid {\n  display: grid;\n  grid-template-columns: repeat(4, 1fr);\n  gap: var(--s-3);\n}\n.metric {\n  background: var(--bg-card);\n  border: 1px solid var(--border);\n  border-radius: var(--r-3);\n  padding: 14px 16px;\n}\n.metric .lbl {\n  font-family: var(--f-mono);\n  font-size: 10px;\n  letter-spacing: .14em;\n  text-transform: uppercase;\n  color: var(--fg-3);\n}\n.metric .num {\n  font-family: var(--f-display);\n  font-size: 38px;\n  line-height: 1;\n  margin-top: 6px;\n  color: var(--fg);\n  letter-spacing: -0.02em;\n}\n.metric .num small { font-size: 18px; color: var(--fg-3); letter-spacing: 0; }\n.metric .delta {\n  font-family: var(--f-mono);\n  font-size: 11px;\n  color: var(--thread);\n  margin-top: 4px;\n}\n.metric .delta.down { color: var(--rust); }\n\n/* ── CLI terminal aesthetic ──────────────────────────────────────────────── */\n.terminal {\n  background: var(--ink);\n  color: #E8E2D4;\n  font-family: var(--f-mono);\n  font-size: 12.5px;\n  line-height: 1.65;\n  border-radius: var(--r-3);\n  border: 1px solid #1F1B17;\n  overflow: hidden;\n}\n.terminal .tbar {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  padding: 10px 14px;\n  border-bottom: 1px solid #1F1B17;\n  background: #15110D;\n  font-size: 11px;\n  color: #7F7669;\n  letter-spacing: .1em;\n}\n.terminal .tbar .traffic i { background: #3A332C; }\n.terminal .tbar .tab { color: #E8E2D4; }\n.terminal .body { padding: 16px 18px 20px; }\n.terminal .prompt { color: #FF6A33; }\n.terminal .path   { color: #6FBC9C; }\n.terminal .branch { color: #E8B100; }\n.terminal .ok     { color: #6FBC9C; }\n.terminal .warn   { color: #E8B100; }\n.terminal .err    { color: #E45A40; }\n.terminal .dim    { color: #7F7669; }\n.terminal .cursor { display:inline-block; width:7px; height:14px; vertical-align:-2px; background:#E8E2D4; animation: blink2 1.1s steps(1) infinite; }\n@keyframes blink2 { 50% { opacity: 0; } }\n\n/* ── Manifesto large quote ──────────────────────────────────────────────── */\n.manifesto {\n  font-family: var(--f-display);\n  font-weight: 400;\n  font-size: clamp(36px, 5vw, 72px);\n  line-height: 1.08;\n  letter-spacing: -0.02em;\n  margin: 0;\n  text-wrap: balance;\n}\n.manifesto em { font-style: italic; color: var(--primary); }\n.manifesto .dim { color: var(--fg-3); }\n\n/* ── TOC ─────────────────────────────────────────────────────────────────── */\n.toc {\n  display: grid;\n  grid-template-columns: repeat(2, 1fr);\n  gap: var(--s-2) clamp(40px, 6vw, 96px);\n  border-top: 1px solid var(--border);\n  border-bottom: 1px solid var(--border);\n  padding: var(--s-6) 0;\n}\n.toc-item {\n  display: grid;\n  grid-template-columns: 48px 1fr auto;\n  gap: var(--s-3);\n  align-items: baseline;\n  padding: 12px 0;\n  border-bottom: 1px solid var(--border);\n  font-size: 15px;\n  color: var(--fg);\n}\n.toc-item:last-child, .toc-item:nth-last-child(2) { border-bottom: 0; }\n.toc-item .num {\n  font-family: var(--f-mono);\n  font-size: 11px;\n  letter-spacing: .12em;\n  color: var(--fg-3);\n}\n.toc-item .ttl {\n  font-family: var(--f-display);\n  font-size: 22px;\n  line-height: 1.1;\n  letter-spacing: -0.01em;\n}\n.toc-item .pg {\n  font-family: var(--f-mono);\n  font-size: 11px;\n  letter-spacing: .12em;\n  color: var(--fg-3);\n}\n@media (max-width: 720px) { .toc { grid-template-columns: 1fr; } }\n\n/* ── Logo construction grid ─────────────────────────────────────────────── */\n.constr {\n  background:\n    linear-gradient(var(--border) 1px, transparent 1px) 0 0/14px 14px,\n    linear-gradient(90deg, var(--border) 1px, transparent 1px) 0 0/14px 14px,\n    var(--bg-card);\n  border: 1px solid var(--border);\n  border-radius: var(--r-3);\n  padding: var(--s-8);\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  min-height: 280px;\n  position: relative;\n}\n.constr .crosshair {\n  position: absolute;\n  top: 14px; right: 14px;\n  font-family: var(--f-mono);\n  font-size: 10px;\n  letter-spacing: .14em;\n  text-transform: uppercase;\n  color: var(--fg-3);\n}\n\n/* ── Misuse ─────────────────────────────────────────────────────────────── */\n.misuse {\n  position: relative;\n  background: var(--bg-card);\n  border: 1px solid var(--border);\n  border-radius: var(--r-3);\n  padding: var(--s-6);\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  min-height: 140px;\n  overflow: hidden;\n}\n.misuse .x {\n  position: absolute;\n  top: 10px; right: 12px;\n  color: var(--rust);\n  font-family: var(--f-mono);\n  font-size: 14px;\n}\n.misuse .lbl {\n  position: absolute;\n  bottom: 10px;\n  left: 14px;\n  font-family: var(--f-mono);\n  font-size: 10px;\n  letter-spacing: .12em;\n  text-transform: uppercase;\n  color: var(--fg-3);\n}\n\n/* ── ReBAC graph mini ───────────────────────────────────────────────────── */\n.graph {\n  background: var(--bg-card);\n  border: 1px solid var(--border);\n  border-radius: var(--r-3);\n  padding: var(--s-6);\n  position: relative;\n  min-height: 320px;\n}\n\n/* ── Color spec lists ───────────────────────────────────────────────────── */\n.semantic-row {\n  display: grid;\n  grid-template-columns: 36px 90px 1fr 110px;\n  gap: var(--s-4);\n  align-items: center;\n  padding: 12px 0;\n  border-bottom: 1px solid var(--border);\n  font-size: 13px;\n}\n.semantic-row:last-child { border-bottom: 0; }\n.semantic-row .chip { width: 28px; height: 28px; border-radius: var(--r-2); border: 1px solid var(--border); }\n.semantic-row .nm { font-family: var(--f-display); font-style: italic; font-size: 20px; color: var(--fg); }\n.semantic-row .use { color: var(--fg-2); }\n.semantic-row .val { font-family: var(--f-mono); font-size: 12px; color: var(--fg-3); text-align: right; }\n\n/* ── Spacing visual ─────────────────────────────────────────────────────── */\n.spacing-row {\n  display: grid;\n  grid-template-columns: 60px 1fr 100px;\n  align-items: center;\n  gap: var(--s-3);\n  padding: 8px 0;\n  border-bottom: 1px solid var(--border);\n}\n.spacing-row .nm { font-family: var(--f-mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--fg-2); }\n.spacing-row .bar { height: 22px; background: var(--primary); border-radius: 3px; opacity: .8; }\n.spacing-row .val { font-family: var(--f-mono); font-size: 11px; color: var(--fg-3); text-align: right; }\n\n/* ── Footer  ────────────────────────────────────────────────────────────── */\n.colophon {\n  padding: var(--s-12) clamp(28px, 6vw, 96px);\n  background: var(--ink);\n  color: var(--paper);\n  font-family: var(--f-mono);\n  font-size: 12px;\n  letter-spacing: .04em;\n}\n.colophon h2 {\n  font-family: var(--f-display);\n  font-style: italic;\n  font-size: clamp(40px, 6vw, 84px);\n  line-height: 1;\n  letter-spacing: -0.02em;\n  margin: 0 0 var(--s-8);\n  color: var(--paper);\n  font-weight: 400;\n}\n.colophon h2 em { color: var(--ember-400); font-style: italic; }\n.colophon .grid {\n  display: grid;\n  grid-template-columns: repeat(4, 1fr);\n  gap: var(--s-6);\n  padding: var(--s-8) 0;\n  border-top: 1px solid #2A2521;\n}\n.colophon .grid h5 {\n  font-family: var(--f-mono);\n  font-size: 10px;\n  letter-spacing: .14em;\n  text-transform: uppercase;\n  color: #7F7669;\n  margin: 0 0 var(--s-3);\n  font-weight: 400;\n}\n.colophon .grid p { margin: 0; color: #E8E2D4; line-height: 1.7; }\n.colophon .grid p b { color: var(--paper); font-weight: 500; }\n@media (max-width: 720px) { .colophon .grid { grid-template-columns: 1fr 1fr; } }\n\n/* ── Section anchors for the chrome nav ─────────────────────────────────── */\n[id^=\"ch-\"] { scroll-margin-top: 70px; }\n\n/* ── Print niceties ─────────────────────────────────────────────────────── */\n@media print {\n  .site-chrome { display: none; }\n}\n<\u002Fstyle>\n<\u002Fhead>\n<body>\n  \n\n  <div id=\"root\"><\u002Fdiv>\n\n  <script src=\"b340795c-2e48-46df-a4c9-06c72c9daee2\" integrity=\"sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L\" crossorigin=\"anonymous\"><\u002Fscript>\n  <script src=\"89e872c2-7d08-40f0-980e-665fc2d9d2fb\" integrity=\"sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm\" crossorigin=\"anonymous\"><\u002Fscript>\n  <script src=\"53c1633a-e328-4d00-aa1c-e7899a916925\" integrity=\"sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y\" crossorigin=\"anonymous\"><\u002Fscript>\n\n  <script type=\"text/babel\" src=\"1694e37c-cbb6-41ad-906f-f1f70f22000f\"><\u002Fscript>\n  <script type=\"text/babel\" src=\"19cf13b2-b8f6-44d8-84e9-18a7e4ce4ae1\"><\u002Fscript>\n  <script type=\"text/babel\" src=\"f58a80da-fb79-4414-8b89-fc29af3ba228\"><\u002Fscript>\n  <script type=\"text/babel\" src=\"978d81f2-93f8-43fa-8c2b-b5c70274261e\"><\u002Fscript>\n  <script type=\"text/babel\" src=\"3ba656f2-0b8e-4a1c-ae5c-99aa08223010\"><\u002Fscript>\n  <script type=\"text/babel\" src=\"b5ff323e-d1fd-49b5-ba63-536a9e069454\"><\u002Fscript>\n\n\n<\u002Fbody><\u002Fhtml>"
   </script>
+<!-- ALFRED:BEGIN -->
+<section id="alfred-identity">
+<h2 class="brand-section-title">Alfred</h2>
+<p class="brand-section-lede">Forge's autonomous operator. A named persona inside the brand family, not a separate brand.</p>
+<div class="alfred-marks">
+<figure id="alfred-mark-fig"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" id="alfred-mark" role="img" aria-label="Alfred">
+  <defs>
+    <linearGradient id="alfred-ember-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F4A77E"/>
+      <stop offset="60%" stop-color="#DC4318"/>
+      <stop offset="100%" stop-color="#8A2509"/>
+    </linearGradient>
+  </defs>
+  <path d="M4 10 L12 13 L20 10 L20 14 L12 11 L4 14 Z" fill="#1A1614"/>
+  <circle cx="12" cy="12" r="2.4" fill="url(#alfred-ember-grad)"/>
+  <rect x="11.2" y="3.5" width="1.6" height="4.5" rx="0.6" fill="#1A1614"/>
+  <rect x="11.2" y="3.5" width="3.2" height="1.4" rx="0.4" fill="#1A1614"/>
+</svg>
+<figcaption>alfred-mark</figcaption></figure>
+<figure id="alfred-mark-mono-fig"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" id="alfred-mark-mono" role="img" aria-label="Alfred (monochrome)">
+  <path d="M4 10 L12 13 L20 10 L20 14 L12 11 L4 14 Z" fill="currentColor"/>
+  <circle cx="12" cy="12" r="2.4" fill="currentColor"/>
+  <rect x="11.2" y="3.5" width="1.6" height="4.5" rx="0.6" fill="currentColor"/>
+  <rect x="11.2" y="3.5" width="3.2" height="1.4" rx="0.4" fill="currentColor"/>
+</svg>
+<figcaption>alfred-mark-mono</figcaption></figure>
+<figure id="alfred-mark-working-fig"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" id="alfred-mark-working" role="img" aria-label="Alfred (working)">
+  <defs>
+    <linearGradient id="alfred-ember-grad-working" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F4A77E"/>
+      <stop offset="60%" stop-color="#DC4318"/>
+      <stop offset="100%" stop-color="#8A2509"/>
+    </linearGradient>
+    <style>
+      @media (prefers-reduced-motion: no-preference) {
+        #alfred-working-ember { animation: alfredEmberPulse 2.4s ease-in-out infinite; transform-origin: 12px 12px; }
+        #alfred-working-bowtie { animation: alfredBowtieSway 4.8s ease-in-out infinite; transform-origin: 12px 12px; }
+      }
+      @keyframes alfredEmberPulse {
+        0%, 100% { transform: scale(0.96); opacity: 0.9; }
+        50%      { transform: scale(1.06); opacity: 1.0; }
+      }
+      @keyframes alfredBowtieSway {
+        0%, 100% { transform: rotate(0deg); }
+        50%      { transform: rotate(2deg); }
+      }
+    </style>
+  </defs>
+  <g id="alfred-working-bowtie">
+    <path d="M4 10 L12 13 L20 10 L20 14 L12 11 L4 14 Z" fill="#1A1614"/>
+  </g>
+  <circle id="alfred-working-ember" cx="12" cy="12" r="2.4" fill="url(#alfred-ember-grad-working)"/>
+  <rect x="11.2" y="3.5" width="1.6" height="4.5" rx="0.6" fill="#1A1614"/>
+  <rect x="11.2" y="3.5" width="3.2" height="1.4" rx="0.4" fill="#1A1614"/>
+</svg>
+<figcaption>alfred-mark-working</figcaption></figure>
+</div>
+<div class="alfred-tokens"><pre class="brand-tokens">
+--alfred-ink         #1A1614 / #F0E8D9 (dark)
+--alfred-paper       #FBF6EE / #15110E (dark)
+--alfred-ember       #B7330F / #FF6A33 (dark)
+--alfred-ember-soft  #F4A77E / #8A2509 (dark)
+--alfred-thread      #4F8C76 / #6FBC9C (dark)
+--alfred-border      #D9D2C5 / #2D2823 (dark)
+--alfred-anim-working 2400ms cubic-bezier(.45,.05,.55,.95)
+--alfred-anim-dock-in  280ms cubic-bezier(.16,1,.3,1)
+</pre></div>
+<details><summary>Persona</summary><pre>
+# Alfred — Persona and Voice
+
+Alfred is the Forge platform's autonomous operator. The dock is a calm,
+single-purpose surface. Every line of Alfred-authored copy reads like a brief
+status report from a competent colleague, not an assistant trying to sell its
+helpfulness.
+
+## Voice rules
+
+These are enforced by `scripts/lint-alfred-copy.mjs` over any `alfred.*` or
+`alfred_*` translation key in `portal/src/i18n/dictionary.ts`. Lint failures
+block CI.
+
+### Rule 1 — No emoji
+
+Alfred uses the criticality glyphs (see below). Emoji read as informal and
+break voice consistency across themes.
+
+| | ES | EN |
+| --- | --- | --- |
+| Do | "Plan listo, esperando aprobación." | "Plan ready, awaiting approval." |
+| Don't | "Plan listo 🎉" | "Plan ready 🎉" |
+| Do | "Cancelado por presupuesto." | "Cancelled — over budget." |
+| Don't | "Cancelado por presupuesto 💸" | "Cancelled — over budget 💸" |
+| Do | "Sesión completada." | "Session completed." |
+| Don't | "Sesión completada ✅" | "Session completed ✅" |
+
+### Rule 2 — No exclamation marks
+
+Alfred is not enthusiastic. Restraint and certainty are the brand.
+
+| | ES | EN |
+| --- | --- | --- |
+| Do | "PR listo para revisión." | "PR ready for review." |
+| Don't | "PR listo!" | "PR ready!" |
+| Do | "Despliegue verde." | "Deploy is green." |
+| Don't | "Despliegue verde!" | "Deploy is green!" |
+| Do | "Error en CI — pausa para diagnosticar." | "CI failed — pausing to diagnose." |
+| Don't | "Error en CI!" | "CI failed!" |
+
+### Rule 3 — No first-person plural
+
+Alfred is one named operator. Not a team. Not a brand voice. Avoid
+"we / us / our / nosotros / nuestro" entirely.
+
+| | ES | EN |
+| --- | --- | --- |
+| Do | "Voy a desplegar después de la aprobación." | "I will deploy once approved." |
+| Don't | "Vamos a desplegar después de la aprobación." | "We will deploy once approved." |
+| Do | "Mi sugerencia: usar `manual-prod`." | "My suggestion: use `manual-prod`." |
+| Don't | "Nuestra sugerencia: usar `manual-prod`." | "Our suggestion: use `manual-prod`." |
+| Do | "Voy a esperar la aprobación." | "I will wait for approval." |
+| Don't | "Vamos a esperar la aprobación." | "Let's wait for approval." |
+
+### Rule 4 — ES/EN parity
+
+Every `alfred.*` / `alfred_*` key must exist in both dictionaries with a
+faithful translation. The lint script fails when a key is missing in either.
+
+## Criticality glyphs
+
+The dock and Alfred-authored notifications use these monospace glyphs in lieu
+of color-only signaling, so screen readers and dark themes read identically:
+
+| Glyph | Meaning |
+| --- | --- |
+| `◆` | Succeeded |
+| `◇` | Running |
+| `◐` | Paused for approval or budget |
+| `○` | Skipped or cancelled |
+| `◆◆` | Critical state (failed, aborted) |
+
+## Tone — quick checklist
+
+When in doubt, the answer is always: shorter, drier, less proud.
+
+- Lead with state (`Plan revised.`), not preamble (`I've taken a look and…`).
+- Reference the OpenSpec, run id or PR by id, never by adjective.
+- If you cannot do the thing, say *why* and *what would unblock you* in one
+  sentence.
+- Never apologize. Never thank the user. Never offer to "help".
+
+</pre></details>
+<details><summary>Motion</summary><pre>
+# Alfred — Motion Spec
+
+Motion is restrained. Alfred enters and leaves the user's view; it does not
+attract attention.
+
+## Dock-in / dock-out
+
+- Easing: `cubic-bezier(.16, 1, .3, 1)` (springy on entrance, no overshoot)
+- Duration: **280 ms** (token `--alfred-anim-dock-in`)
+- Direction: vertical, 8 px from below into final position
+- Opacity: 0 → 1 on the same curve
+
+```css
+@keyframes alfred-dock-in {
+  from { transform: translateY(8px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+```
+
+## Working state (mark)
+
+The working state pulses the ember and slowly sways the bowtie. The cycle is
+intentionally slow so the dock does not feel busy.
+
+- Ember: scale 0.96 → 1.06 → 0.96 over **2.4 s** (`--alfred-anim-working`)
+- Bowtie: rotate 0° → 2° → 0° over **4.8 s** (double the ember cycle)
+- Both curves: `ease-in-out`
+- Transform origin: centre of the 24×24 viewBox (12, 12)
+
+The animation lives **inside** `alfred-mark-working.svg` as CSS, not as JS or
+Lottie, so the asset works as a static drop-in `&lt;img src&gt;` and respects
+`prefers-reduced-motion` without portal-side wiring.
+
+## Reduced-motion fallback
+
+All Alfred animations gate on `@media (prefers-reduced-motion: no-preference)`.
+When reduced motion is preferred:
+
+- The working state renders as the still `alfred-mark.svg`.
+- The dock entrance skips the translate/opacity keyframes (the dock just
+  appears in place).
+- The pulse on the launcher button is suppressed.
+
+## What never animates
+
+- Status changes in the plan checklist — those rely on glyph swaps, not
+  animation, so they are accessible to AT.
+- Approval prompts — appearing inside a session must not feel celebratory.
+- Text content — Alfred never types into the transcript character by character.
+
+## Tokens
+
+| Token | Value |
+| --- | --- |
+| `--alfred-anim-working` | `2400ms cubic-bezier(.45,.05,.55,.95)` |
+| `--alfred-anim-dock-in` | `280ms  cubic-bezier(.16,1,.3,1)` |
+
+These live alongside the rest of the Alfred tokens in
+`portal/src/app/globals.css`.
+
+</pre></details>
+<details><summary>Do / Don't</summary><pre>
+# Alfred — Do / Don't Board
+
+Six paired examples of correct vs. incorrect Alfred usage. Each pair has a
+thumbnail SVG so the page also reads as a printable board.
+
+---
+
+## 1. Launcher position
+
+**Do** anchor the launcher to the bottom-right of the viewport, above the
+toast rail.
+
+&lt;svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 120"&gt;
+  &lt;rect width="200" height="120" fill="#F5F1E9" stroke="#D9D2C5"/&gt;
+  &lt;circle cx="180" cy="100" r="12" fill="#DC4318"/&gt;
+&lt;/svg&gt;
+
+**Don't** float the launcher in the centre or top of the viewport. It must not
+compete with primary navigation.
+
+&lt;svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 120"&gt;
+  &lt;rect width="200" height="120" fill="#F5F1E9" stroke="#D9D2C5"/&gt;
+  &lt;circle cx="100" cy="60" r="12" fill="#DC4318" opacity="0.4"/&gt;
+  &lt;line x1="80" y1="40" x2="120" y2="80" stroke="#B33620" stroke-width="2"/&gt;
+  &lt;line x1="120" y1="40" x2="80" y2="80" stroke="#B33620" stroke-width="2"/&gt;
+&lt;/svg&gt;
+
+---
+
+## 2. Mark colour
+
+**Do** use the ember gradient on light backgrounds and `currentColor` on
+fills sourced from text content.
+
+&lt;svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60"&gt;
+  &lt;defs&gt;
+    &lt;linearGradient id="g1" x1="0" y1="0" x2="0" y2="1"&gt;
+      &lt;stop offset="0%" stop-color="#F4A77E"/&gt;&lt;stop offset="100%" stop-color="#8A2509"/&gt;
+    &lt;/linearGradient&gt;
+  &lt;/defs&gt;
+  &lt;circle cx="30" cy="30" r="14" fill="url(#g1)"/&gt;
+&lt;/svg&gt;
+
+**Don't** apply hue shifts, drop shadows or duotone treatments to the mark.
+
+&lt;svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60"&gt;
+  &lt;circle cx="30" cy="30" r="14" fill="#5A92E8"/&gt;
+  &lt;line x1="14" y1="14" x2="46" y2="46" stroke="#B33620" stroke-width="2"/&gt;
+&lt;/svg&gt;
+
+---
+
+## 3. Copy persona
+
+**Do** report state. Drop the preamble.
+
+&gt; "Plan revised. Waiting for the deploy:prod approval."
+
+**Don't** preface every line with chatty preamble or enthusiastic praise.
+
+&gt; "Great question! I've thought about this and decided that, after consulting
+&gt;  the OpenSpec, we should probably revise the plan and wait for the deploy
+&gt;  approval — let me know if that works for you!"
+
+---
+
+## 4. Mark scale
+
+**Do** render the mark at 24×24 in dock chrome and 32×32 in the notebook hero.
+
+&lt;svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60"&gt;
+  &lt;rect x="6" y="6" width="24" height="24" fill="none" stroke="#13110F"/&gt;
+  &lt;rect x="6" y="32" width="32" height="32" fill="none" stroke="#13110F"/&gt;
+&lt;/svg&gt;
+
+**Don't** scale the mark below 18 px or above 48 px in product UI — the bowtie
+silhouette degrades outside that range.
+
+&lt;svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60"&gt;
+  &lt;rect x="6" y="6" width="8" height="8" fill="none" stroke="#B33620"/&gt;
+  &lt;rect x="16" y="6" width="48" height="48" fill="none" stroke="#B33620"/&gt;
+&lt;/svg&gt;
+
+---
+
+## 5. Motion budget
+
+**Do** keep working-state animation under 2.5 s per cycle and gate on
+`prefers-reduced-motion`.
+
+&lt;svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 30"&gt;
+  &lt;text x="2" y="20" font-family="JetBrains Mono" font-size="10" fill="#13110F"&gt;2.4s cycle · ease-in-out&lt;/text&gt;
+&lt;/svg&gt;
+
+**Don't** animate the dock entrance with bounce, overshoot or sound. Alfred is
+not a notification.
+
+&lt;svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 30"&gt;
+  &lt;text x="2" y="20" font-family="JetBrains Mono" font-size="10" fill="#B33620"&gt;bounce · overshoot · jingle&lt;/text&gt;
+&lt;/svg&gt;
+
+---
+
+## 6. Mark composition
+
+**Do** keep the ascender on the centre vertical axis — it is the "F." nod and
+must align with the bowtie centre.
+
+&lt;svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60"&gt;
+  &lt;rect x="28" y="8" width="4" height="14" fill="#13110F"/&gt;
+  &lt;rect x="28" y="8" width="9" height="3" fill="#13110F"/&gt;
+  &lt;path d="M14 28 L30 36 L46 28 L46 38 L30 30 L14 38 Z" fill="#13110F"/&gt;
+&lt;/svg&gt;
+
+**Don't** offset the ascender, rotate the bowtie, or detach the ember from
+the bowtie centre.
+
+&lt;svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60"&gt;
+  &lt;rect x="40" y="8" width="4" height="14" fill="#B33620"/&gt;
+  &lt;path d="M14 32 L30 28 L46 32 L46 42 L30 38 L14 42 Z" fill="#B33620" transform="rotate(8 30 36)"/&gt;
+&lt;/svg&gt;
+
+</pre></details>
+</section>
+<!-- ALFRED:END -->
 </body>
 </html>

@@ -60,6 +60,18 @@ class Settings(BaseSettings):
     # flip to `enabled` to surface the /v1/intent/* routes.
     alfred_dialogue_api: str = Field(default="disabled", alias="ALFRED_DIALOGUE_API")
 
+    # Agent-mode (alfred-agent-mode-orchestrator). Defaults off; flip to enable
+    # the /v1/agent-mode/* routes. Workspace-level dock_enabled flag is checked
+    # separately at request time.
+    alfred_agent_mode_enabled: bool = Field(default=False, alias="ALFRED_AGENT_MODE_ENABLED")
+    workflow_runtime_url: str = Field(default="http://localhost:8093", alias="WORKFLOW_RUNTIME_URL")
+    agent_mode_preset_dir: str = Field(
+        default="/var/lib/forge/alfred/presets", alias="ALFRED_PRESET_DIR"
+    )
+    agent_mode_default_model: str = Field(
+        default="gemini-1.5-pro", alias="ALFRED_AGENT_MODE_MODEL"
+    )
+
 
 def load_settings() -> Settings:
     return Settings()

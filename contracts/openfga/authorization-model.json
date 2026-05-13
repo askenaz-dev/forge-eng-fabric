@@ -80,6 +80,8 @@
         "can_view": { "computedUserset": { "object": "", "relation": "viewer" } },
         "can_edit": { "computedUserset": { "object": "", "relation": "editor" } },
         "can_admin": { "computedUserset": { "object": "", "relation": "owner" } },
+        "can_alfred_agent_mode_run": { "computedUserset": { "object": "", "relation": "editor" } },
+        "can_alfred_agent_mode_cancel": { "computedUserset": { "object": "", "relation": "editor" } },
         "assignable_developer": { "this": {} }
       },
       "metadata": {

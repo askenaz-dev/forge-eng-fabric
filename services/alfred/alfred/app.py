@@ -11,7 +11,14 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request, Res
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
 
+from alfred.agent_mode.budget import BudgetProbe as AgentBudgetProbe
+from alfred.agent_mode.events import EventEmitter as AgentEventEmitter, LogSink
+from alfred.agent_mode.executor import ExecutorDeps as AgentExecutorDeps
+from alfred.agent_mode.router import build_router as build_agent_mode_router
+from alfred.agent_mode.store import AgentModeStore
+from alfred.agent_mode.workflow_client import WorkflowRuntimeClient
 from alfred.auth import Principal, fga_check, verify_jwt
+from alfred.autonomy_presets import PresetStore
 from alfred.config import Settings, load_settings
 from alfred.dialogue import generate_followup
 from alfred.gateways import ApprovalsClient, OpenSpecClient, PermissionsClient, PolicyClient, RAGClient
@@ -233,6 +240,51 @@ def create_app(
         if not document:
             raise HTTPException(status_code=400, detail="draft not commit-ready")
         return {"openspec": document}
+
+    if getattr(settings, "alfred_agent_mode_enabled", False):
+        agent_store = AgentModeStore(owned_store)
+        workflow_client = WorkflowRuntimeClient(settings.workflow_runtime_url)
+        budget_probe = AgentBudgetProbe(settings.litellm_url, settings.litellm_key)
+        event_emitter = AgentEventEmitter(LogSink())
+        from pathlib import Path
+
+        preset_store = PresetStore(root=Path(settings.agent_mode_preset_dir))
+        agent_deps = AgentExecutorDeps(
+            store=owned_store,
+            agent_store=agent_store,
+            llm=deps.llm,
+            rag=deps.rag,
+            policy=deps.policy,
+            approvals=deps.approvals,
+            permissions=deps.permissions,
+            openspec=deps.openspec,
+            tool_handler=deps.tool_handler,
+            workflow_dispatcher=workflow_client.dispatch,
+            budget_probe=budget_probe.probe,
+            emit_event=event_emitter.emit,
+            ai_observer=deps.ai_observer,
+        )
+        app.state.agent_mode = {
+            "store": agent_store,
+            "deps": agent_deps,
+            "preset_store": preset_store,
+            "emitter": event_emitter,
+        }
+        agent_router = build_agent_mode_router(
+            settings=settings,
+            agent_store=agent_store,
+            executor_deps=agent_deps,
+            preset_store=preset_store,
+            event_emitter=event_emitter,
+            principal_dep=_principal,
+        )
+        app.include_router(agent_router)
+    else:
+        @app.post("/v1/agent-mode/sessions")
+        async def _agent_mode_disabled() -> dict[str, Any]:
+            raise HTTPException(
+                status_code=503, detail="agent-mode is disabled (ALFRED_AGENT_MODE_ENABLED=false)"
+            )
 
     return app
 

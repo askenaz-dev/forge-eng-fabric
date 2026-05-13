@@ -125,8 +125,9 @@ forge skills install {a.name}@{a.version}
             <div className="p-4 text-sm leading-6">
               <p className="font-medium">Install instructions</p>
               <pre className="mt-2 rounded bg-neutral-950 p-3 text-xs text-neutral-100">
-{`# 1. install the forge CLI
-brew install forge-eng-fabric/tap/forge
+{`# 1. install the forge CLI (pick one)
+brew install askenaz-dev/tap/forge         # macOS / Linux
+npm install -g @askenaz-dev/forge-cli      # any OS with Node 18+
 
 # 2. log in to your tenant gateway
 forge login --gateway https://<tenant>.forge.dev

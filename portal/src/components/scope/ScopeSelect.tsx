@@ -87,28 +87,54 @@ export function ScopeSelect({
   }
 
   if (options.length === 0) {
-    return controlled ? (
+    const noun = kind === "tenant" ? "tenant" : "workspace";
+    const fallbackReason = error
+      ? `Control plane unreachable (${error}). Type the ${noun} ID manually.`
+      : `No ${noun}s in directory yet. Type the ${noun} ID manually.`;
+    const fallbackPlaceholder = error
+      ? `${kind === "tenant" ? "Tenant" : "Workspace"} ID — control plane offline`
+      : `${kind === "tenant" ? "Tenant" : "Workspace"} ID — none in directory`;
+    const input = controlled ? (
       <input
         name={name}
         value={value}
         onChange={(e) => setValue(e.target.value)}
         required={required}
-        placeholder={placeholder ?? (kind === "tenant" ? "Tenant ID" : "Workspace ID")}
+        placeholder={placeholder ?? fallbackPlaceholder}
         className={className}
         style={style}
-        title={error ? `Scope service unavailable (${error}); type the ID instead.` : undefined}
+        title={fallbackReason}
+        aria-describedby={`${name}-fallback-note`}
       />
     ) : (
       <input
         name={name}
         defaultValue={defaultValue}
         required={required}
-        placeholder={placeholder ?? (kind === "tenant" ? "Tenant ID" : "Workspace ID")}
+        placeholder={placeholder ?? fallbackPlaceholder}
         className={className}
         style={style}
-        title={error ? `Scope service unavailable (${error}); type the ID instead.` : undefined}
+        title={fallbackReason}
+        aria-describedby={`${name}-fallback-note`}
       />
     );
+    // When used inside a vertical form (controlled drawers always are), surface
+    // the reason as visible text below the input. The page-level horizontal
+    // toolbar uses uncontrolled mode and relies on the placeholder + title.
+    if (controlled) {
+      return (
+        <>
+          {input}
+          <small
+            id={`${name}-fallback-note`}
+            className="mt-1 block text-[11px] text-orange-700 dark:text-orange-300"
+          >
+            {fallbackReason}
+          </small>
+        </>
+      );
+    }
+    return input;
   }
 
   return (

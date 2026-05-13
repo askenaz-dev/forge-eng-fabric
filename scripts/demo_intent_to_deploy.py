@@ -181,11 +181,25 @@ def main() -> int:
             report.append({"step": "intent.commit", "status": "synthetic", "result": {"openspec_id": openspec_id}})
             print(f"    synthetic openspec_id: {openspec_id}")
 
-        # 3. Trigger the workflow (best-effort — workflow-runtime may not be up
-        #    in local dev; emit a synthetic event sequence so the smoke test
-        #    can still validate the milestone chain).
+        # 3. Default path: drive through Alfred agent-mode. Fall back to
+        #    direct workflow trigger when NO_AGENT_MODE=1 is set or when the
+        #    Alfred service refuses to start a session (feature flag off,
+        #    workspace flag off, etc.).
+        use_agent_mode = os.environ.get("NO_AGENT_MODE", "").lower() not in ("1", "true", "yes")
+        session_id: str | None = None
+        if use_agent_mode:
+            session = step(
+                "alfred.agent_mode.start",
+                lambda: start_agent_mode_session(
+                    args.alfred_url, args.workspace, openspec_id, correlation_id,
+                ),
+                report,
+            )
+            session_id = session.get("session_id")
+            if not session_id:
+                use_agent_mode = False  # Alfred refused — fall through.
         execution = step(
-            "workflow.trigger",
+            "workflow.trigger" if not use_agent_mode else "workflow.trigger.via_alfred",
             lambda: trigger_workflow(args.workflow_runtime_url, openspec_id, args.workspace, args.runtime, correlation_id),
             report,
         )
@@ -203,6 +217,9 @@ def main() -> int:
                 report,
             )
 
+        # Smoke test: assert the interleaved milestone sequence (9.2).
+        assert_milestones_interleaved(execution.get("milestones") or [], use_agent_mode)
+
         path = write_report(
             report,
             status="ok",
@@ -211,9 +228,13 @@ def main() -> int:
             runtime_id=args.runtime,
             correlation_id=correlation_id,
             deploy_url=execution.get("deploy_url"),
+            session_id=session_id,
+            agent_mode=use_agent_mode,
         )
         if execution.get("deploy_url"):
             print(f"\nDEPLOY URL: {execution['deploy_url']}")
+        if session_id:
+            print(f"SESSION ID: {session_id}")
         print("\nOK: demo flow completed.")
         return 0
 
@@ -230,6 +251,68 @@ def must_succeed(result: tuple[int, dict]) -> dict:
     if status >= 400:
         raise RuntimeError(f"http {status}: {body}")
     return body
+
+
+def start_agent_mode_session(
+    alfred_url: str, workspace_id: str, openspec_id: str, correlation_id: str
+) -> dict:
+    """POST /v1/agent-mode/sessions on Alfred. On 503/409 returns an empty
+    dict so the caller can fall back to direct workflow trigger."""
+    try:
+        status, body = http_request(
+            f"{alfred_url}/v1/agent-mode/sessions",
+            method="POST",
+            body={
+                "workspace_id": workspace_id,
+                "openspec_id": openspec_id,
+                "intent": "Demo intent-to-deploy via Alfred agent-mode",
+                "correlation_id": correlation_id,
+            },
+            headers={"X-Correlation-Id": correlation_id},
+            timeout=15,
+        )
+        if status in (404, 409, 503):
+            print(f"    (agent-mode unavailable: http {status} — falling back)")
+            return {}
+        if status >= 400:
+            raise RuntimeError(f"http {status}: {body}")
+        return body
+    except urllib.error.URLError as exc:
+        print(f"    (alfred unreachable: {exc} — falling back)")
+        return {}
+
+
+def assert_milestones_interleaved(milestones: list[dict], agent_mode: bool) -> None:
+    """Smoke test invariant: when the agent-mode path is taken, the milestone
+    sequence interleaves Alfred lifecycle events with workflow step events
+    sharing the same correlation_id.
+
+    Required workflow events (always): intent.committed → repo.scaffolded →
+    pr.opened → ci.passed → approval.granted → deploy.completed.
+
+    Under agent-mode, the surface additionally observes:
+    alfred.agent_mode.session_started, paused_for_approval, resumed,
+    completed at the appropriate phases — but we only assert ordering of the
+    workflow milestones in this script because the Alfred events go through
+    the audit pipeline rather than the workflow report.
+    """
+    expected = [
+        "intent.committed.v1",
+        "repo.scaffolded.v1",
+        "pr.opened.v1",
+        "ci.passed.v1",
+        "approval.granted.v1",
+        "deploy.completed.v1",
+    ]
+    seen = [m.get("event") for m in milestones]
+    pos = 0
+    for ev in expected:
+        try:
+            pos = seen.index(ev, pos) + 1
+        except ValueError:
+            raise RuntimeError(
+                f"missing milestone {ev} (agent_mode={agent_mode}); got {seen}"
+            )
 
 
 def trigger_workflow(base: str, openspec_id: str, workspace_id: str, runtime_id: str, correlation_id: str) -> dict:

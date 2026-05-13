@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" id="alfred-mark" role="img" aria-label="Alfred">
+  <defs>
+    <linearGradient id="alfred-ember-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F4A77E"/>
+      <stop offset="60%" stop-color="#DC4318"/>
+      <stop offset="100%" stop-color="#8A2509"/>
+    </linearGradient>
+  </defs>
+  <path d="M4 10 L12 13 L20 10 L20 14 L12 11 L4 14 Z" fill="#1A1614"/>
+  <circle cx="12" cy="12" r="2.4" fill="url(#alfred-ember-grad)"/>
+  <rect x="11.2" y="3.5" width="1.6" height="4.5" rx="0.6" fill="#1A1614"/>
+  <rect x="11.2" y="3.5" width="3.2" height="1.4" rx="0.4" fill="#1A1614"/>
+</svg>

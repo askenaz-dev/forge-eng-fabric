@@ -101,6 +101,22 @@
   /* Motion */
   --t-fast: 120ms cubic-bezier(.2,.6,.3,1);
   --t-med:  220ms cubic-bezier(.2,.6,.3,1);
+
+  /* Alfred — agent-mode identity tokens.
+     Ink/paper pair must satisfy AA contrast in both themes; AlfredDock and
+     any Alfred-authored UI surface MUST consume these tokens only. */
+  --alfred-ink:        #1A1614;
+  --alfred-paper:      #FBF6EE;
+  --alfred-ember:      #B7330F;
+  --alfred-ember-soft: #F4A77E;
+  --alfred-thread:     #4F8C76;
+  --alfred-border:     #D9D2C5;
+  --alfred-shadow:     0 18px 40px -16px rgba(26,22,20,.28), 0 4px 12px -4px rgba(26,22,20,.10);
+  --alfred-ring:       0 0 0 3px color-mix(in oklch, var(--alfred-ember), transparent 75%);
+
+  /* Working-state animation timing (referenced by design/alfred-identity/MOTION.md) */
+  --alfred-anim-working: 2400ms cubic-bezier(.45,.05,.55,.95);
+  --alfred-anim-dock-in: 280ms cubic-bezier(.16,1,.3,1);
 }
 
 /* ── Density variants ──────────────────────────────────────────────────── */
@@ -145,6 +161,16 @@
   --shadow-pop: 0 12px 30px -8px rgba(0,0,0,.65), 0 2px 6px rgba(0,0,0,.45);
   --shadow-emb: inset 0 0 0 1px rgba(255,255,255,.05), 0 14px 36px -10px rgba(255,106,51,.45);
   --ring:       0 0 0 3px color-mix(in oklch, var(--primary), transparent 70%);
+
+  /* Alfred — dark-theme overrides; AA contrast on --alfred-ink/paper preserved */
+  --alfred-ink:        #F0E8D9;
+  --alfred-paper:      #15110E;
+  --alfred-ember:      #FF6A33;
+  --alfred-ember-soft: #8A2509;
+  --alfred-thread:     #6FBC9C;
+  --alfred-border:     #2D2823;
+  --alfred-shadow:     0 22px 48px -18px rgba(0,0,0,.65), 0 4px 14px -4px rgba(0,0,0,.35);
+  --alfred-ring:       0 0 0 3px color-mix(in oklch, var(--alfred-ember), transparent 65%);
 }
 
 :root { color-scheme: light dark; }
@@ -639,6 +665,12 @@ button { font-family: inherit; cursor: pointer; }
 }
 .btn--danger:hover { background: color-mix(in oklch, var(--rust), black 10%); }
 .btn--xs { font-size: 12px; padding: 4px 8px; min-height: 26px; }
+.btn:disabled,
+.btn[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
 
 /* ── Badges ────────────────────────────────────────────────────────────── */
 .badge {
@@ -1677,4 +1709,132 @@ button { font-family: inherit; cursor: pointer; }
 
 @media (max-width: 719px) {
   .below-min-width-notice { display: block; }
+}
+
+/* ── Alfred dock ─────────────────────────────────────────────────────────
+   Floating launcher + slide-in console. Tokens come from the --alfred-*
+   ramp; no other portal CSS may consume them. */
+.alfred-launcher {
+  position: fixed;
+  right: var(--s-5);
+  bottom: var(--s-5);
+  z-index: 70;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-3);
+  border: 1px solid var(--alfred-border);
+  border-radius: var(--r-pill);
+  background: var(--alfred-paper);
+  color: var(--alfred-ink);
+  font-family: var(--f-sans);
+  font-size: 13px;
+  box-shadow: var(--alfred-shadow);
+  cursor: pointer;
+  transition: transform var(--t-fast), box-shadow var(--t-fast);
+}
+.alfred-launcher:hover { transform: translateY(-1px); }
+.alfred-launcher:focus-visible { outline: none; box-shadow: var(--alfred-ring), var(--alfred-shadow); }
+.alfred-launcher--working .alfred-mark { animation: alfred-working var(--alfred-anim-working) infinite; }
+.alfred-launcher__label { font-weight: 500; }
+@media (prefers-reduced-motion: reduce) {
+  .alfred-launcher--working .alfred-mark { animation: none; }
+}
+
+@keyframes alfred-working {
+  0%, 100% { opacity: 0.85; }
+  50%      { opacity: 1.0; }
+}
+
+.alfred-dock {
+  position: fixed;
+  right: var(--s-5);
+  bottom: calc(var(--s-5) + 48px);
+  z-index: 71;
+  width: 420px;
+  max-width: calc(100vw - var(--s-5) * 2);
+  max-height: 78vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--alfred-paper);
+  color: var(--alfred-ink);
+  border: 1px solid var(--alfred-border);
+  border-radius: var(--r-5);
+  box-shadow: var(--alfred-shadow);
+  animation: alfred-dock-in var(--alfred-anim-dock-in) ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .alfred-dock { animation: none; }
+}
+@keyframes alfred-dock-in {
+  from { transform: translateY(8px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.alfred-dock__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--s-3) var(--s-4);
+  border-bottom: 1px solid var(--alfred-border);
+}
+.alfred-dock__title { display: inline-flex; gap: var(--s-3); align-items: center; }
+.alfred-dock__title strong { font-family: var(--f-display); font-weight: 500; font-size: 18px; display: block; }
+.alfred-dock__title small { color: var(--alfred-ember); font-family: var(--f-mono); font-size: 11px; }
+.alfred-dock__actions { display: inline-flex; gap: var(--s-2); }
+.alfred-dock__btn {
+  border: 1px solid var(--alfred-border);
+  background: transparent;
+  color: var(--alfred-ink);
+  padding: var(--s-1) var(--s-3);
+  border-radius: var(--r-2);
+  font-size: 12px;
+  cursor: pointer;
+}
+.alfred-dock__btn:hover { background: color-mix(in oklch, var(--alfred-paper), var(--alfred-ink) 6%); }
+.alfred-dock__btn--primary {
+  background: var(--alfred-ember);
+  color: var(--alfred-paper);
+  border-color: var(--alfred-ember);
+}
+.alfred-dock__btn--primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.alfred-dock__body {
+  overflow-y: auto;
+  padding: var(--s-3) var(--s-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+.alfred-dock__section { display: flex; flex-direction: column; gap: var(--s-2); }
+.alfred-dock__section h3 { margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--alfred-ember); font-family: var(--f-mono); }
+.alfred-dock__label { display: flex; flex-direction: column; gap: var(--s-1); font-size: 12px; }
+.alfred-dock__input {
+  font: inherit;
+  padding: var(--s-2) var(--s-3);
+  border: 1px solid var(--alfred-border);
+  border-radius: var(--r-2);
+  background: var(--bg-input);
+  color: var(--alfred-ink);
+  width: 100%;
+}
+.alfred-dock__input:focus-visible { outline: none; box-shadow: var(--alfred-ring); }
+
+.alfred-dock__plan, .alfred-dock__transcript, .alfred-dock__artifacts {
+  margin: 0;
+  padding-left: var(--s-3);
+  font-size: 12px;
+  font-family: var(--f-mono);
+  color: var(--alfred-ink);
+}
+.alfred-dock__step { list-style: none; display: flex; gap: var(--s-2); align-items: baseline; }
+.alfred-dock__step--succeeded { color: var(--alfred-thread); }
+.alfred-dock__step--failed { color: var(--rust); }
+.alfred-dock__step--paused_for_approval, .alfred-dock__step--paused_for_budget { color: var(--alfred-ember); }
+.alfred-dock__empty { color: var(--fg-3); font-style: italic; }
+
+/* Responsive: <1024px the dock widens; launcher loses its status text. */
+@media (max-width: 1024px) {
+  .alfred-dock { width: calc(100vw - var(--s-5) * 2); right: var(--s-5); }
+  .alfred-launcher__label { display: none; }
 }

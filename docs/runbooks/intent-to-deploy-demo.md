@@ -12,6 +12,22 @@ alfred → sdlc-orchestrator → scaffolder → app-onboarding → ci → deploy
 
 It is the canonical demo for showing the platform's "From Intent to Infrastructure" promise.
 
+## Two paths
+
+As of `alfred-agent-mode-orchestrator`, the demo supports two paths:
+
+| Path | When | Operator | Surface |
+| --- | --- | --- | --- |
+| **agent-mode (default)** | `ALFRED_AGENT_MODE_ENABLED=true` and the workspace has `alfred.dock_enabled` | Alfred, via `POST /v1/agent-mode/sessions` | Portal dock (`Alt+A`), SSE stream, decisions table |
+| **direct (legacy)** | `NO_AGENT_MODE=1` set on the script | The script itself | Workflow-runtime API only |
+
+The script picks the agent-mode path by default and writes the `session_id`
+into the report. When Alfred refuses (503 = global flag off; 409 = workspace
+flag off), it falls back to the direct path so the demo still runs.
+
+Screenshots of the dock at each phase live in
+[design/alfred-identity/](../../design/alfred-identity/).
+
 ## Prerequisites
 
 | Component | Source | Why |
