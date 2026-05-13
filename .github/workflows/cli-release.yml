@@ -49,3 +49,17 @@ jobs:
           VERSION: ${{ github.ref_name }}
           DIST: ${{ github.workspace }}/cli/forge/dist
         run: node cli/forge/npm/publish.mjs
+
+      # Go modules in a subdirectory require a prefixed tag so `go install
+      # github.com/askenaz-dev/forge-eng-fabric/cli/forge/cmd/forge@vX.Y.Z`
+      # resolves. The plain vX.Y.Z tag triggers this workflow; we mirror it
+      # to cli/forge/vX.Y.Z so the Go proxy can find the submodule.
+      - name: mirror tag for Go submodule
+        env:
+          VERSION: ${{ github.ref_name }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name  'forge-release-bot'
+          git config user.email 'release-bot@askenaz-dev.github.io'
+          git tag "cli/forge/${VERSION}" "${VERSION}"
+          git push origin "cli/forge/${VERSION}"
