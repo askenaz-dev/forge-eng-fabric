@@ -12,6 +12,7 @@ builds:
     binary: forge
     env:
       - CGO_ENABLED=0
+      - GOWORK=off
     flags:
       - -trimpath
     ldflags:
