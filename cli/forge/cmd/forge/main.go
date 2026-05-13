@@ -19,10 +19,10 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/zalando/go-keyring"
 
-	"github.com/forge-eng-fabric/cli/forge/internal/clients"
-	"github.com/forge-eng-fabric/cli/forge/internal/gateway"
-	"github.com/forge-eng-fabric/cli/forge/internal/mcpwire"
-	"github.com/forge-eng-fabric/cli/forge/internal/unpack"
+	"github.com/askenaz-dev/forge-eng-fabric/cli/forge/internal/clients"
+	"github.com/askenaz-dev/forge-eng-fabric/cli/forge/internal/gateway"
+	"github.com/askenaz-dev/forge-eng-fabric/cli/forge/internal/mcpwire"
+	"github.com/askenaz-dev/forge-eng-fabric/cli/forge/internal/unpack"
 )
 
 // Build-time variables filled in by goreleaser / `go build -ldflags`.

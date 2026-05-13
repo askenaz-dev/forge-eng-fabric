@@ -17,7 +17,7 @@ try {
 } catch {
   console.error(`forge: no prebuilt binary for ${platform}/${arch}.`);
   console.error('Supported: darwin/x64, darwin/arm64, linux/x64, linux/arm64, win32/x64.');
-  console.error('Alternative: go install github.com/forge-eng-fabric/cli/forge/cmd/forge@latest');
+  console.error('Alternative: go install github.com/askenaz-dev/forge-eng-fabric/cli/forge/cmd/forge@latest');
   process.exit(1);
 }
 

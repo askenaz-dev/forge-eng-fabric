@@ -43,7 +43,7 @@ npm install -g @askenaz-dev/forge-cli
 Supported targets: `darwin/x64`, `darwin/arm64`, `linux/x64`, `linux/arm64`, `win32/x64`. On unsupported platforms, fall back to:
 
 ```bash
-go install github.com/forge-eng-fabric/cli/forge/cmd/forge@latest
+go install github.com/askenaz-dev/forge-eng-fabric/cli/forge/cmd/forge@latest
 ```
 
 ### Direct download

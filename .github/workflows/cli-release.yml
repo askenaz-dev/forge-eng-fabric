@@ -45,8 +45,7 @@ jobs:
       - name: publish to npm
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          # Re-enable NPM_CONFIG_PROVENANCE=true once the repo is public —
-          # npm requires public source repos for sigstore provenance bundles.
+          NPM_CONFIG_PROVENANCE: 'true'
           VERSION: ${{ github.ref_name }}
           DIST: ${{ github.workspace }}/cli/forge/dist
         run: node cli/forge/npm/publish.mjs

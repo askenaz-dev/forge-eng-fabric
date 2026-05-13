@@ -1,4 +1,4 @@
-module github.com/forge-eng-fabric/cli/forge
+module github.com/askenaz-dev/forge-eng-fabric/cli/forge
 
 go 1.22
 
