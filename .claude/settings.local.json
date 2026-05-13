@@ -73,7 +73,20 @@
       "Bash(tee docs/governance/evidence/phase-3/helm-install-umbrella.log)",
       "Bash(helm status *)",
       "Bash(awk -F/ '{print $1}')",
-      "Bash(tee -a docs/governance/evidence/phase-3/helm-install-umbrella.log)"
+      "Bash(tee -a docs/governance/evidence/phase-3/helm-install-umbrella.log)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3000)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:65532)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:65532)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:64647)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" -m 5 http://localhost:64647)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git -C C:/forge-eng-fabric status --short)",
+      "Bash(git -C C:/forge-eng-fabric merge --no-ff claude/hopeful-joliot-a5686d -m \"merge\\(portal\\): fix collapsed sidebar groups\")",
+      "PowerShell(Get-Command gh -ErrorAction SilentlyContinue)",
+      "Bash(git config *)",
+      "Bash(git credential *)"
     ]
   }
 }
