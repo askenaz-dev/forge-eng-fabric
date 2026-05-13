@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://forge.local/contracts/events/portal.lang.changed.v1.json",
+  "title": "portal.lang.changed.v1",
+  "description": "Emitted when an authenticated user changes their Portal language preference (es / en).",
+  "type": "object",
+  "required": ["type", "principal", "timestamp", "data", "correlation_id"],
+  "properties": {
+    "type": { "type": "string", "const": "portal.lang.changed.v1" },
+    "principal": { "type": "string" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "correlation_id": { "type": "string" },
+    "data": {
+      "type": "object",
+      "required": ["to"],
+      "properties": {
+        "to":   { "type": "string", "enum": ["es", "en"] },
+        "from": { "type": "string", "enum": ["es", "en"] }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

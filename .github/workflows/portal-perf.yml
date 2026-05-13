@@ -1,0 +1,42 @@
+name: portal-perf
+
+on:
+  pull_request:
+    paths:
+      - "portal/**"
+      - ".github/workflows/portal-perf.yml"
+  workflow_dispatch:
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - run: pnpm --filter @forge/portal install --frozen-lockfile=false
+      - name: Build Portal
+        env:
+          NEXTAUTH_URL: http://127.0.0.1:3000
+          NEXTAUTH_SECRET: ci-secret
+          PORTAL_REBRAND: "1"
+        run: pnpm --filter @forge/portal build
+      - name: Start Portal
+        run: |
+          (NEXTAUTH_URL=http://127.0.0.1:3000 NEXTAUTH_SECRET=ci-secret PORTAL_REBRAND=1 \
+             pnpm --filter @forge/portal start) &
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:3000/api/auth/csrf >/dev/null; then break; fi
+            sleep 2
+          done
+      - uses: treosh/lighthouse-ci-action@v12
+        with:
+          urls: |
+            http://127.0.0.1:3000/
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+          configPath: ./portal/.lighthouserc.json

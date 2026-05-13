@@ -39,3 +39,7 @@ deploy/compose/data/
 
 # Generated
 contracts/openapi/_generated/
+portal/tsconfig.tsbuildinfo
+
+# Design source assets (large, kept locally only)
+design/

@@ -2,6 +2,9 @@
 // report (per task 2.13 of platform-gaps-closure). When the runtime-registry
 // API is unreachable this falls back to a placeholder so the route still renders.
 
+import { PageHead } from "@/components/page/PageHead";
+import { Card } from "@/components/primitives";
+
 type VerifyCheck = {
   name: string;
   status: "pass" | "fail" | "warn" | "skip";
@@ -61,17 +64,20 @@ export default async function RuntimeDetailPage({ params }: { params: { id: stri
   const { runtime, latest, error } = await fetchRuntime(params.id);
 
   return (
-    <section className="space-y-6">
-      <div>
-        <p className="text-sm font-medium uppercase tracking-wide text-neutral-500">Runtime</p>
-        <h2 className="text-2xl font-semibold">{runtime?.name ?? params.id}</h2>
-        <p className="text-xs text-neutral-500">{params.id}</p>
-      </div>
+    <>
+      <PageHead
+        eyebrow="Observability · Runtime"
+        title={runtime?.name ?? params.id}
+        titleEm="detail"
+        sub={params.id}
+      />
 
       {error && (
-        <div className="rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
-          Could not reach runtime-registry: {error}
-        </div>
+        <Card style={{ marginBottom: 16 }}>
+          <div style={{ padding: 14, color: "var(--spark)" }}>
+            Could not reach runtime-registry: {error}
+          </div>
+        </Card>
       )}
 
       {runtime && (
@@ -128,6 +134,6 @@ export default async function RuntimeDetailPage({ params }: { params: { id: stri
           </div>
         )}
       </div>
-    </section>
+    </>
   );
 }

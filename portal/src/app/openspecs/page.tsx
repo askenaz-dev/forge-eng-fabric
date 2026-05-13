@@ -1,6 +1,8 @@
 import { authOptions } from "@/auth";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
+import { PageHead } from "@/components/page/PageHead";
+import { Button, Card } from "@/components/primitives";
 
 type SpecificationDocument = {
   openspec_id: string;
@@ -156,20 +158,36 @@ export default async function SpecificationsPage({ searchParams }: { searchParam
   }
 
   return (
-    <section className="space-y-6">
-      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h2 className="text-2xl font-semibold">Specifications</h2>
-          <p className="mt-1 text-sm opacity-70">Structured delivery specifications backed by OpenSpec artifacts, links, and version history.</p>
-        </div>
-        <form className="flex gap-2" method="get">
-          <input name="workspace_id" defaultValue={workspaceId} placeholder="Workspace ID" className="min-w-0 rounded border border-neutral-300 bg-transparent px-3 py-2 text-sm dark:border-neutral-700" />
-          <button className="rounded bg-neutral-900 px-4 py-2 text-sm text-white dark:bg-neutral-100 dark:text-neutral-900">Load</button>
-        </form>
-      </div>
+    <>
+      <PageHead
+        eyebrow="Governance · OpenSpec"
+        title="Specs &"
+        titleEm="OpenSpec"
+        sub="Structured delivery specifications backed by OpenSpec artifacts, links, and version history."
+        actions={
+          <form method="get" style={{ display: "flex", gap: 8 }}>
+            <input
+              name="workspace_id"
+              defaultValue={workspaceId}
+              placeholder="Workspace ID"
+              className="top-search"
+              style={{ height: 32, width: 240 }}
+            />
+            <Button variant="primary" type="submit">Load</Button>
+          </form>
+        }
+      />
 
-      {searchParams.saved && <p className="rounded border border-green-300 bg-green-50 p-3 text-sm text-green-800 dark:border-green-800 dark:bg-green-950 dark:text-green-200">Specification saved.</p>}
-      {error && <p className="rounded border border-red-300 bg-red-50 p-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200">{error}</p>}
+      {searchParams.saved && (
+        <Card style={{ marginBottom: 16 }}>
+          <div style={{ padding: 14, color: "var(--thread)" }}>Specification saved.</div>
+        </Card>
+      )}
+      {error && (
+        <Card style={{ marginBottom: 16 }}>
+          <div style={{ padding: 14, color: "var(--rust)" }}>{error}</div>
+        </Card>
+      )}
 
       <div className="grid gap-5 xl:grid-cols-[320px_1fr]">
         <aside className="space-y-4 rounded border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
@@ -201,7 +219,7 @@ export default async function SpecificationsPage({ searchParams }: { searchParam
           </div>
         </div>
       </div>
-    </section>
+    </>
   );
 }
 

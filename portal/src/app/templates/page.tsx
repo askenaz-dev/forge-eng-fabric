@@ -1,5 +1,7 @@
 import { fetchTemplates, requirePortalIdentity } from "@/lib/onboarding";
 import type { RepoTemplate } from "@/lib/onboarding-types";
+import { PageHead } from "@/components/page/PageHead";
+import { Button } from "@/components/primitives";
 
 type SearchParams = { lifecycle_state?: string; trust_level?: string; category?: string };
 
@@ -20,33 +22,35 @@ export default async function TemplatesPage({ searchParams }: { searchParams: Se
   });
 
   return (
-    <section className="space-y-5">
-      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h2 className="text-2xl font-semibold">Templates</h2>
-          <p className="mt-1 text-sm opacity-70">Approved repository templates with lifecycle, trust level and required capabilities.</p>
-        </div>
-        <form className="flex flex-wrap gap-2 text-sm" method="get">
-          <input name="category" defaultValue={searchParams.category ?? ""} placeholder="category" className="rounded border border-neutral-300 bg-transparent px-3 py-2 dark:border-neutral-700" />
-          <select name="lifecycle_state" defaultValue={searchParams.lifecycle_state ?? ""} className="rounded border border-neutral-300 bg-transparent px-3 py-2 dark:border-neutral-700">
+    <>
+      <PageHead
+        eyebrow="Platform · Templates"
+        title="Repository"
+        titleEm="templates"
+        sub="Approved repository templates with lifecycle, trust level and required capabilities."
+        actions={
+          <form method="get" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <input name="category" defaultValue={searchParams.category ?? ""} placeholder="category" className="top-search" style={{ height: 32, width: 140 }} />
+            <select name="lifecycle_state" defaultValue={searchParams.lifecycle_state ?? ""} style={{ height: 32, background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--r-2)", padding: "0 10px", color: "var(--fg)", fontFamily: "var(--f-sans)", fontSize: 13 }}>
             <option value="">any lifecycle</option>
             <option value="approved">approved</option>
             <option value="in_review">in_review</option>
             <option value="proposed">proposed</option>
           </select>
-          <select name="trust_level" defaultValue={searchParams.trust_level ?? ""} className="rounded border border-neutral-300 bg-transparent px-3 py-2 dark:border-neutral-700">
-            <option value="">any trust</option>
-            {['T0', 'T1', 'T2', 'T3', 'T4', 'T5'].map((trust) => <option key={trust} value={trust}>{trust}</option>)}
-          </select>
-          <button className="rounded bg-neutral-900 px-4 py-2 text-white dark:bg-neutral-100 dark:text-neutral-900">Filter</button>
-        </form>
-      </div>
+            <select name="trust_level" defaultValue={searchParams.trust_level ?? ""} style={{ height: 32, background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--r-2)", padding: "0 10px", color: "var(--fg)", fontFamily: "var(--f-sans)", fontSize: 13 }}>
+              <option value="">any trust</option>
+              {['T0', 'T1', 'T2', 'T3', 'T4', 'T5'].map((trust) => <option key={trust} value={trust}>{trust}</option>)}
+            </select>
+            <Button variant="primary" type="submit">Filter</Button>
+          </form>
+        }
+      />
       {error && <p className="rounded border border-red-300 bg-red-50 p-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200">{error}</p>}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {filtered.map((template) => <TemplateCard key={`${template.id}@${template.version}`} template={template} />)}
         {filtered.length === 0 && !error && <p className="rounded border border-dashed border-neutral-300 p-6 text-sm opacity-70 dark:border-neutral-800">No templates match these filters.</p>}
       </div>
-    </section>
+    </>
   );
 }
 

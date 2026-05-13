@@ -1,6 +1,8 @@
 import { authOptions } from "@/auth";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
+import { PageHead } from "@/components/page/PageHead";
+import { Button } from "@/components/primitives";
 
 type Recommendation = {
   id: string;
@@ -48,17 +50,19 @@ export default async function FinOpsRecommendationsPage({ searchParams }: { sear
   const data = await fetchRecommendations(tenantId, token);
 
   return (
-    <section className="space-y-6">
-      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h2 className="text-2xl font-semibold">FinOps Recommendations</h2>
-          <p className="mt-1 text-sm opacity-70">Cost-reduction proposals from the autonomous FinOps advisor (Phase 6). Each comes with a draft PR.</p>
-        </div>
-        <form className="flex gap-2" method="get">
-          <input name="tenant_id" defaultValue={tenantId} placeholder="Tenant ID" className="rounded border border-neutral-300 bg-transparent px-3 py-2 text-sm dark:border-neutral-700" />
-          <button className="rounded bg-neutral-900 px-4 py-2 text-sm text-white dark:bg-neutral-100 dark:text-neutral-900">Filter</button>
-        </form>
-      </div>
+    <>
+      <PageHead
+        eyebrow="Observability · FinOps"
+        title="FinOps"
+        titleEm="recommendations"
+        sub="Cost-reduction proposals from the autonomous FinOps advisor. Each comes with a draft PR."
+        actions={
+          <form method="get" style={{ display: "flex", gap: 8 }}>
+            <input name="tenant_id" defaultValue={tenantId} placeholder="Tenant ID" className="top-search" style={{ height: 32, width: 200 }} />
+            <Button variant="primary" type="submit">Filter</Button>
+          </form>
+        }
+      />
 
       <div className="grid gap-3 sm:grid-cols-3" data-testid="finops-summary">
         <Stat label="Total recs" value={data.recommendations.length} />
@@ -91,7 +95,7 @@ export default async function FinOpsRecommendationsPage({ searchParams }: { sear
         ))}
         {data.recommendations.length === 0 && <p className="rounded border border-dashed border-neutral-300 p-6 text-sm opacity-70 dark:border-neutral-800">No recommendations yet — the advisor runs daily.</p>}
       </ul>
-    </section>
+    </>
   );
 }
 

@@ -1,4 +1,6 @@
 import { redirect } from "next/navigation";
+import { PageHead } from "@/components/page/PageHead";
+import { Button, Card } from "@/components/primitives";
 
 type PhaseStatus =
   | "not_started"
@@ -200,25 +202,24 @@ export default async function InitiativesPage({ searchParams }: { searchParams: 
   if (finops.error) errors.push(finops.error);
 
   return (
-    <section className="space-y-6">
-      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <div>
-          <p className="text-sm font-medium uppercase tracking-wide text-neutral-500">Initiatives</p>
-          <h2 className="text-2xl font-semibold">SDLC phase progression</h2>
-          <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-300">
-            Live initiative state from the SDLC orchestrator, traceability graph, and FinOps attribution.
-          </p>
-        </div>
-        <form className="flex gap-2" method="get">
-          <input name="workspace_id" defaultValue={workspaceId} placeholder="Workspace ID" className="min-w-0 rounded border border-neutral-300 bg-transparent px-3 py-2 text-sm dark:border-neutral-700" />
-          <button className="rounded bg-neutral-900 px-4 py-2 text-sm text-white dark:bg-neutral-100 dark:text-neutral-900">Load</button>
-        </form>
-      </div>
+    <>
+      <PageHead
+        eyebrow="Governance · Initiatives"
+        title="SDLC phase"
+        titleEm="progression"
+        sub="Live initiative state from the SDLC orchestrator, traceability graph, and FinOps attribution."
+        actions={
+          <form method="get" style={{ display: "flex", gap: 8 }}>
+            <input name="workspace_id" defaultValue={workspaceId} placeholder="Workspace ID" className="top-search" style={{ height: 32, width: 200 }} />
+            <Button variant="primary" type="submit">Load</Button>
+          </form>
+        }
+      />
 
-      {searchParams.saved && <p className="rounded border border-green-300 bg-green-50 p-3 text-sm text-green-800 dark:border-green-800 dark:bg-green-950 dark:text-green-200">Initiative state saved.</p>}
-      {searchParams.error && <p className="rounded border border-red-300 bg-red-50 p-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200">{searchParams.error}</p>}
+      {searchParams.saved && <Card style={{ marginBottom: 16 }}><div style={{ padding: 14, color: "var(--thread)" }}>Initiative state saved.</div></Card>}
+      {searchParams.error && <Card style={{ marginBottom: 16 }}><div style={{ padding: 14, color: "var(--rust)" }}>{searchParams.error}</div></Card>}
       {errors.map((error) => (
-        <p key={error} className="rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">{error}</p>
+        <Card key={error} style={{ marginBottom: 16 }}><div style={{ padding: 14, color: "var(--spark)" }}>{error}</div></Card>
       ))}
 
       {!workspaceId ? (
@@ -245,7 +246,7 @@ export default async function InitiativesPage({ searchParams }: { searchParams: 
           </div>
         </div>
       )}
-    </section>
+    </>
   );
 }
 

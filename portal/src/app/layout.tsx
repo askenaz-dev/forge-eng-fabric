@@ -1,66 +1,119 @@
 import "./globals.css";
 import type { ReactNode } from "react";
+import { headers } from "next/headers";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/auth";
 import { Providers } from "./providers";
+import { PortalShell } from "@/components/shell/PortalShell";
+import { LegacyShell } from "@/components/shell/LegacyShell";
+import { fontClassNames, geist } from "./fonts";
+import { initialDataTheme, readPreferences } from "@/lib/prefs";
+import { endpoint } from "@/lib/api";
 
 export const metadata = {
   title: "Forge Engineering Fabric",
-  description: "Forge Engineering Fabric portal",
+  description: "Forge Engineering Fabric — Internal Developer Portal",
 };
 
-const modules = [
-  { label: "Workspaces", href: "/" },
-  { label: "New App", href: "/apps/new" },
-  { label: "Onboarding History", href: "/onboarding" },
-  { label: "Templates", href: "/templates" },
-  { label: "PR Gates", href: "/pr-gates" },
-  { label: "Alfred Console", href: "/alfred" },
-  { label: "Alfred Wizard (Beta)", href: "/alfred/wizard?wizard=1" },
-  { label: "Asset Registry", href: "/assets" },
-  { label: "Specifications", href: "/openspecs" },
-  { label: "Initiatives", href: "/initiatives" },
-  { label: "Repositories", href: "/settings/github" },
-  { label: "Runtimes", href: "/runtimes" },
-  { label: "Deployments", href: "/deployments" },
-  { label: "Drift", href: "/drift" },
-  { label: "Environments", href: "#" },
-  { label: "Workflows", href: "/workflows" },
-  { label: "Workflow Editor (Beta)", href: "/workflows/editor" },
-  { label: "Marketplace", href: "/marketplace" },
-  { label: "Approvals Inbox", href: "/approvals" },
-  { label: "Observability", href: "#" },
-  { label: "Incidents", href: "/incidents" },
-  { label: "Evolution Inbox", href: "/evolution" },
-  { label: "FinOps Recommendations", href: "/finops-recommendations" },
-  { label: "Kill Switch", href: "/kill-switch" },
-  { label: "Admin & Governance", href: "/permissions" },
-];
+async function fetchInitialPermissions(token?: string): Promise<string[]> {
+  if (!token) return ["policy:read", "audit:read", "admin"];
+  try {
+    const r = await fetch(`${endpoint("POLICY_URL")}/v1/permissions/me`, {
+      headers: { authorization: `Bearer ${token}`, accept: "application/json" },
+      cache: "no-store",
+    });
+    if (!r.ok) throw new Error(String(r.status));
+    const data = (await r.json()) as { permissions?: string[] };
+    return data.permissions ?? [];
+  } catch {
+    return ["policy:read", "audit:read", "admin"];
+  }
+}
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+async function fetchInitialCounts(token: string | undefined, actor: string) {
+  const reg = endpoint("REGISTRY_URL");
+  const apr = endpoint("APPROVALS_URL");
+  async function safe(url: string): Promise<number> {
+    try {
+      const r = await fetch(url, {
+        headers: { ...(token ? { authorization: `Bearer ${token}` } : {}) },
+        cache: "no-store",
+      });
+      if (!r.ok) return 0;
+      const data = (await r.json()) as { total?: number; items?: unknown[]; approvals?: unknown[] };
+      if (typeof data.total === "number") return data.total;
+      if (Array.isArray(data.items)) return data.items.length;
+      if (Array.isArray(data.approvals)) return data.approvals.length;
+      return 0;
+    } catch {
+      return 0;
+    }
+  }
+  const [agents, skills, mcp, approvals] = await Promise.all([
+    safe(`${reg}/v1/assets?kind=agent&status=approved&summary=true`),
+    safe(`${reg}/v1/assets?kind=skill&status=approved&summary=true`),
+    safe(`${reg}/v1/assets?kind=mcp&status=approved&summary=true`),
+    safe(`${apr}/v1/approvals?status=pending&approver=${encodeURIComponent(actor)}`),
+  ]);
+  return { agents, skills, mcp, approvals };
+}
+
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const rebrandFlag = (process.env.PORTAL_REBRAND ?? "1") !== "0";
+
+  const prefs = readPreferences();
+  const dataTheme = initialDataTheme(prefs);
+
+  // The Geist face is applied as the default `body` font via its CSS variable.
+  // Other faces are referenced through the design-system tokens.
+  if (!rebrandFlag) {
+    // Legacy shell path — keeps the rebrand controllable in production until
+    // cutover. The legacy module simply re-exports the previous v1 layout.
+    return (
+      <html lang={prefs.lang}>
+        <body className={geist.className}>
+          <Providers initialTheme={prefs.theme} initialDensity={prefs.density} initialLang={prefs.lang}>
+            <LegacyShell>{children}</LegacyShell>
+          </Providers>
+        </body>
+      </html>
+    );
+  }
+
+  const session = await getServerSession(authOptions);
+  const token = (session as { accessToken?: string } | null)?.accessToken;
+  const actor = session?.user?.email ?? session?.user?.name ?? "anonymous";
+
+  const [permissions, counts] = await Promise.all([
+    fetchInitialPermissions(token),
+    fetchInitialCounts(token, actor),
+  ]);
+
+  const tenantSlug = "acme"; // populated from prefs/cookie in subsequent iterations
+  const workspaceLabel = "Workspace · Engineering";
+  const githubHref = process.env.PORTAL_GITHUB_HREF;
+
+  // Surface the correlation id from the incoming request for traceability.
+  headers();
+
   return (
-    <html lang="en">
-      <body className="min-h-screen bg-neutral-50 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
-        <Providers>
-          <header className="flex items-center justify-between border-b border-neutral-200 px-6 py-3 dark:border-neutral-800">
-            <h1 className="text-lg font-semibold">Forge Engineering Fabric</h1>
-            <a href="/api/auth/signout" className="text-sm underline opacity-70">sign out</a>
-          </header>
-          <div className="grid min-h-[calc(100vh-53px)] md:grid-cols-[260px_1fr]">
-            <aside className="border-b border-neutral-200 bg-white px-4 py-4 dark:border-neutral-800 dark:bg-neutral-900 md:border-b-0 md:border-r">
-              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-neutral-500">Modules</p>
-              <nav className="grid gap-1">
-                {modules.map((module) => (
-                  <a
-                    key={module.label}
-                    href={module.href}
-                    className="rounded px-3 py-2 text-sm text-neutral-700 hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800"
-                  >
-                    {module.label}
-                  </a>
-                ))}
-              </nav>
-            </aside>
-            <main className="px-6 py-6">{children}</main>
-          </div>
+    <html
+      lang={prefs.lang}
+      data-theme={dataTheme}
+      data-density={prefs.density}
+      className={fontClassNames}
+    >
+      <body>
+        <Providers initialTheme={prefs.theme} initialDensity={prefs.density} initialLang={prefs.lang}>
+          <PortalShell
+            tenantSlug={tenantSlug}
+            workspaceLabel={workspaceLabel}
+            githubHref={githubHref}
+            initialPermissions={permissions}
+            initialCounts={counts}
+          >
+            {children}
+          </PortalShell>
         </Providers>
       </body>
     </html>
