@@ -1,0 +1,5 @@
+asset_id: sdlc.qa.generate-e2e-tests.eval
+version: "1.0.0"
+description: "Graded fixtures for generate-e2e-tests skill: Playwright suite, one spec per plan section."
+trust_level: T1
+fixtures: fixtures.json

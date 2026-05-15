@@ -24,6 +24,13 @@ func (h *Handler) Mount(mux *http.ServeMux) {
 	mux.HandleFunc("GET /v1/kill-switch", h.handleGetKillSwitch)
 	mux.HandleFunc("POST /v1/actions/promote", h.handlePromote)
 	mux.HandleFunc("GET /v1/decisions/", h.handleDecisions)
+
+	// L1 / L2 endpoints.
+	mux.HandleFunc("POST /v1/detect", h.handleDetect)
+	mux.HandleFunc("POST /v1/propose-fix", h.handleProposeFix)
+	mux.HandleFunc("GET /v1/detections", h.handleListDetections)
+	mux.HandleFunc("GET /v1/suggestions", h.handleListSuggestions)
+	mux.HandleFunc("POST /v1/suggestions/", h.handleSuggestionAction)
 }
 
 func (h *Handler) handleTrigger(w http.ResponseWriter, r *http.Request) {
@@ -125,6 +132,90 @@ func (h *Handler) handleDecisions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, h.Service.Store.ListDecisions(id))
+}
+
+// --- L1 / L2 handlers ---
+
+func (h *Handler) handleDetect(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	var in DetectionInput
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	det, err := h.Service.Detect(r.Context(), in)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	writeJSON(w, http.StatusCreated, det)
+}
+
+func (h *Handler) handleProposeFix(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	var in ProposeFixInput
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	sug, err := h.Service.ProposeFix(r.Context(), in)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	writeJSON(w, http.StatusCreated, sug)
+}
+
+func (h *Handler) handleListDetections(w http.ResponseWriter, r *http.Request) {
+	appID := r.URL.Query().Get("app_id")
+	writeJSON(w, http.StatusOK, h.Service.Store.ListDetections(appID))
+}
+
+func (h *Handler) handleListSuggestions(w http.ResponseWriter, r *http.Request) {
+	appID := r.URL.Query().Get("app_id")
+	writeJSON(w, http.StatusOK, h.Service.Store.ListSuggestions(appID))
+}
+
+// handleSuggestionAction routes POST /v1/suggestions/{id}/approve and
+// POST /v1/suggestions/{id}/reject.
+func (h *Handler) handleSuggestionAction(w http.ResponseWriter, r *http.Request) {
+	// Path: /v1/suggestions/{id}/{action}
+	path := strings.TrimPrefix(r.URL.Path, "/v1/suggestions/")
+	parts := strings.SplitN(path, "/", 2)
+	if len(parts) != 2 {
+		http.NotFound(w, r)
+		return
+	}
+	id, action := parts[0], parts[1]
+	if id == "" {
+		http.NotFound(w, r)
+		return
+	}
+
+	sug := h.Service.Store.GetSuggestion(id)
+	if sug == nil {
+		http.Error(w, "suggestion_not_found", http.StatusNotFound)
+		return
+	}
+
+	switch action {
+	case "approve":
+		sug.Status = "approved"
+		h.Service.Store.SaveSuggestion(sug)
+		writeJSON(w, http.StatusOK, map[string]string{"status": "approved", "id": id})
+	case "reject":
+		defer r.Body.Close()
+		var body struct {
+			Reason string `json:"reason"`
+		}
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		sug.Status = "rejected"
+		sug.RejectionReason = body.Reason
+		h.Service.Store.SaveSuggestion(sug)
+		writeJSON(w, http.StatusOK, map[string]string{"status": "rejected", "id": id})
+	default:
+		http.NotFound(w, r)
+	}
 }
 
 func writeJSON(w http.ResponseWriter, status int, body any) {

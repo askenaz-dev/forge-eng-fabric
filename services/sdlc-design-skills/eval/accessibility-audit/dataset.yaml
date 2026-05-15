@@ -1,0 +1,5 @@
+asset_id: sdlc.design.accessibility-audit.eval
+version: "1.0.0"
+description: "Graded fixtures for accessibility-audit skill: Axe-core integration, severity classification, gate verdict."
+trust_level: T1
+fixtures: fixtures.json

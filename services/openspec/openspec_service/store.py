@@ -74,6 +74,10 @@ class FilesystemOpenSpecStore:
         document = OpenSpecDocument(
             openspec_id=openspec_id,
             workspace_id=request.workspace_id,
+            # Phase 5 (app-first-class-entity 5.1): persist app_id when the
+            # caller supplies it. Enforcement that app_id is non-null happens
+            # at the wizard/handler layer guarded by `forge.app_entity.enabled`.
+            app_id=request.app_id,
             title=request.title,
             business_intent=request.business_intent,
             problem_statement=request.problem_statement,
@@ -88,6 +92,41 @@ class FilesystemOpenSpecStore:
             review_status=review_status,
         )
         return self._write(document)
+
+    def reparent(
+        self,
+        openspec_id: str,
+        *,
+        target_app_id,
+        actor: str,
+        reason: str,
+    ) -> OpenSpecDocument | None:
+        """Move a spec from its current App to `target_app_id` (5.4).
+
+        The caller MUST verify `app#editor` on both the source and target App
+        before invoking this method. The store records the change as a new
+        version and bumps the audit trail; the calling handler emits
+        `spec.reparented.v1`.
+        """
+        document = self.get(openspec_id)
+        if not document:
+            return None
+        if document.app_id == target_app_id:
+            return document
+        updated = document.model_copy(deep=True)
+        updated.app_id = target_app_id
+        updated.version += 1
+        updated.audit.updated_by = actor
+        updated.audit.updated_at = _utcnow()
+        updated.decision_log.append(
+            DecisionLogEntry(
+                actor=actor,
+                type="reparent",
+                decision=f"reparented to app:{target_app_id}",
+                rationale=reason,
+            )
+        )
+        return self._write(updated)
 
     def review(
         self,

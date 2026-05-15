@@ -117,14 +117,23 @@ async def build_initial_plan(
     openspec: OpenSpecClient,
     model: str,
     rag_top_k: int = 8,
+    start_step: str | None = None,
 ) -> dict[str, Any]:
-    """Return a plan dict matching D2. Falls back to CANONICAL_PLAN on error."""
+    """Return a plan dict matching D2. Falls back to CANONICAL_PLAN on error.
 
+    alfred-console-redesign 7.3: when `start_step` is provided, the plan's
+    step 0 is set to the requested step kind. The LLM prompt is updated to
+    reflect this so the rest of the plan is consistent.
+    """
     spec = await openspec.get(openspec_id)
     rag_chunks: Sequence[dict[str, Any]] = await rag.query(
         workspace_id=workspace_id, text=intent, top_k=rag_top_k, principal="alfred"
     )
     user_prompt_parts = [f"intent: {intent}", f"openspec_id: {openspec_id}"]
+    if start_step:
+        user_prompt_parts.append(
+            f"start_step: {start_step} — plan step 0 MUST be of kind matching this step."
+        )
     if spec:
         user_prompt_parts.append("openspec: " + json.dumps(spec)[:4000])
     if rag_chunks:
@@ -147,6 +156,7 @@ async def build_initial_plan(
                 "actor": "alfred",
                 "phase": "agent_mode.plan",
                 "openspec_id": openspec_id,
+                "start_step": start_step or "discovery",
             },
         )
         content = (
@@ -159,7 +169,39 @@ async def build_initial_plan(
 
     if not plan.get("steps"):
         plan = dict(CANONICAL_PLAN)
-    return _normalize_steps(plan)
+
+    plan = _normalize_steps(plan)
+
+    # Enforce start_step: reorder so step 0 matches the requested step kind.
+    if start_step and plan.get("steps"):
+        steps = plan["steps"]
+        target_idx = next(
+            (i for i, s in enumerate(steps) if start_step in (s.get("kind"), s.get("tool_id", ""))),
+            None,
+        )
+        if target_idx is not None and target_idx != 0:
+            # Move the target step to position 0.
+            target = steps.pop(target_idx)
+            steps.insert(0, target)
+            for i, s in enumerate(steps):
+                s["idx"] = i
+        elif target_idx is None:
+            # Inject a synthetic start step at position 0.
+            inject = {
+                "idx": 0,
+                "kind": "workflow",
+                "tool_id": None,
+                "workflow_id": f"forge.sdlc.{start_step}@1",
+                "agent_id": None,
+                "criticality": "high",
+                "summary": f"Execute {start_step} phase directly (start_step hint).",
+                "params": {"start_step": start_step},
+            }
+            steps.insert(0, inject)
+            for i, s in enumerate(steps):
+                s["idx"] = i
+
+    return plan
 
 
 def replan(

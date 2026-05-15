@@ -9,9 +9,10 @@ import { useEffect, useState } from "react";
 // degraded environments (e.g. control-plane down).
 type Tenant = { id: string; name: string };
 type Workspace = { id: string; tenant_id: string; name: string };
+type BusinessUnit = { id: string; tenant_id: string; name: string };
 
 export type ScopeSelectProps = {
-  kind: "tenant" | "workspace";
+  kind: "tenant" | "workspace" | "business-unit";
   name: string;
   defaultValue?: string;
   required?: boolean;
@@ -54,16 +55,28 @@ export function ScopeSelect({
     let alive = true;
     (async () => {
       try {
+        const qs = tenantId ? `?tenant_id=${encodeURIComponent(tenantId)}` : "";
         const url =
           kind === "tenant"
             ? "/api/me/tenants"
-            : `/api/me/workspaces${tenantId ? `?tenant_id=${encodeURIComponent(tenantId)}` : ""}`;
+            : kind === "workspace"
+            ? `/api/me/workspaces${qs}`
+            : `/api/me/business-units${qs}`;
         const resp = await fetch(url, { cache: "no-store" });
         if (!resp.ok) throw new Error(`${resp.status}`);
         const body = await resp.json();
         if (!alive) return;
-        const list = kind === "tenant" ? (body.tenants as Tenant[] | undefined) : (body.workspaces as Workspace[] | undefined);
-        const opts = (list ?? []).map((o) => ({ value: o.name, label: o.name }));
+        // tenant/workspace are submitted by slug name (downstream services
+        // accept slugs); business-unit needs the UUID because control-plane
+        // routes are /v1/business-units/{uuid}/workspaces.
+        let opts: { value: string; label: string }[] = [];
+        if (kind === "tenant") {
+          opts = (body.tenants as Tenant[] | undefined ?? []).map((o) => ({ value: o.name, label: o.name }));
+        } else if (kind === "workspace") {
+          opts = (body.workspaces as Workspace[] | undefined ?? []).map((o) => ({ value: o.name, label: o.name }));
+        } else {
+          opts = (body.business_units as BusinessUnit[] | undefined ?? []).map((o) => ({ value: o.id, label: o.name }));
+        }
         setOptions(opts);
         if (!value && opts.length === 1) setValue(opts[0].value);
       } catch (e) {
@@ -87,13 +100,14 @@ export function ScopeSelect({
   }
 
   if (options.length === 0) {
-    const noun = kind === "tenant" ? "tenant" : "workspace";
+    const noun = kind === "tenant" ? "tenant" : kind === "workspace" ? "workspace" : "business unit";
+    const Noun = noun.charAt(0).toUpperCase() + noun.slice(1);
     const fallbackReason = error
       ? `Control plane unreachable (${error}). Type the ${noun} ID manually.`
       : `No ${noun}s in directory yet. Type the ${noun} ID manually.`;
     const fallbackPlaceholder = error
-      ? `${kind === "tenant" ? "Tenant" : "Workspace"} ID — control plane offline`
-      : `${kind === "tenant" ? "Tenant" : "Workspace"} ID — none in directory`;
+      ? `${Noun} ID — control plane offline`
+      : `${Noun} ID — none in directory`;
     const input = controlled ? (
       <input
         name={name}
@@ -146,7 +160,7 @@ export function ScopeSelect({
       className={className}
       style={style}
     >
-      <option value="" disabled>{placeholder ?? (kind === "tenant" ? "Select tenant…" : "Select workspace…")}</option>
+      <option value="" disabled>{placeholder ?? (kind === "tenant" ? "Select tenant…" : kind === "workspace" ? "Select workspace…" : "Select business unit…")}</option>
       {options.map((o) => (
         <option key={o.value} value={o.value}>{o.label}</option>
       ))}

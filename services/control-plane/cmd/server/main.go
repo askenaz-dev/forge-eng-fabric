@@ -83,6 +83,7 @@ func main() {
 
 	r.Group(func(r chi.Router) {
 		r.Use(auth.Middleware(verifier))
+		r.Use(httpx.PlatformUserUpsert(db))
 		api.Routes(r)
 	})
 

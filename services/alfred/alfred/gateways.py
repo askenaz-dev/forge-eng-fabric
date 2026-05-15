@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any
+from typing import Any, Callable
 
 import httpx
 
@@ -19,23 +19,62 @@ class RAGClient:
         text: str,
         top_k: int = 8,
         principal: str = "alfred",
+        app_id: uuid.UUID | str | None = None,
     ) -> list[dict[str, Any]]:
+        """Retrieve top-k hits scoped to the workspace.
+
+        Phase 5 (app-first-class-entity 7.3): when an `app_id` is supplied the
+        query is scoped to the App's corpus by default. If the App corpus is
+        empty the caller decides whether to widen to the workspace (see
+        `query_with_app_scope` below); this method only adds the App filter
+        and logs the effective scope so downstream observability can spot
+        retrieval gaps.
+        """
+        body: dict[str, Any] = {
+            "workspace_id": str(workspace_id),
+            "text": text,
+            "top_k": top_k,
+            "principal": principal,
+        }
+        if app_id is not None:
+            body["app_id"] = str(app_id)
         try:
             async with httpx.AsyncClient(timeout=10.0) as client:
-                r = await client.post(
-                    f"{self._base}/v1/query",
-                    json={
-                        "workspace_id": str(workspace_id),
-                        "text": text,
-                        "top_k": top_k,
-                        "principal": principal,
-                    },
-                )
+                r = await client.post(f"{self._base}/v1/query", json=body)
                 if r.status_code != 200:
                     return []
                 return r.json().get("results", [])
         except httpx.HTTPError:
             return []
+
+    async def query_with_app_scope(
+        self,
+        *,
+        workspace_id: uuid.UUID,
+        text: str,
+        top_k: int = 8,
+        principal: str = "alfred",
+        app_id: uuid.UUID | str | None,
+        observe: Callable[[dict[str, Any]], None] | None = None,
+    ) -> list[dict[str, Any]]:
+        """Two-pass retriever: try the App corpus first, fall back to the
+        workspace corpus when the App corpus returns nothing. This matches the
+        Phase 5 retrieval policy: App-first, workspace-fallback, every retrieval
+        logged so downstream observability can spot the fallback frequency.
+        """
+        if app_id is not None:
+            hits = await self.query(workspace_id=workspace_id, text=text, top_k=top_k,
+                                    principal=principal, app_id=app_id)
+            if hits:
+                if observe is not None:
+                    observe({"scope": "app", "app_id": str(app_id), "workspace_id": str(workspace_id), "hits": len(hits)})
+                return hits
+            if observe is not None:
+                observe({"scope": "workspace_fallback", "app_id": str(app_id), "workspace_id": str(workspace_id), "hits": 0})
+        hits = await self.query(workspace_id=workspace_id, text=text, top_k=top_k, principal=principal)
+        if observe is not None and app_id is None:
+            observe({"scope": "workspace", "workspace_id": str(workspace_id), "hits": len(hits)})
+        return hits
 
 
 class PolicyClient:

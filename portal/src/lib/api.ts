@@ -18,24 +18,28 @@ export type Endpoint =
   | "FINOPS_URL"
   | "POLICY_URL"
   | "RUNTIME_REGISTRY_URL"
-  | "ALFRED_URL";
+  | "ALFRED_URL"
+  | "HEALING_URL"
+  | "WORKFLOW_RUNTIME_URL";
 
 const DEFAULTS: Record<Endpoint, string> = {
-  CONTROL_PLANE_URL: "http://localhost:8081",
-  APPROVALS_URL:     "http://localhost:8105",
-  SDLC_URL:          "http://localhost:8086",
-  REGISTRY_URL:      "http://localhost:8089",
-  AUDIT_URL:         "http://localhost:8088",
-  OBS_URL:           "http://localhost:8091",
-  NOTIFICATIONS_URL: "http://localhost:8092",
-  OPENSPEC_URL:      "http://localhost:8094",
-  DEPLOY_URL:        "http://localhost:8096",
-  INCIDENT_URL:      "http://localhost:8097",
-  EVOLUTION_URL:     "http://localhost:8098",
-  FINOPS_URL:        "http://localhost:8099",
-  POLICY_URL:        "http://localhost:8102",
+  CONTROL_PLANE_URL:    "http://localhost:8081",
+  APPROVALS_URL:        "http://localhost:8105",
+  SDLC_URL:             "http://localhost:8086",
+  REGISTRY_URL:         "http://localhost:8089",
+  AUDIT_URL:            "http://localhost:8088",
+  OBS_URL:              "http://localhost:8091",
+  NOTIFICATIONS_URL:    "http://localhost:8092",
+  OPENSPEC_URL:         "http://localhost:8094",
+  DEPLOY_URL:           "http://localhost:8096",
+  INCIDENT_URL:         "http://localhost:8097",
+  EVOLUTION_URL:        "http://localhost:8098",
+  FINOPS_URL:           "http://localhost:8099",
+  POLICY_URL:           "http://localhost:8102",
   RUNTIME_REGISTRY_URL: "http://localhost:8110",
-  ALFRED_URL:        "http://localhost:8090",
+  ALFRED_URL:           "http://localhost:8090",
+  HEALING_URL:          "http://localhost:8107",
+  WORKFLOW_RUNTIME_URL: "http://localhost:8095",
 };
 
 export function endpoint(name: Endpoint): string {

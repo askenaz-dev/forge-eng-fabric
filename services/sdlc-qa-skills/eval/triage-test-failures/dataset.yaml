@@ -1,0 +1,5 @@
+asset_id: sdlc.qa.triage-test-failures.eval
+version: "1.0.0"
+description: "Graded fixtures for triage-test-failures skill: top hypotheses, affected files, proposed patch, adversarial CI-failure cases."
+trust_level: T1
+fixtures: fixtures.json

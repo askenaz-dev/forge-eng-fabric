@@ -20,9 +20,26 @@ const (
 	StatusFailed          Status = "failed"
 )
 
+// AppProposal is the inline-create payload accepted by onboarding requests
+// when the caller wants to atomically materialise a new App together with the
+// repo (app-first-class-entity 8.2). Either `AppID` (existing App) or
+// `AppProposal` (new App) MUST be supplied — never both.
+type AppProposal struct {
+	Slug        string   `json:"slug"`
+	Name        string   `json:"name"`
+	Description string   `json:"description,omitempty"`
+	Owners      []string `json:"owners,omitempty"`
+}
+
 type Request struct {
 	ID                 string         `json:"id"`
 	WorkspaceID        string         `json:"workspace_id"`
+	// Phase 5 (app-first-class-entity 8.1): every onboarding request belongs
+	// to exactly one App. Either AppID OR AppProposal MUST be supplied;
+	// after submission AppID is always populated (AppProposal is consumed by
+	// the inline-create step and discarded).
+	AppID              string         `json:"app_id,omitempty"`
+	AppProposal        *AppProposal   `json:"app_proposal,omitempty"`
 	TenantID           string         `json:"tenant_id"`
 	RepoOrg            string         `json:"repo_org"`
 	RepoName           string         `json:"repo_name"`
@@ -164,12 +181,25 @@ func (s *Store) List(filter RequestFilter) []*Request {
 	return out
 }
 
-func key(workspaceID, repoName string) string { return workspaceID + "/" + repoName }
+// key derives the idempotency key for an onboarding request. Phase 5
+// (app-first-class-entity 8.3): the key is now (workspace_id, app_id,
+// repo_name) so the same repo can be onboarded against two different Apps
+// in the same workspace (e.g. a monorepo backing two products).
+func key(workspaceID, appID, repoName string) string {
+	if appID == "" {
+		// Legacy callers that pre-date app-first-class-entity continue to use
+		// the (workspace_id, repo_name) shape until the per-workspace
+		// `forge.app_entity.enabled` flag flips. See db/migrations/app-onboarding/0003_app_id.sql
+		// where the legacy partial-unique index mirrors this.
+		return workspaceID + "/" + repoName
+	}
+	return workspaceID + "/" + appID + "/" + repoName
+}
 
 func (s *Store) Insert(r *Request) (*Request, bool, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if existing, ok := s.byKey[key(r.WorkspaceID, r.RepoName)]; ok {
+	if existing, ok := s.byKey[key(r.WorkspaceID, r.AppID, r.RepoName)]; ok {
 		// Idempotent: return existing instead of creating a duplicate.
 		return s.requests[existing], false, nil
 	}
@@ -186,7 +216,7 @@ func (s *Store) Insert(r *Request) (*Request, bool, error) {
 		r.Status = StatusPending
 	}
 	s.requests[r.ID] = r
-	s.byKey[key(r.WorkspaceID, r.RepoName)] = r.ID
+	s.byKey[key(r.WorkspaceID, r.AppID, r.RepoName)] = r.ID
 	return r, true, nil
 }
 

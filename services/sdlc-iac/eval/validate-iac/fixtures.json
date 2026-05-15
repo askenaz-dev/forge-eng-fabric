@@ -1,0 +1,744 @@
+[
+  {
+    "id": "iac-val-001",
+    "input": {
+      "app_id": "app-payments-api",
+      "terraform_module_path": "terraform/payments-api",
+      "helm_values_path": "helm/payments-api/values-prod.yaml",
+      "correlation_id": "corr-val-001"
+    },
+    "expected": {
+      "status": "passed",
+      "report": {
+        "terraform_fmt_passed": true,
+        "terraform_plan_passed": true,
+        "helm_lint_passed": true,
+        "helm_template_passed": true,
+        "conftest_passed": true,
+        "conftest_violations": []
+      }
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-val-002",
+    "input": {
+      "app_id": "app-search-svc",
+      "terraform_module_path": "terraform/search-svc",
+      "helm_values_path": "helm/search-svc/values-prod.yaml",
+      "correlation_id": "corr-val-002"
+    },
+    "expected": {
+      "status": "passed",
+      "report": {
+        "terraform_fmt_passed": true,
+        "terraform_plan_passed": true,
+        "helm_lint_passed": true,
+        "helm_template_passed": true,
+        "conftest_passed": true,
+        "conftest_violations": []
+      }
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-val-003",
+    "input": {
+      "app_id": "app-notification-svc",
+      "terraform_module_path": "terraform/notification-svc",
+      "helm_values_path": "helm/notification-svc/values-prod.yaml",
+      "correlation_id": "corr-val-003"
+    },
+    "expected": {
+      "status": "passed",
+      "report": {
+        "terraform_fmt_passed": true,
+        "terraform_plan_passed": true,
+        "helm_lint_passed": true,
+        "helm_template_passed": true,
+        "conftest_passed": true,
+        "conftest_violations": []
+      }
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-val-004",
+    "input": {
+      "app_id": "app-user-profile",
+      "terraform_module_path": "terraform/user-profile",
+      "helm_values_path": "helm/user-profile/values-prod.yaml",
+      "correlation_id": "corr-val-004"
+    },
+    "expected": {
+      "status": "passed",
+      "report": {
+        "terraform_fmt_passed": true,
+        "terraform_plan_passed": true,
+        "helm_lint_passed": true,
+        "helm_template_passed": true,
+        "conftest_passed": true,
+        "conftest_violations": []
+      }
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-val-005",
+    "input": {
+      "app_id": "app-inventory-svc",
+      "terraform_module_path": "terraform/inventory-svc",
+      "helm_values_path": "helm/inventory-svc/values-prod.yaml",
+      "correlation_id": "corr-val-005"
+    },
+    "expected": {
+      "status": "passed",
+      "report": {
+        "terraform_fmt_passed": true,
+        "terraform_plan_passed": true,
+        "helm_lint_passed": true,
+        "helm_template_passed": true,
+        "conftest_passed": true,
+        "conftest_violations": []
+      }
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-val-006",
+    "input": {
+      "app_id": "app-billing-svc",
+      "terraform_module_path": "terraform/billing-svc",
+      "helm_values_path": "helm/billing-svc/values-prod.yaml",
+      "correlation_id": "corr-val-006"
+    },
+    "expected": {
+      "status": "passed",
+      "report": {
+        "terraform_fmt_passed": true,
+        "terraform_plan_passed": true,
+        "helm_lint_passed": true,
+        "helm_template_passed": true,
+        "conftest_passed": true,
+        "conftest_violations": []
+      }
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-val-007",
+    "input": {
+      "app_id": "app-analytics-svc",
+      "terraform_module_path": "terraform/analytics-svc",
+      "helm_values_path": "helm/analytics-svc/values-prod.yaml",
+      "correlation_id": "corr-val-007"
+    },
+    "expected": {
+      "status": "passed",
+      "report": {
+        "terraform_fmt_passed": true,
+        "terraform_plan_passed": true,
+        "helm_lint_passed": true,
+        "helm_template_passed": true,
+        "conftest_passed": true,
+        "conftest_violations": []
+      }
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-val-008",
+    "input": {
+      "app_id": "app-auth-gateway",
+      "terraform_module_path": "terraform/auth-gateway",
+      "helm_values_path": "helm/auth-gateway/values-prod.yaml",
+      "correlation_id": "corr-val-008"
+    },
+    "expected": {
+      "status": "passed",
+      "report": {
+        "terraform_fmt_passed": true,
+        "terraform_plan_passed": true,
+        "helm_lint_passed": true,
+        "helm_template_passed": true,
+        "conftest_passed": true,
+        "conftest_violations": []
+      }
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-val-009",
+    "input": {
+      "app_id": "app-file-processor",
+      "terraform_module_path": "terraform/file-processor",
+      "helm_values_path": "helm/file-processor/values-prod.yaml",
+      "correlation_id": "corr-val-009"
+    },
+    "expected": {
+      "status": "passed",
+      "report": {
+        "terraform_fmt_passed": true,
+        "terraform_plan_passed": true,
+        "helm_lint_passed": true,
+        "helm_template_passed": true,
+        "conftest_passed": true,
+        "conftest_violations": []
+      }
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-val-010",
+    "input": {
+      "app_id": "app-event-consumer",
+      "terraform_module_path": "terraform/event-consumer",
+      "helm_values_path": "helm/event-consumer/values-prod.yaml",
+      "correlation_id": "corr-val-010"
+    },
+    "expected": {
+      "status": "passed",
+      "report": {
+        "terraform_fmt_passed": true,
+        "terraform_plan_passed": true,
+        "helm_lint_passed": true,
+        "helm_template_passed": true,
+        "conftest_passed": true,
+        "conftest_violations": []
+      }
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-val-011",
+    "input": {
+      "app_id": "app-stream-processor",
+      "terraform_module_path": "terraform/stream-processor",
+      "helm_values_path": "helm/stream-processor/values-prod.yaml",
+      "correlation_id": "corr-val-011"
+    },
+    "expected": {
+      "status": "passed",
+      "report": {
+        "terraform_fmt_passed": true,
+        "terraform_plan_passed": true,
+        "helm_lint_passed": true,
+        "helm_template_passed": true,
+        "conftest_passed": true,
+        "conftest_violations": []
+      }
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-val-012",
+    "input": {
+      "app_id": "app-cdn-purge",
+      "terraform_module_path": "terraform/cdn-purge",
+      "helm_values_path": "helm/cdn-purge/values-prod.yaml",
+      "correlation_id": "corr-val-012"
+    },
+    "expected": {
+      "status": "passed",
+      "report": {
+        "terraform_fmt_passed": true,
+        "terraform_plan_passed": true,
+        "helm_lint_passed": true,
+        "helm_template_passed": true,
+        "conftest_passed": true,
+        "conftest_violations": []
+      }
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-val-013",
+    "input": {
+      "app_id": "app-report-gen",
+      "terraform_module_path": "terraform/report-gen",
+      "helm_values_path": "helm/report-gen/values-prod.yaml",
+      "correlation_id": "corr-val-013"
+    },
+    "expected": {
+      "status": "passed",
+      "report": {
+        "terraform_fmt_passed": true,
+        "terraform_plan_passed": true,
+        "helm_lint_passed": true,
+        "helm_template_passed": true,
+        "conftest_passed": true,
+        "conftest_violations": []
+      }
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-val-014",
+    "input": {
+      "app_id": "app-config-server",
+      "terraform_module_path": "terraform/config-server",
+      "helm_values_path": "helm/config-server/values-prod.yaml",
+      "correlation_id": "corr-val-014"
+    },
+    "expected": {
+      "status": "passed",
+      "report": {
+        "terraform_fmt_passed": true,
+        "terraform_plan_passed": true,
+        "helm_lint_passed": true,
+        "helm_template_passed": true,
+        "conftest_passed": true,
+        "conftest_violations": []
+      }
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-val-015",
+    "input": {
+      "app_id": "app-job-scheduler",
+      "terraform_module_path": "terraform/job-scheduler",
+      "helm_values_path": "helm/job-scheduler/values-prod.yaml",
+      "correlation_id": "corr-val-015"
+    },
+    "expected": {
+      "status": "passed",
+      "report": {
+        "terraform_fmt_passed": true,
+        "terraform_plan_passed": true,
+        "helm_lint_passed": true,
+        "helm_template_passed": true,
+        "conftest_passed": true,
+        "conftest_violations": []
+      }
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-val-016",
+    "input": {
+      "app_id": "app-cache-proxy",
+      "terraform_module_path": "terraform/cache-proxy",
+      "helm_values_path": "helm/cache-proxy/values-prod.yaml",
+      "correlation_id": "corr-val-016"
+    },
+    "expected": {
+      "status": "passed",
+      "report": {
+        "terraform_fmt_passed": true,
+        "terraform_plan_passed": true,
+        "helm_lint_passed": true,
+        "helm_template_passed": true,
+        "conftest_passed": true,
+        "conftest_violations": []
+      }
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-val-017",
+    "input": {
+      "app_id": "app-grpc-server",
+      "terraform_module_path": "terraform/grpc-server",
+      "helm_values_path": "helm/grpc-server/values-prod.yaml",
+      "correlation_id": "corr-val-017"
+    },
+    "expected": {
+      "status": "passed",
+      "report": {
+        "terraform_fmt_passed": true,
+        "terraform_plan_passed": true,
+        "helm_lint_passed": true,
+        "helm_template_passed": true,
+        "conftest_passed": true,
+        "conftest_violations": []
+      }
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-val-018",
+    "input": {
+      "app_id": "app-upload-svc",
+      "terraform_module_path": "terraform/upload-svc",
+      "helm_values_path": "helm/upload-svc/values-prod.yaml",
+      "correlation_id": "corr-val-018"
+    },
+    "expected": {
+      "status": "passed",
+      "report": {
+        "terraform_fmt_passed": true,
+        "terraform_plan_passed": true,
+        "helm_lint_passed": true,
+        "helm_template_passed": true,
+        "conftest_passed": true,
+        "conftest_violations": []
+      }
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-val-019",
+    "input": {
+      "app_id": "app-audit-trail",
+      "terraform_module_path": "terraform/audit-trail",
+      "helm_values_path": "helm/audit-trail/values-prod.yaml",
+      "correlation_id": "corr-val-019"
+    },
+    "expected": {
+      "status": "passed",
+      "report": {
+        "terraform_fmt_passed": true,
+        "terraform_plan_passed": true,
+        "helm_lint_passed": true,
+        "helm_template_passed": true,
+        "conftest_passed": true,
+        "conftest_violations": []
+      }
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-val-020",
+    "input": {
+      "app_id": "app-rbac-svc",
+      "terraform_module_path": "terraform/rbac-svc",
+      "helm_values_path": "helm/rbac-svc/values-prod.yaml",
+      "correlation_id": "corr-val-020"
+    },
+    "expected": {
+      "status": "passed",
+      "report": {
+        "terraform_fmt_passed": true,
+        "terraform_plan_passed": true,
+        "helm_lint_passed": true,
+        "helm_template_passed": true,
+        "conftest_passed": true,
+        "conftest_violations": []
+      }
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-val-021",
+    "input": {
+      "app_id": "app-metrics-collector",
+      "terraform_module_path": "terraform/metrics-collector",
+      "helm_values_path": "helm/metrics-collector/values-prod.yaml",
+      "correlation_id": "corr-val-021"
+    },
+    "expected": {
+      "status": "passed",
+      "report": {
+        "terraform_fmt_passed": true,
+        "terraform_plan_passed": true,
+        "helm_lint_passed": true,
+        "helm_template_passed": true,
+        "conftest_passed": true,
+        "conftest_violations": []
+      }
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-val-022",
+    "input": {
+      "app_id": "app-session-mgr",
+      "terraform_module_path": "terraform/session-mgr",
+      "helm_values_path": "helm/session-mgr/values-prod.yaml",
+      "correlation_id": "corr-val-022"
+    },
+    "expected": {
+      "status": "passed",
+      "report": {
+        "terraform_fmt_passed": true,
+        "terraform_plan_passed": true,
+        "helm_lint_passed": true,
+        "helm_template_passed": true,
+        "conftest_passed": true,
+        "conftest_violations": []
+      }
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-val-023",
+    "input": {
+      "app_id": "app-proxy-svc",
+      "terraform_module_path": "terraform/proxy-svc",
+      "helm_values_path": "helm/proxy-svc/values-prod.yaml",
+      "correlation_id": "corr-val-023"
+    },
+    "expected": {
+      "status": "passed",
+      "report": {
+        "terraform_fmt_passed": true,
+        "terraform_plan_passed": true,
+        "helm_lint_passed": true,
+        "helm_template_passed": true,
+        "conftest_passed": true,
+        "conftest_violations": []
+      }
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-val-024",
+    "input": {
+      "app_id": "app-feature-flags",
+      "terraform_module_path": "terraform/feature-flags",
+      "helm_values_path": "helm/feature-flags/values-prod.yaml",
+      "correlation_id": "corr-val-024"
+    },
+    "expected": {
+      "status": "passed",
+      "report": {
+        "terraform_fmt_passed": true,
+        "terraform_plan_passed": true,
+        "helm_lint_passed": true,
+        "helm_template_passed": true,
+        "conftest_passed": true,
+        "conftest_violations": []
+      }
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-val-025",
+    "input": {
+      "app_id": "app-email-renderer",
+      "terraform_module_path": "terraform/email-renderer",
+      "helm_values_path": "helm/email-renderer/values-prod.yaml",
+      "correlation_id": "corr-val-025"
+    },
+    "expected": {
+      "status": "passed",
+      "report": {
+        "terraform_fmt_passed": true,
+        "terraform_plan_passed": true,
+        "helm_lint_passed": true,
+        "helm_template_passed": true,
+        "conftest_passed": true,
+        "conftest_violations": []
+      }
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-val-026",
+    "input": {
+      "app_id": "app-log-aggregator",
+      "terraform_module_path": "terraform/log-aggregator",
+      "helm_values_path": "helm/log-aggregator/values-prod.yaml",
+      "correlation_id": "corr-val-026"
+    },
+    "expected": {
+      "status": "passed",
+      "report": {
+        "terraform_fmt_passed": true,
+        "terraform_plan_passed": true,
+        "helm_lint_passed": true,
+        "helm_template_passed": true,
+        "conftest_passed": true,
+        "conftest_violations": []
+      }
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-val-027",
+    "input": {
+      "app_id": "app-data-pipeline",
+      "terraform_module_path": "terraform/data-pipeline",
+      "helm_values_path": "helm/data-pipeline/values-prod.yaml",
+      "correlation_id": "corr-val-027"
+    },
+    "expected": {
+      "status": "passed",
+      "report": {
+        "terraform_fmt_passed": true,
+        "terraform_plan_passed": true,
+        "helm_lint_passed": true,
+        "helm_template_passed": true,
+        "conftest_passed": true,
+        "conftest_violations": []
+      }
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-val-028",
+    "input": {
+      "app_id": "app-db-migrator",
+      "terraform_module_path": "terraform/db-migrator",
+      "helm_values_path": "helm/db-migrator/values-prod.yaml",
+      "correlation_id": "corr-val-028"
+    },
+    "expected": {
+      "status": "passed",
+      "report": {
+        "terraform_fmt_passed": true,
+        "terraform_plan_passed": true,
+        "helm_lint_passed": true,
+        "helm_template_passed": true,
+        "conftest_passed": true,
+        "conftest_violations": []
+      }
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-val-029",
+    "input": {
+      "app_id": "app-order-svc",
+      "terraform_module_path": "terraform/order-svc",
+      "helm_values_path": "helm/order-svc/values-prod.yaml",
+      "correlation_id": "corr-val-029"
+    },
+    "expected": {
+      "status": "passed",
+      "report": {
+        "terraform_fmt_passed": true,
+        "terraform_plan_passed": true,
+        "helm_lint_passed": true,
+        "helm_template_passed": true,
+        "conftest_passed": true,
+        "conftest_violations": []
+      }
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-val-030",
+    "input": {
+      "app_id": "app-vault-proxy",
+      "terraform_module_path": "terraform/vault-proxy",
+      "helm_values_path": "helm/vault-proxy/values-prod.yaml",
+      "correlation_id": "corr-val-030"
+    },
+    "expected": {
+      "status": "passed",
+      "report": {
+        "terraform_fmt_passed": true,
+        "terraform_plan_passed": true,
+        "helm_lint_passed": true,
+        "helm_template_passed": true,
+        "conftest_passed": true,
+        "conftest_violations": []
+      }
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-val-adv-001",
+    "input": {
+      "app_id": "app-fmt-fail",
+      "terraform_module_path": "terraform/FAIL_TF_FMT/fmt-fail-svc",
+      "helm_values_path": "helm/fmt-fail-svc/values-prod.yaml",
+      "correlation_id": "corr-val-adv-001"
+    },
+    "expected": {
+      "status": "failed",
+      "report": {
+        "terraform_fmt_passed": false,
+        "terraform_plan_passed": true,
+        "helm_lint_passed": true,
+        "helm_template_passed": true,
+        "conftest_passed": true,
+        "conftest_violations": []
+      }
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "iac-val-adv-002",
+    "input": {
+      "app_id": "app-plan-fail",
+      "terraform_module_path": "terraform/FAIL_TF_PLAN/plan-fail-svc",
+      "helm_values_path": "helm/plan-fail-svc/values-prod.yaml",
+      "correlation_id": "corr-val-adv-002"
+    },
+    "expected": {
+      "status": "failed",
+      "report": {
+        "terraform_fmt_passed": true,
+        "terraform_plan_passed": false,
+        "helm_lint_passed": true,
+        "helm_template_passed": true,
+        "conftest_passed": true,
+        "conftest_violations": []
+      }
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "iac-val-adv-003",
+    "input": {
+      "app_id": "app-lint-fail",
+      "terraform_module_path": "terraform/lint-fail-svc",
+      "helm_values_path": "helm/FAIL_HELM_LINT/values-prod.yaml",
+      "correlation_id": "corr-val-adv-003"
+    },
+    "expected": {
+      "status": "failed",
+      "report": {
+        "terraform_fmt_passed": true,
+        "terraform_plan_passed": true,
+        "helm_lint_passed": false,
+        "helm_template_passed": false,
+        "conftest_passed": true,
+        "conftest_violations": []
+      }
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "iac-val-adv-004",
+    "input": {
+      "app_id": "app-conftest-fail",
+      "terraform_module_path": "terraform/conftest-fail-svc",
+      "helm_values_path": "helm/FAIL_CONFTEST/values-prod.yaml",
+      "correlation_id": "corr-val-adv-004"
+    },
+    "expected": {
+      "status": "failed",
+      "report": {
+        "terraform_fmt_passed": true,
+        "terraform_plan_passed": true,
+        "helm_lint_passed": true,
+        "helm_template_passed": true,
+        "conftest_passed": false,
+        "conftest_violations": [
+          "DENY: container must not run as root (policy: no-root-containers)",
+          "DENY: image tag must not be 'latest' (policy: no-latest-image-tag)",
+          "DENY: resource limits must be set for all containers (policy: require-resource-limits)"
+        ]
+      }
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "iac-val-adv-005",
+    "input": {
+      "app_id": "app-all-fail",
+      "terraform_module_path": "terraform/FAIL_TF_FMT/FAIL_TF_PLAN/all-fail-svc",
+      "helm_values_path": "helm/FAIL_HELM_LINT/FAIL_CONFTEST/values-prod.yaml",
+      "correlation_id": "corr-val-adv-005"
+    },
+    "expected": {
+      "status": "failed",
+      "report": {
+        "terraform_fmt_passed": false,
+        "terraform_plan_passed": false,
+        "helm_lint_passed": false,
+        "helm_template_passed": false,
+        "conftest_passed": false,
+        "conftest_violations": [
+          "DENY: container must not run as root (policy: no-root-containers)",
+          "DENY: image tag must not be 'latest' (policy: no-latest-image-tag)"
+        ]
+      }
+    },
+    "weight": 2.0
+  }
+]

@@ -186,3 +186,74 @@ The Alfred store SHALL persist `alfred_agent_session` rows and `alfred_agent_ste
 
 - **WHEN** a `workflow` step triggers `forge.reference.intent-to-deploy@1`
 - **THEN** the `alfred_agent_step` row SHALL record the workflow id and run id, and joining back via the run id SHALL return the workflow runtime's per-step events without re-deriving them
+
+### Requirement: Alfred requires explicit App scope to create or modify specs
+
+Every Alfred dialogue turn that could create or mutate an OpenSpec SHALL carry an explicit `app_id` in the request context. Alfred SHALL refuse to call the OpenSpec backbone with an unscoped intent and SHALL surface the App scope step (via the Intent Capture Wizard) when the caller has not yet picked one. The `app_id` SHALL be included in every decision-log entry produced during that turn.
+
+#### Scenario: Dialogue without app_id is rejected
+
+- **WHEN** any caller calls `POST /v1/intent/start` without `app_id` in the request body
+- **THEN** Alfred MUST return `422 missing_app_scope` together with a hint pointing at the wizard's App scope step
+- **AND** Alfred MUST NOT create a draft OpenSpec
+
+#### Scenario: Decision log records app_id on every turn
+
+- **WHEN** Alfred completes an intent dialogue turn for `app_id=app-1`
+- **THEN** every decision-log entry produced for that turn MUST include `app_id=app-1`
+- **AND** the audit event MUST include `app_id=app-1`
+
+### Requirement: Alfred RAG queries are scoped to the App by default
+
+When Alfred performs RAG retrieval inside an active dialogue with a resolved `app_id`, the query SHALL be scoped to the App's corpus first (its specs, decision logs, deployments and dashboards) and SHALL fall back to the parent Workspace corpus only when the App-scoped result set is empty or when the user explicitly broadens the scope. The retrieval log SHALL record the effective scope.
+
+#### Scenario: App-scoped retrieval
+
+- **GIVEN** an active dialogue for `app_id=app-1` in `workspace=ws-1`
+- **WHEN** Alfred performs RAG retrieval
+- **THEN** the retrieval log MUST record `scope=app:app-1` and the returned chunks MUST all belong to App `app-1`
+- **AND** the retrieval MUST NOT include chunks from other Apps in `ws-1`
+
+#### Scenario: Fallback to workspace scope when app corpus is empty
+
+- **GIVEN** an active dialogue for a newly created App with no prior corpus
+- **WHEN** Alfred performs RAG retrieval and the App corpus returns zero hits
+- **THEN** the retrieval MUST automatically broaden to `scope=workspace:ws-1` and the log MUST record both the initial and the broadened scope
+
+### Requirement: Alfred runs dedup retrieval before persisting a new draft
+
+For every new intent capture flow (Friendly view conversation, Advanced view `/forge` invocation, wizard, dock empty-state), Alfred SHALL run the dedup retrieval (`POST /v1/intent/match`) before persisting a draft spec. If the top hit's score meets the tenant threshold, the dialogue API SHALL return a `spec_match` block carrying the candidate(s) so the consuming UI can render the match dialog. The caller MUST send `bypass_match=true` to skip the pass (used by "Crear nuevo" and by automation that has already resolved the question).
+
+#### Scenario: Match block returned on intent start
+
+- **GIVEN** a workspace `ws-1` with `app-1` and a similar existing spec `spec-7`
+- **WHEN** any UI calls `POST /v1/intent/start` with `{workspace_id: ws-1, app_id: app-1, intent: "Necesito una app para registrar vacaciones"}`
+- **THEN** Alfred MUST first run the dedup retrieval, and if the top hit scores ≥ threshold MUST return `200 OK` with a body containing `spec_match: { candidate: { spec_id: spec-7, score, lifecycle_state, ... }, threshold }` and no `draft_id`
+- **AND** the response MUST NOT persist a draft yet
+- **AND** an `alfred.intent.match_found.v1` event MUST be emitted
+
+#### Scenario: bypass_match skips dedup
+
+- **WHEN** the UI calls `POST /v1/intent/start` with `bypass_match=true`
+- **THEN** Alfred MUST skip the dedup retrieval, persist a fresh draft and return the `draft_id` + first question
+
+#### Scenario: resume_spec_id extends an existing spec
+
+- **WHEN** the UI calls `POST /v1/intent/start` with `resume_spec_id=spec-7`
+- **THEN** Alfred MUST hydrate the existing spec into the dialogue context, persist a continuation draft referencing `spec-7`, and proceed with a continuation prompt instead of the fresh-intent prompt
+
+### Requirement: Dialogue context carries view marker for persona rendering
+
+Alfred's dialogue API SHALL accept a `view: "friendly" | "advanced"` field on `POST /v1/intent/start` and on `POST /v1/intent/answer`. The view marker SHALL be propagated to the LLM call so the persona rendering (label vs raw ID, citation footer style) matches the consumer surface. Audit events SHALL include `view` for slice-and-dice.
+
+#### Scenario: Friendly view triggers label-only rendering
+
+- **WHEN** any call carries `view=friendly`
+- **THEN** Alfred's response MUST replace every raw entity ID in the rendered text with the entity's human label (using the platform label resolver)
+- **AND** the audit event MUST include `view=friendly`
+
+#### Scenario: Advanced view preserves raw IDs
+
+- **WHEN** any call carries `view=advanced`
+- **THEN** Alfred's response MAY include raw IDs in the rendered text
+- **AND** the audit event MUST include `view=advanced`

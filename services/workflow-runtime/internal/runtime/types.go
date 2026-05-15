@@ -40,23 +40,74 @@ const (
 
 // Execution describes a workflow execution.
 type Execution struct {
-	ID            string             `json:"id"`
-	TenantID      string             `json:"tenant_id"`
-	WorkspaceID   string             `json:"workspace_id"`
-	Namespace     string             `json:"namespace"`
-	WorkflowID    string             `json:"workflow_id"`
-	Version       string             `json:"version"`
-	CorrelationID string             `json:"correlation_id,omitempty"`
-	Status        ExecutionStatus    `json:"status"`
-	Inputs        map[string]any     `json:"inputs,omitempty"`
-	Outputs       map[string]any     `json:"outputs,omitempty"`
-	Steps         []StepEvent        `json:"steps"`
-	StartedAt     time.Time          `json:"started_at"`
-	UpdatedAt     time.Time          `json:"updated_at"`
-	CompletedAt   *time.Time         `json:"completed_at,omitempty"`
-	FailureReason string             `json:"failure_reason,omitempty"`
-	Compensations []CompensationItem `json:"compensations,omitempty"`
-	DryRun        bool               `json:"dry_run,omitempty"`
+	ID             string             `json:"id"`
+	TenantID       string             `json:"tenant_id"`
+	WorkspaceID    string             `json:"workspace_id"`
+	Namespace      string             `json:"namespace"`
+	WorkflowID     string             `json:"workflow_id"`
+	Version        string             `json:"version"`
+	CorrelationID  string             `json:"correlation_id,omitempty"`
+	Status         ExecutionStatus    `json:"status"`
+	Inputs         map[string]any     `json:"inputs,omitempty"`
+	Outputs        map[string]any     `json:"outputs,omitempty"`
+	Steps          []StepEvent        `json:"steps"`
+	StartedAt      time.Time          `json:"started_at"`
+	UpdatedAt      time.Time          `json:"updated_at"`
+	CompletedAt    *time.Time         `json:"completed_at,omitempty"`
+	FailureReason  string             `json:"failure_reason,omitempty"`
+	Compensations  []CompensationItem `json:"compensations,omitempty"`
+	DryRun         bool               `json:"dry_run,omitempty"`
+	SelectedAssets *SelectedAssets    `json:"selected_assets,omitempty"`
+}
+
+// SelectedAssets is the pinned set the wizard / visual editor saved on
+// the workflow. When non-empty, the engine refuses to invoke any asset
+// not present in the corresponding list. Empty means no pinning — the
+// engine reverts to its pre-change behavior.
+//
+// The id values are matched against `step.ref` for skill / mcp / agent
+// steps. Empty SelectedAssets (or nil) preserves the current open
+// behavior.
+type SelectedAssets struct {
+	Skills []string `json:"skills,omitempty"`
+	MCPs   []string `json:"mcps,omitempty"`
+	Agents []string `json:"agents,omitempty"`
+}
+
+// IsEmpty reports whether the pinned set has nothing to enforce.
+func (s *SelectedAssets) IsEmpty() bool {
+	if s == nil {
+		return true
+	}
+	return len(s.Skills) == 0 && len(s.MCPs) == 0 && len(s.Agents) == 0
+}
+
+// Allows reports whether a step with the given type+ref is in the pinned
+// set. Empty pinned set always allows (no enforcement); empty sub-list
+// for the step's family denies (deny-by-default within a pinned set).
+func (s *SelectedAssets) Allows(stepType, ref string) bool {
+	if s.IsEmpty() {
+		return true
+	}
+	var list []string
+	switch stepType {
+	case "skill":
+		list = s.Skills
+	case "mcp":
+		list = s.MCPs
+	case "agent", "sub_workflow":
+		list = s.Agents
+	default:
+		// Non-asset steps (branch, loop, prompt, hitl, event) are always
+		// allowed; pinning targets asset invocation only.
+		return true
+	}
+	for _, a := range list {
+		if a == ref {
+			return true
+		}
+	}
+	return false
 }
 
 // StepEvent records a single step transition; multiple events for the
@@ -83,12 +134,13 @@ type CompensationItem struct {
 
 // StartRequest is the input for starting a workflow execution.
 type StartRequest struct {
-	TenantID      string         `json:"tenant_id"`
-	WorkspaceID   string         `json:"workspace_id"`
-	Workflow      *ast.Workflow  `json:"workflow"`
-	Inputs        map[string]any `json:"inputs,omitempty"`
-	CorrelationID string         `json:"correlation_id,omitempty"`
-	DryRun        bool           `json:"dry_run,omitempty"`
+	TenantID       string          `json:"tenant_id"`
+	WorkspaceID    string          `json:"workspace_id"`
+	Workflow       *ast.Workflow   `json:"workflow"`
+	Inputs         map[string]any  `json:"inputs,omitempty"`
+	CorrelationID  string          `json:"correlation_id,omitempty"`
+	DryRun         bool            `json:"dry_run,omitempty"`
+	SelectedAssets *SelectedAssets `json:"selected_assets,omitempty"`
 }
 
 // SignalRequest is the input for delivering a signal to an execution.

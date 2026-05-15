@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/forge-eng-fabric/services/control-plane/internal/auth"
+	"github.com/forge-eng-fabric/services/control-plane/internal/store"
 	"github.com/google/uuid"
 )
 
@@ -45,6 +47,27 @@ func AccessLog(next http.Handler) http.Handler {
 			r.Method, r.URL.Path, sw.status, time.Since(start),
 			CorrelationFromContext(r.Context()))
 	})
+}
+
+// PlatformUserUpsert records every authenticated principal in the
+// platform_user table so the portal can offer "users of the platform" as
+// pickable suggestions (workspace owners, etc.). Best-effort: a failed
+// upsert never blocks the request.
+func PlatformUserUpsert(db *store.DB) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if p, ok := auth.FromContext(r.Context()); ok && p.Subject != "" {
+				go func(subject, username, email string) {
+					ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+					defer cancel()
+					if err := db.UpsertPlatformUser(ctx, subject, username, email); err != nil {
+						log.Printf("platform_user upsert: %v", err)
+					}
+				}(p.Subject, p.Username, p.Email)
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
 }
 
 type statusWriter struct {

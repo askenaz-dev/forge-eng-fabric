@@ -193,6 +193,10 @@ func (s *Service) Submit(ctx context.Context, req *Request) (*Request, error) {
 		fmt.Sprintf("workspace/%s/repo/%s", stored.WorkspaceID, stored.RepoName),
 		map[string]any{
 			"workspace_id": stored.WorkspaceID,
+			// Phase 5 (app-first-class-entity 8.3): onboarding events carry
+			// app_id so subscribers (SDLC orchestrator, traceability) can
+			// anchor downstream work without an extra lookup.
+			"app_id":       stored.AppID,
 			"repo_name":    stored.RepoName,
 			"template":     stored.TemplateID + "@" + stored.TemplateVersion,
 			"criticality":  stored.Criticality,
@@ -390,6 +394,12 @@ func validateRequest(req *Request) error {
 	}
 	if req.TemplateID == "" || req.TemplateVersion == "" {
 		return fmt.Errorf("template_id and template_version required")
+	}
+	// Phase 5 (app-first-class-entity 8.1): exactly one of (AppID, AppProposal)
+	// must be supplied. Legacy callers (pre-rollout) may omit both; the
+	// callers responsible for the M3-M5 cutover flip the gate.
+	if req.AppID != "" && req.AppProposal != nil {
+		return fmt.Errorf("app_id and app_proposal are mutually exclusive")
 	}
 	if req.Criticality == "" {
 		req.Criticality = "medium"

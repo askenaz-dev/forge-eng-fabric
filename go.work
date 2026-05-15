@@ -2,13 +2,18 @@ go 1.22
 
 use (
 	./cli/forge
+	./pkg/a2a-shim
+	./pkg/artifact-store-adapter
 	./pkg/cosign
 	./pkg/deployers
 	./pkg/llmclient
+	./pkg/mcp-shim
 	./pkg/runtimes
 	./pkg/skill-packager
 	./pkg/workflow
+	./services/a2a-gateway
 	./services/app-onboarding
+	./services/application
 	./services/asset-observability
 	./services/audit
 	./services/control-plane
@@ -18,10 +23,12 @@ use (
 	./services/iac-drift
 	./services/incident-detection
 	./services/marketplace
+	./services/mcp-gateway
 	./services/policy-engine
 	./services/registry
 	./services/runtime-registry
 	./services/scaffolder
+	./services/sdlc-iac
 	./services/sdlc-orchestrator
 	./services/skill-gateway
 	./services/traceability

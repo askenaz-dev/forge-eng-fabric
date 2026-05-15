@@ -82,19 +82,20 @@ func (e *InMemoryEngine) StartWorkflow(ctx context.Context, req StartRequest) (*
 		return nil, errors.New("workflow_required")
 	}
 	exec := &Execution{
-		ID:            uuid.NewString(),
-		TenantID:      req.TenantID,
-		WorkspaceID:   req.WorkspaceID,
-		Namespace:     e.EnsureNamespace(req.TenantID),
-		WorkflowID:    req.Workflow.Metadata.ID,
-		Version:       req.Workflow.Metadata.Version,
-		CorrelationID: req.CorrelationID,
-		Status:        StatusPending,
-		Inputs:        req.Inputs,
-		Outputs:       map[string]any{},
-		StartedAt:     e.now(),
-		UpdatedAt:     e.now(),
-		DryRun:        req.DryRun,
+		ID:             uuid.NewString(),
+		TenantID:       req.TenantID,
+		WorkspaceID:    req.WorkspaceID,
+		Namespace:      e.EnsureNamespace(req.TenantID),
+		WorkflowID:     req.Workflow.Metadata.ID,
+		Version:        req.Workflow.Metadata.Version,
+		CorrelationID:  req.CorrelationID,
+		Status:         StatusPending,
+		Inputs:         req.Inputs,
+		Outputs:        map[string]any{},
+		StartedAt:      e.now(),
+		UpdatedAt:      e.now(),
+		DryRun:         req.DryRun,
+		SelectedAssets: req.SelectedAssets,
 	}
 	e.put(exec)
 	signalCh := make(chan signalEnvelope, 8)
@@ -315,6 +316,21 @@ type stepContext struct {
 }
 
 func (e *InMemoryEngine) runStep(ctx context.Context, exec *Execution, sc stepContext, signals <-chan signalEnvelope) (map[string]any, error) {
+	// Pinned-asset enforcement (active-registry-gateways §6.3). If the
+	// caller pinned a selected_assets set on the execution and the step
+	// invokes an asset that isn't on the list, refuse with
+	// `asset_not_pinned` and emit guardrail.trip.v1.
+	if !exec.SelectedAssets.IsEmpty() && sc.Step.Ref != "" {
+		if !exec.SelectedAssets.Allows(string(sc.Step.Type), sc.Step.Ref) {
+			_ = e.sink.Emit(newEvent(exec, EventGuardrailTrip, map[string]any{
+				"step_id":  sc.Step.ID,
+				"asset_id": sc.Step.Ref,
+				"type":     string(sc.Step.Type),
+				"reason":   "asset_not_in_pinned_set",
+			}))
+			return nil, fmt.Errorf("asset_not_pinned: step %s references %s which is not in selected_assets", sc.Step.ID, sc.Step.Ref)
+		}
+	}
 	activity, err := e.registry.Resolve(sc.Step.Type)
 	if err != nil {
 		return nil, err

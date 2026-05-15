@@ -1,0 +1,1751 @@
+[
+  {
+    "id": "arch-eval-001",
+    "input": {
+      "tenant_id": "tenant-ecom-01",
+      "workspace_id": "ws-ecom-platform",
+      "decision_context": "Select a message broker for propagating order events to downstream services. We process 50,000 orders per day and need reliable, ordered delivery with replay capability.",
+      "options": [
+        {"name": "Apache Kafka", "description": "Distributed event streaming platform with durable log storage, consumer groups, and partition-based ordering."},
+        {"name": "RabbitMQ", "description": "Traditional message broker with flexible routing, priority queues, and AMQP protocol support."},
+        {"name": "AWS SQS + SNS", "description": "Managed AWS messaging services with fan-out (SNS) and reliable queuing (SQS), no ops overhead."},
+        {"name": "Google Pub/Sub", "description": "Managed Google Cloud messaging with at-least-once delivery and push/pull subscriptions."}
+      ],
+      "criteria": [
+        "Message replay and event sourcing support",
+        "Operational complexity for a 3-person team",
+        "Throughput at 50K messages/hour",
+        "Vendor lock-in risk",
+        "Cost at current and 10x scale"
+      ]
+    },
+    "expected": {
+      "status": "ok",
+      "ranked_options": [
+        {
+          "name": "Apache Kafka",
+          "score": 0.85,
+          "pros": ["Best-in-class replay capability", "Partition-based ordering", "Scales to millions of messages/hour"],
+          "cons": ["High operational complexity", "Steep learning curve"],
+          "rationale": "Strongest fit for event sourcing requirements despite higher ops burden."
+        },
+        {
+          "name": "AWS SQS + SNS",
+          "score": 0.72,
+          "pros": ["Zero ops overhead", "Scales automatically", "Low cost at moderate throughput"],
+          "cons": ["No native replay", "SQS has no strict ordering without FIFO (which has throughput limits)"],
+          "rationale": "Best choice if event replay is not critical and team prefers managed services."
+        },
+        {
+          "name": "Google Pub/Sub",
+          "score": 0.65,
+          "pros": ["Managed, low ops", "Seek-to-timestamp for limited replay"],
+          "cons": ["GCP lock-in if AWS is primary cloud", "Less ecosystem tooling than Kafka"],
+          "rationale": "Good managed option but creates cross-cloud dependency."
+        },
+        {
+          "name": "RabbitMQ",
+          "score": 0.48,
+          "pros": ["Flexible routing patterns", "Low latency"],
+          "cons": ["No durable log replay", "Requires ops expertise", "Not designed for event sourcing"],
+          "rationale": "Poor fit: lacks the replay capability that is central to the requirement."
+        }
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-eval-002",
+    "input": {
+      "tenant_id": "tenant-fintech-01",
+      "workspace_id": "ws-payments",
+      "decision_context": "Choose a primary database for a financial transaction ledger requiring ACID compliance, complex queries, and support for 50M rows per month with 7-year retention.",
+      "options": [
+        {"name": "PostgreSQL", "description": "Open-source relational database with full ACID, advanced SQL, JSONB support, and mature ecosystem."},
+        {"name": "CockroachDB", "description": "Distributed SQL database with PostgreSQL compatibility, global active-active replication, and horizontal scaling."},
+        {"name": "Amazon Aurora PostgreSQL", "description": "AWS-managed Postgres-compatible database with 6-way replication, auto-scaling storage, and managed failover."},
+        {"name": "DynamoDB with transactions", "description": "AWS NoSQL database with ACID transactions, single-digit millisecond performance, and pay-per-request pricing."}
+      ],
+      "criteria": [
+        "ACID compliance with strong consistency",
+        "Complex SQL query support for reconciliation",
+        "Cost at 50M rows/month",
+        "High availability with RPO < 1 minute",
+        "PCI-DSS compliance support"
+      ]
+    },
+    "expected": {
+      "status": "ok",
+      "ranked_options": [
+        {
+          "name": "Amazon Aurora PostgreSQL",
+          "score": 0.90,
+          "pros": ["Managed failover < 30s", "Full PostgreSQL SQL compatibility", "6-way replication for durability", "AWS compliance certifications including PCI-DSS"],
+          "cons": ["AWS vendor lock-in", "Higher cost than self-hosted Postgres"],
+          "rationale": "Best balance of ACID guarantees, SQL richness, HA, and reduced operational burden for a fintech team."
+        },
+        {
+          "name": "PostgreSQL",
+          "score": 0.80,
+          "pros": ["Full SQL", "Open source with no lock-in", "Lowest cost option"],
+          "cons": ["Requires manual HA setup (Patroni/etc)", "Storage management overhead"],
+          "rationale": "Excellent choice if team has DB operational expertise to manage HA."
+        },
+        {
+          "name": "CockroachDB",
+          "score": 0.65,
+          "pros": ["Global distribution", "Horizontal scaling", "PostgreSQL wire compatible"],
+          "cons": ["Higher licensing cost", "Distributed transactions add latency", "Less mature ecosystem"],
+          "rationale": "Overkill for single-region deployment; shines for global active-active scenarios."
+        },
+        {
+          "name": "DynamoDB with transactions",
+          "score": 0.30,
+          "pros": ["Managed, scales automatically", "Low read/write latency"],
+          "cons": ["Limited SQL for complex reconciliation queries", "Transaction semantics more limited than RDBMS", "Schema rigidity concerns"],
+          "rationale": "Poor fit: reconciliation queries are complex SQL that DynamoDB is not designed for."
+        }
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-eval-003",
+    "input": {
+      "tenant_id": "tenant-health-01",
+      "workspace_id": "ws-patient-portal",
+      "decision_context": "Select an API gateway solution to centralize HIPAA access control, rate limiting, and audit logging for 12 backend microservices accessed by our React patient portal.",
+      "options": [
+        {"name": "Kong Gateway", "description": "Open-source API gateway with plugin ecosystem for rate limiting, auth, and request transformation. Self-hosted on Kubernetes."},
+        {"name": "AWS API Gateway", "description": "Fully managed AWS service for REST/HTTP/WebSocket APIs with WAF integration and CloudWatch logging."},
+        {"name": "Nginx with Lua scripting", "description": "High-performance web server extended with Lua for custom routing logic, auth, and rate limiting."},
+        {"name": "GraphQL Federation Gateway", "description": "Apollo Router or similar federating multiple GraphQL subgraphs into a single schema with per-field access control."}
+      ],
+      "criteria": [
+        "HIPAA audit logging for all PHI access",
+        "Centralized JWT validation and RBAC",
+        "Rate limiting per user and per endpoint",
+        "Operational simplicity for small DevOps team",
+        "Latency overhead < 10ms P99"
+      ]
+    },
+    "expected": {
+      "status": "ok",
+      "ranked_options": [
+        {
+          "name": "Kong Gateway",
+          "score": 0.82,
+          "pros": ["Rich plugin ecosystem covers all required features", "Kubernetes-native deployment", "Declarative config via KongIngress"],
+          "cons": ["Self-hosted ops burden", "Enterprise plugins needed for some advanced features"],
+          "rationale": "Strong all-around fit with plugins for every stated requirement."
+        },
+        {
+          "name": "AWS API Gateway",
+          "score": 0.75,
+          "pros": ["Zero ops overhead", "Native CloudWatch audit logging", "WAF integration for threat protection"],
+          "cons": ["Higher per-call cost at scale", "Limited request transformation compared to Kong"],
+          "rationale": "Excellent if already on AWS; simpler operationally but more expensive at high volume."
+        },
+        {
+          "name": "Nginx with Lua scripting",
+          "score": 0.45,
+          "pros": ["Extremely low latency overhead", "Highly customizable"],
+          "cons": ["Custom HIPAA audit logging must be built from scratch", "Lua expertise required", "Poor developer experience"],
+          "rationale": "Viable but requires significant custom development to meet HIPAA logging requirements."
+        },
+        {
+          "name": "GraphQL Federation Gateway",
+          "score": 0.35,
+          "pros": ["Excellent for GraphQL-native architectures", "Per-field access control"],
+          "cons": ["Requires migrating all backends to GraphQL", "Not designed as a general API gateway"],
+          "rationale": "Wrong tool: requires full GraphQL migration, not suitable as a general REST gateway."
+        }
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-eval-004",
+    "input": {
+      "tenant_id": "tenant-saas-01",
+      "workspace_id": "ws-multi-tenant-app",
+      "decision_context": "Choose a multi-tenancy data isolation strategy for a B2B SaaS product. We serve 50 enterprise customers today, targeting 500 in 3 years. Enterprise customers require contractual data isolation.",
+      "options": [
+        {"name": "Shared schema with row-level security", "description": "All tenants in one schema with a tenant_id column. Postgres RLS enforces isolation at the DB layer."},
+        {"name": "Separate schema per tenant", "description": "Each tenant has their own schema in a shared database cluster. Migrations run per schema."},
+        {"name": "Separate database per tenant", "description": "Each tenant has a dedicated database instance. Maximum isolation but highest infrastructure cost."},
+        {"name": "Hybrid model", "description": "SMB tenants share a pooled schema; enterprise tenants with isolation contracts get dedicated schemas or databases."}
+      ],
+      "criteria": [
+        "Data isolation guarantee for enterprise compliance",
+        "Cost efficiency at 500 tenants",
+        "New tenant onboarding time",
+        "Schema migration complexity",
+        "Scalability beyond 500 tenants"
+      ]
+    },
+    "expected": {
+      "status": "ok",
+      "ranked_options": [
+        {
+          "name": "Hybrid model",
+          "score": 0.88,
+          "pros": ["Satisfies enterprise isolation requirements", "Cost-efficient for SMB tier", "Flexible growth path"],
+          "cons": ["More complex codebase", "Two migration tracks to maintain"],
+          "rationale": "Best fit: addresses enterprise contractual requirements while keeping SMB economics viable."
+        },
+        {
+          "name": "Separate schema per tenant",
+          "score": 0.70,
+          "pros": ["Strong isolation", "Relatively cost-efficient", "Clear migration boundaries"],
+          "cons": ["Migration orchestration complexity at 500+ schemas", "Connection pooling challenges"],
+          "rationale": "Good middle ground but migration tooling overhead grows with tenant count."
+        },
+        {
+          "name": "Shared schema with row-level security",
+          "score": 0.55,
+          "pros": ["Lowest cost", "Simple migrations", "Easy onboarding"],
+          "cons": ["RLS misconfiguration risks data leakage", "Enterprise customers may reject shared schema contractually"],
+          "rationale": "Cheapest option but may fail enterprise contractual requirements."
+        },
+        {
+          "name": "Separate database per tenant",
+          "score": 0.40,
+          "pros": ["Maximum isolation", "Independent scaling per tenant"],
+          "cons": ["Very high infrastructure cost at 500 tenants", "Complex connection management", "Slow onboarding"],
+          "rationale": "Too expensive and operationally complex at target scale."
+        }
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-eval-005",
+    "input": {
+      "tenant_id": "tenant-ecom-01",
+      "workspace_id": "ws-search",
+      "decision_context": "Select a product search engine for a 10M product catalog with faceted filtering, typo tolerance, and real-time inventory updates. Team prefers managed services.",
+      "options": [
+        {"name": "Elasticsearch (self-hosted on Kubernetes)", "description": "Open-source search engine with powerful query DSL, BM25 ranking, and vector search support."},
+        {"name": "Algolia", "description": "Managed search-as-a-service with typo tolerance, instant search, and developer-friendly SDKs."},
+        {"name": "Typesense Cloud", "description": "Open-source search engine with managed hosting, typo tolerance, and simpler ops than Elasticsearch."},
+        {"name": "OpenSearch Serverless", "description": "AWS managed OpenSearch with serverless capacity and native AWS IAM integration."}
+      ],
+      "criteria": [
+        "Typo tolerance and synonym support",
+        "Faceted filtering performance",
+        "Real-time index updates for inventory",
+        "Managed service (no self-hosted ops)",
+        "Cost for 10M documents and 500K searches/day"
+      ]
+    },
+    "expected": {
+      "status": "ok",
+      "ranked_options": [
+        {
+          "name": "Algolia",
+          "score": 0.86,
+          "pros": ["Best-in-class typo tolerance out of the box", "Fastest time to value", "Excellent faceting performance", "Real-time index updates"],
+          "cons": ["Highest cost per search operation", "Less control over ranking than Elasticsearch"],
+          "rationale": "Best fit for managed preference and fast time-to-market; cost premium justified by feature quality."
+        },
+        {
+          "name": "Typesense Cloud",
+          "score": 0.75,
+          "pros": ["Strong typo tolerance", "Managed hosting", "Lower cost than Algolia", "Open source with no lock-in"],
+          "cons": ["Smaller ecosystem", "Less proven at 10M+ document scale"],
+          "rationale": "Strong cost-effective alternative with similar DX to Algolia."
+        },
+        {
+          "name": "OpenSearch Serverless",
+          "score": 0.60,
+          "pros": ["Native AWS integration", "Serverless scales to zero", "Cost-effective for bursty workloads"],
+          "cons": ["No built-in typo tolerance (requires custom analyzers)", "More complex to configure facets"],
+          "rationale": "Requires more configuration to match Algolia/Typesense UX quality."
+        },
+        {
+          "name": "Elasticsearch (self-hosted on Kubernetes)",
+          "score": 0.40,
+          "pros": ["Most flexible", "Vector search for semantic ranking", "No per-query pricing"],
+          "cons": ["High ops burden contradicts managed preference", "Requires dedicated search infrastructure engineer"],
+          "rationale": "Disqualified by managed-service preference; ops cost exceeds search cost savings."
+        }
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-eval-006",
+    "input": {
+      "tenant_id": "tenant-fintech-01",
+      "workspace_id": "ws-fraud-detection",
+      "decision_context": "Choose a real-time fraud scoring architecture for payment transactions requiring P99 inference latency under 150ms and the ability to hot-reload ML models.",
+      "options": [
+        {"name": "Kafka Streams + embedded ONNX model", "description": "Stream processing topology with ML model embedded in-process as an ONNX runtime inference session."},
+        {"name": "AWS SageMaker real-time endpoints", "description": "Managed ML inference endpoints with auto-scaling, model versioning, and A/B testing."},
+        {"name": "Feast feature store + Triton inference server", "description": "Feast for low-latency feature serving from Redis, Triton for GPU-accelerated batch and real-time inference."},
+        {"name": "Redis-based rule engine with periodic model refresh", "description": "Deterministic rules stored in Redis evaluated in-memory, with rule set refreshed from model outputs periodically."}
+      ],
+      "criteria": [
+        "P99 inference latency under 150ms",
+        "Model hot-reload without service restart",
+        "Feature consistency between training and serving",
+        "Fallback when model service is unavailable",
+        "Operational complexity"
+      ]
+    },
+    "expected": {
+      "status": "ok",
+      "ranked_options": [
+        {
+          "name": "Feast feature store + Triton inference server",
+          "score": 0.84,
+          "pros": ["Training/serving feature consistency via Feast", "Low latency with Redis feature store", "Triton supports hot model reload", "Production-grade model serving"],
+          "cons": ["Higher complexity to operate", "Requires Feast and Triton expertise"],
+          "rationale": "Best fit for production ML serving with feature consistency and hot-reload requirements."
+        },
+        {
+          "name": "AWS SageMaker real-time endpoints",
+          "score": 0.72,
+          "pros": ["Managed, low ops overhead", "Model versioning and A/B testing built-in", "Auto-scaling"],
+          "cons": ["Cold start latency risk", "SageMaker adds network hop (~30-50ms)"],
+          "rationale": "Good managed option but network latency overhead may be tight against 150ms P99 requirement."
+        },
+        {
+          "name": "Kafka Streams + embedded ONNX model",
+          "score": 0.65,
+          "pros": ["Lowest inference latency (in-process)", "No network hop for feature fetch"],
+          "cons": ["Model reload requires rolling restart or blue-green", "Feature store integration is custom"],
+          "rationale": "Excellent latency but hot-reload without restart is complex to implement correctly."
+        },
+        {
+          "name": "Redis-based rule engine with periodic model refresh",
+          "score": 0.42,
+          "pros": ["Deterministic and auditable", "Sub-millisecond rule evaluation", "Simple fallback"],
+          "cons": ["Stale rules between refresh cycles", "Cannot learn new fraud patterns in real-time", "Not a true ML solution"],
+          "rationale": "Useful as a fallback layer but not a primary ML fraud scoring solution."
+        }
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-eval-007",
+    "input": {
+      "tenant_id": "tenant-health-01",
+      "workspace_id": "ws-telehealth",
+      "decision_context": "Select a HIPAA-compliant video conferencing infrastructure for telehealth consultations requiring 99.95% uptime, adaptive bitrate for rural connectivity, and recorded sessions.",
+      "options": [
+        {"name": "Twilio Video", "description": "Programmable video API with HIPAA BAA, WebRTC-based, adaptive bitrate, and recording storage."},
+        {"name": "Daily.co", "description": "Video API built on WebRTC with HIPAA BAA, simulcast adaptive bitrate, and cloud recording."},
+        {"name": "Amazon Chime SDK", "description": "AWS media service for custom video applications; requires building UI and features on top of SDK."},
+        {"name": "Vonage Video API", "description": "OpenTok-based video API with HIPAA BAA, archiving, and server-side layout composition."}
+      ],
+      "criteria": [
+        "HIPAA Business Associate Agreement available",
+        "Uptime SLA >= 99.95%",
+        "Adaptive bitrate for low-bandwidth connections",
+        "Encrypted recording and storage",
+        "Integration effort (time to first video call)"
+      ]
+    },
+    "expected": {
+      "status": "ok",
+      "ranked_options": [
+        {
+          "name": "Daily.co",
+          "score": 0.83,
+          "pros": ["HIPAA BAA available", "Excellent simulcast for variable bandwidth", "Fast integration", "Transparent uptime history"],
+          "cons": ["Smaller company than Twilio", "Less enterprise support depth"],
+          "rationale": "Best combination of HIPAA compliance, adaptive bitrate quality, and rapid integration."
+        },
+        {
+          "name": "Twilio Video",
+          "score": 0.80,
+          "pros": ["HIPAA BAA available", "Market leader with enterprise support", "Adaptive bitrate", "Robust recording"],
+          "cons": ["More expensive at scale", "More complex API than Daily"],
+          "rationale": "Excellent choice, nearly tied with Daily; favored when enterprise support is a priority."
+        },
+        {
+          "name": "Vonage Video API",
+          "score": 0.62,
+          "pros": ["HIPAA BAA available", "Server-side recording and layout", "Good documentation"],
+          "cons": ["OpenTok platform has had reliability issues", "Less investment in product since Ericsson acquisition"],
+          "rationale": "Functional but lower confidence in long-term platform investment trajectory."
+        },
+        {
+          "name": "Amazon Chime SDK",
+          "score": 0.50,
+          "pros": ["AWS-native for existing AWS deployments", "Flexible building block approach"],
+          "cons": ["No out-of-box video UI — must build everything", "High integration effort", "BAA requires separate AWS HIPAA agreement"],
+          "rationale": "Requires significant custom development; high integration effort disqualifies for fast clinical deployment."
+        }
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-eval-008",
+    "input": {
+      "tenant_id": "tenant-saas-01",
+      "workspace_id": "ws-analytics-platform",
+      "decision_context": "Select an analytics data warehouse for customer-facing usage dashboards. Data volume starts at 500GB and grows to 10TB in 2 years. Must integrate with Postgres via CDC and support dbt.",
+      "options": [
+        {"name": "Snowflake", "description": "Cloud data warehouse with separate compute/storage, time-travel, and broad connector ecosystem."},
+        {"name": "BigQuery", "description": "Google serverless data warehouse with per-query pricing, streaming inserts, and BI Engine acceleration."},
+        {"name": "ClickHouse (self-hosted)", "description": "Open-source columnar OLAP database optimized for high-throughput analytical queries on time-series and event data."},
+        {"name": "Redshift Serverless", "description": "AWS serverless Redshift with per-RPU-second billing and automatic scaling for variable workloads."}
+      ],
+      "criteria": [
+        "Query performance on cold data < 10 seconds",
+        "Cost predictability for customer-facing queries",
+        "dbt compatibility",
+        "CDC ingestion from Postgres",
+        "Managed service preference"
+      ]
+    },
+    "expected": {
+      "status": "ok",
+      "ranked_options": [
+        {
+          "name": "BigQuery",
+          "score": 0.82,
+          "pros": ["Serverless — no cluster management", "First-class dbt support", "CDC via Datastream", "Fast cold query performance", "Per-query billing is cost-predictable for irregular usage"],
+          "cons": ["GCP lock-in if primary cloud is AWS", "Per-query cost can spike with complex queries"],
+          "rationale": "Best fit for managed preference, dbt, and CDC with predictable costs at 500GB-10TB scale."
+        },
+        {
+          "name": "Snowflake",
+          "score": 0.78,
+          "pros": ["Excellent dbt ecosystem", "Time-travel for debugging", "Multi-cloud"],
+          "cons": ["Compute cost can be unpredictable for customer-facing queries", "Requires warehouse sizing"],
+          "rationale": "Strong choice, especially if multi-cloud flexibility matters."
+        },
+        {
+          "name": "Redshift Serverless",
+          "score": 0.65,
+          "pros": ["AWS-native integration", "dbt supported", "Serverless capacity auto-scaling"],
+          "cons": ["Cold start latency on serverless can exceed 10s for large queries", "CDC setup more complex"],
+          "rationale": "Good if deeply AWS-committed but cold start performance is a risk."
+        },
+        {
+          "name": "ClickHouse (self-hosted)",
+          "score": 0.55,
+          "pros": ["Fastest query performance", "Lowest raw cost", "Excellent for time-series event data"],
+          "cons": ["Self-hosted contradicts managed preference", "dbt-clickhouse adapter is less mature", "Ops expertise required"],
+          "rationale": "Best query performance but self-hosted ops burden disqualifies given stated preference."
+        }
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-eval-009",
+    "input": {
+      "tenant_id": "tenant-logistics-01",
+      "workspace_id": "ws-routing-engine",
+      "decision_context": "Select a route optimization algorithm for last-mile delivery with 500 stops, time window constraints, and a target of routes within 5% of optimal computed in under 30 seconds.",
+      "options": [
+        {"name": "Google OR-Tools", "description": "Google's open-source operations research toolkit with VRP solvers, metaheuristics, and Python/Go/Java bindings."},
+        {"name": "Vroom", "description": "Open-source VRP solver written in C++ using local search with fast computation times."},
+        {"name": "Google Maps Platform Routes Optimization API", "description": "Managed VRP API from Google using live traffic data, time windows, and capacity constraints."},
+        {"name": "Custom genetic algorithm", "description": "In-house genetic algorithm tailored to our specific constraint set and vehicle types."}
+      ],
+      "criteria": [
+        "Solution quality: within 5% of optimal for 500 stops",
+        "Computation time under 30 seconds",
+        "Support for time window and capacity constraints",
+        "Team capability without dedicated OR expertise",
+        "Cost at 2,000 route optimizations per day"
+      ]
+    },
+    "expected": {
+      "status": "ok",
+      "ranked_options": [
+        {
+          "name": "Google OR-Tools",
+          "score": 0.87,
+          "pros": ["Proven solution quality within 5% of optimal", "Full constraint support", "Excellent documentation and examples", "Free and open source", "Active Google-backed development"],
+          "cons": ["Requires tuning search parameters for best results", "Python binding has GIL constraints for parallel solving"],
+          "rationale": "Best combination of solution quality, constraint support, and accessibility for a team without OR expertise."
+        },
+        {
+          "name": "Google Maps Platform Routes Optimization API",
+          "score": 0.75,
+          "pros": ["Managed API, no ops overhead", "Live traffic integration", "Easy to integrate"],
+          "cons": ["Per-route pricing at 2K/day adds up", "Less control over solver parameters", "Data sent to Google"],
+          "rationale": "Good managed alternative but daily API costs warrant evaluation against OR-Tools self-hosting."
+        },
+        {
+          "name": "Vroom",
+          "score": 0.68,
+          "pros": ["Very fast computation (C++)", "Open source", "REST API available"],
+          "cons": ["Less documentation than OR-Tools", "Smaller community", "Some constraint types require custom extension"],
+          "rationale": "Competitive option but OR-Tools has better documentation and community for a team new to VRP."
+        },
+        {
+          "name": "Custom genetic algorithm",
+          "score": 0.25,
+          "pros": ["Fully tailored to specific constraints", "No licensing or API costs"],
+          "cons": ["Very high development time", "No OR expertise on team", "High risk of poor solution quality", "Maintenance burden"],
+          "rationale": "High risk: OR expertise required to achieve near-optimal solutions; not viable for this team."
+        }
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-eval-010",
+    "input": {
+      "tenant_id": "tenant-saas-01",
+      "workspace_id": "ws-auth",
+      "decision_context": "Select an authentication and authorization platform supporting enterprise SSO, MFA, fine-grained RBAC, and audit logging for a B2B SaaS product with 200 enterprise customers.",
+      "options": [
+        {"name": "Auth0", "description": "Identity platform with OIDC/SAML SSO, MFA, actions (serverless customization), and roles/permissions."},
+        {"name": "Okta Customer Identity", "description": "Enterprise-grade CIAM with SSO, adaptive MFA, fine-grained authorization, and extensive audit logging."},
+        {"name": "Keycloak (self-hosted)", "description": "Open-source IAM with full feature set: SSO, MFA, RBAC, and extensible via Java providers."},
+        {"name": "WorkOS", "description": "Developer-focused enterprise SSO and directory sync API with SAML/OIDC abstraction for SaaS companies."}
+      ],
+      "criteria": [
+        "SAML 2.0 and OIDC SSO for enterprise customers",
+        "MFA with TOTP and WebAuthn",
+        "Fine-grained RBAC at resource level",
+        "Audit log completeness and export",
+        "Time to integrate SSO for a new enterprise customer"
+      ]
+    },
+    "expected": {
+      "status": "ok",
+      "ranked_options": [
+        {
+          "name": "WorkOS",
+          "score": 0.85,
+          "pros": ["Purpose-built for SaaS enterprise SSO", "Fastest time-to-integrate per new enterprise customer", "Clean API abstraction over SAML/OIDC/SCIM complexity"],
+          "cons": ["Less feature-rich RBAC than Okta", "Newer product with smaller ecosystem"],
+          "rationale": "Best fit for rapid enterprise SSO onboarding — the key operational need for B2B SaaS."
+        },
+        {
+          "name": "Auth0",
+          "score": 0.78,
+          "pros": ["Strong SSO and MFA", "Flexible customization via Actions", "Large ecosystem and community"],
+          "cons": ["Fine-grained authorization requires FGA add-on", "Pricing can escalate with MAU model"],
+          "rationale": "Solid all-around choice with strong community; FGA requires additional configuration."
+        },
+        {
+          "name": "Okta Customer Identity",
+          "score": 0.72,
+          "pros": ["Enterprise-grade reliability", "Best-in-class audit logging", "Fine-grained authorization built-in"],
+          "cons": ["Most expensive option", "Complex setup for initial integration"],
+          "rationale": "Best for compliance-heavy regulated industries; cost may be prohibitive for earlier-stage SaaS."
+        },
+        {
+          "name": "Keycloak (self-hosted)",
+          "score": 0.48,
+          "pros": ["Open source with no per-MAU cost", "Full feature set", "No vendor lock-in"],
+          "cons": ["High ops burden", "Java expertise required for customization", "Security patching responsibility falls on team"],
+          "rationale": "Cost-effective at scale but ops burden and security responsibility make it risky for a small team."
+        }
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-eval-011",
+    "input": {
+      "tenant_id": "tenant-fintech-01",
+      "workspace_id": "ws-kyc",
+      "decision_context": "Select a KYC identity verification vendor for automated document verification with liveness detection. Must cover 50+ countries and meet ISO 30107-3 liveness certification.",
+      "options": [
+        {"name": "Persona", "description": "Identity infrastructure platform with document verification, liveness detection, database checks, and workflow customization."},
+        {"name": "Jumio", "description": "AI-powered identity verification with biometric liveness, document OCR, and regulatory screening."},
+        {"name": "Onfido", "description": "AI-powered identity verification used by financial services, with Motion liveness and SmartCapture."},
+        {"name": "Stripe Identity", "description": "Stripe's identity verification product integrated into Stripe payment flows with Stripe's compliance infrastructure."}
+      ],
+      "criteria": [
+        "Document coverage for 50+ countries",
+        "ISO 30107-3 certified liveness detection",
+        "Automated adverse media and PEP screening",
+        "API integration time < 2 weeks",
+        "Pricing per verification at 5,000 verifications/month"
+      ]
+    },
+    "expected": {
+      "status": "ok",
+      "ranked_options": [
+        {
+          "name": "Persona",
+          "score": 0.85,
+          "pros": ["Highly customizable verification workflows", "200+ country document coverage", "Database checks for adverse media/PEP included", "Competitive per-verification pricing"],
+          "cons": ["Newer entrant vs Jumio/Onfido", "ISO 30107-3 liveness — verify current certification level"],
+          "rationale": "Best fit for workflow customization and integrated adverse media/PEP screening requirements."
+        },
+        {
+          "name": "Onfido",
+          "score": 0.80,
+          "pros": ["ISO 30107-3 certified Motion liveness", "Strong fintech track record", "195+ country document coverage", "Good developer documentation"],
+          "cons": ["Adverse media screening is add-on (additional cost)", "Less flexible workflow customization than Persona"],
+          "rationale": "Strong fintech pedigree and certified liveness; PEP/adverse media requires add-on."
+        },
+        {
+          "name": "Jumio",
+          "score": 0.72,
+          "pros": ["ISO 30107-3 certified", "200+ country coverage", "Strong enterprise compliance"],
+          "cons": ["Higher cost at low volumes", "Less modern developer experience", "Contract negotiations slow integration"],
+          "rationale": "Reliable enterprise choice but pricing and integration velocity are weaker."
+        },
+        {
+          "name": "Stripe Identity",
+          "score": 0.40,
+          "pros": ["Easiest integration if using Stripe for payments", "Stripe compliance infrastructure"],
+          "cons": ["Limited to ~40 countries (primarily US/EU)", "No adverse media/PEP screening", "Less suitable for independent KYC flow"],
+          "rationale": "Insufficient country coverage and missing PEP screening disqualify for international fintech use."
+        }
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-eval-012",
+    "input": {
+      "tenant_id": "tenant-ecom-01",
+      "workspace_id": "ws-recommendation",
+      "decision_context": "Choose a product recommendation engine approach for an e-commerce platform with 5M users, 2 years of purchase history, and a 2-person ML team.",
+      "options": [
+        {"name": "Amazon Personalize", "description": "Managed ML service using the same technology as Amazon.com's recommendations; supports collaborative filtering and item metadata."},
+        {"name": "Custom collaborative filtering on SageMaker", "description": "Custom matrix factorization or two-tower model trained on SageMaker with real-time inference endpoint."},
+        {"name": "Recombee", "description": "Recommendation API service with prebuilt algorithms, A/B testing, and a management dashboard."},
+        {"name": "Rule-based system with popularity signals", "description": "Deterministic rules combining bestseller ranks, category affinity, and purchase recency without ML."}
+      ],
+      "criteria": [
+        "Recommendation quality (CTR and conversion lift)",
+        "Cold start for new users and new products",
+        "Serving latency under 100ms",
+        "Operational burden on 2-person ML team",
+        "A/B testing capability"
+      ]
+    },
+    "expected": {
+      "status": "ok",
+      "ranked_options": [
+        {
+          "name": "Amazon Personalize",
+          "score": 0.83,
+          "pros": ["Managed ML with no model training ops", "Built-in cold start handling", "Real-time event ingestion for personalization", "A/B campaign support"],
+          "cons": ["AWS-specific solution", "Less control over model architecture"],
+          "rationale": "Best fit: proven algorithms, managed serving, and low ML team burden are decisive advantages."
+        },
+        {
+          "name": "Recombee",
+          "score": 0.72,
+          "pros": ["Quick integration", "Built-in A/B testing dashboard", "No ML expertise required for operation"],
+          "cons": ["Less customization than custom models", "Vendor dependency for core recommendation logic"],
+          "rationale": "Good option for speed to market; less powerful than Personalize at scale."
+        },
+        {
+          "name": "Custom collaborative filtering on SageMaker",
+          "score": 0.58,
+          "pros": ["Maximum control and customization", "Best long-term quality ceiling"],
+          "cons": ["High ongoing ML engineering cost", "Cold start requires explicit engineering", "2-person team spread thin"],
+          "rationale": "Quality ceiling is highest but operational burden is unsustainable for the team size."
+        },
+        {
+          "name": "Rule-based system with popularity signals",
+          "score": 0.30,
+          "pros": ["Deterministic and explainable", "Zero ML ops burden", "Fast to implement"],
+          "cons": ["Poor personalization", "Cannot learn from behavior", "Low conversion lift vs ML"],
+          "rationale": "Useful as a baseline and fallback but insufficient as a primary recommendation strategy."
+        }
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-eval-013",
+    "input": {
+      "tenant_id": "tenant-saas-01",
+      "workspace_id": "ws-billing",
+      "decision_context": "Select a usage-based billing metering system handling 1M events/hour with exactly-once semantics and Stripe Billing integration.",
+      "options": [
+        {"name": "Amberflo", "description": "Cloud metering platform with real-time usage aggregation, Stripe integration, and programmable pricing plans."},
+        {"name": "Lago (open source)", "description": "Open-source billing and metering with event deduplication, aggregation formulas, and Stripe sync."},
+        {"name": "Orb", "description": "Usage-based billing platform built for developer-first companies with SQL-based pricing formulas and Stripe integration."},
+        {"name": "Custom Kafka + Postgres metering service", "description": "In-house metering with Kafka for event ingestion, exactly-once consumer semantics, and Postgres for aggregation."}
+      ],
+      "criteria": [
+        "Exactly-once metering semantics",
+        "1M events/hour throughput",
+        "Stripe Billing integration for invoicing",
+        "Dispute-resolution audit trail",
+        "Time to production (weeks not months)"
+      ]
+    },
+    "expected": {
+      "status": "ok",
+      "ranked_options": [
+        {
+          "name": "Orb",
+          "score": 0.84,
+          "pros": ["SQL-based pricing formulas are auditable", "First-class Stripe integration", "Handles idempotency for exactly-once semantics", "Proven at high event volumes"],
+          "cons": ["Premium pricing", "Newer product with fewer enterprise references than Amberflo"],
+          "rationale": "Best fit for exactly-once semantics, audit trail, and Stripe integration at target throughput."
+        },
+        {
+          "name": "Amberflo",
+          "score": 0.78,
+          "pros": ["Real-time aggregation", "Stripe integration", "Good dashboard for dispute resolution"],
+          "cons": ["Less developer-first DX than Orb", "Pricing formulas less flexible"],
+          "rationale": "Strong choice with good Stripe integration; slightly less developer-friendly than Orb."
+        },
+        {
+          "name": "Lago (open source)",
+          "score": 0.70,
+          "pros": ["Open source — no vendor lock-in", "Good event deduplication", "Stripe sync available", "Self-host option for cost control"],
+          "cons": ["Cloud version at 1M events/hour requires Enterprise tier", "Smaller team behind product"],
+          "rationale": "Excellent for teams wanting open-source flexibility; verify cloud hosting capacity at target volume."
+        },
+        {
+          "name": "Custom Kafka + Postgres metering service",
+          "score": 0.35,
+          "pros": ["Full control", "No per-event vendor cost at scale"],
+          "cons": ["High build time (months not weeks)", "Exactly-once Kafka semantics are complex to implement correctly", "Stripe integration must be custom-built"],
+          "rationale": "High engineering cost and time-to-production disqualify for time-sensitive deployment."
+        }
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-eval-014",
+    "input": {
+      "tenant_id": "tenant-health-01",
+      "workspace_id": "ws-remote-monitoring",
+      "decision_context": "Select a remote patient monitoring platform for BLE medical device integration with HIPAA compliance, 5-minute data delivery SLA, and minimal mobile battery impact.",
+      "options": [
+        {"name": "Validic", "description": "Medical device integration platform with 500+ device integrations, HIPAA BAA, and normalized data model."},
+        {"name": "Apple HealthKit + custom backend", "description": "Native iOS HealthKit for device data collection with a custom HIPAA-compliant backend for aggregation and alerting."},
+        {"name": "Custom BLE SDK + AWS IoT Core", "description": "Custom Bluetooth Low Energy SDK for device integration paired with AWS IoT Core for data ingestion and storage."},
+        {"name": "Human API", "description": "Health data platform aggregating wearable and medical device data with HIPAA BAA and normalized API."}
+      ],
+      "criteria": [
+        "BLE medical device manufacturer coverage",
+        "HIPAA BAA availability",
+        "End-to-end data delivery within 5 minutes",
+        "Mobile SDK battery consumption < 3%/day",
+        "Clinical threshold alerting"
+      ]
+    },
+    "expected": {
+      "status": "ok",
+      "ranked_options": [
+        {
+          "name": "Validic",
+          "score": 0.86,
+          "pros": ["500+ medical device integrations", "HIPAA BAA available", "Normalized data model reduces backend complexity", "Clinical alerting built-in"],
+          "cons": ["Premium pricing for enterprise device breadth", "Less control over data ingestion pipeline"],
+          "rationale": "Best fit: largest device coverage, HIPAA compliance, and alerting reduce custom development significantly."
+        },
+        {
+          "name": "Human API",
+          "score": 0.70,
+          "pros": ["HIPAA BAA available", "Broad device coverage", "Good normalized API"],
+          "cons": ["Fewer clinical-grade medical devices than Validic", "Alerting requires custom implementation"],
+          "rationale": "Good alternative with lower cost; verify device coverage for specific target devices."
+        },
+        {
+          "name": "Apple HealthKit + custom backend",
+          "score": 0.55,
+          "pros": ["Native iOS integration for Apple Watch and HealthKit-connected devices", "Battery-efficient", "No device SDK maintenance"],
+          "cons": ["iOS-only — excludes Android patients", "Custom backend required for HIPAA storage and alerting", "Device coverage limited to HealthKit-compatible"],
+          "rationale": "Good for iOS-first deployments but Android exclusion is a significant patient coverage gap."
+        },
+        {
+          "name": "Custom BLE SDK + AWS IoT Core",
+          "score": 0.38,
+          "pros": ["Maximum control over device integration", "No per-device vendor cost"],
+          "cons": ["High development cost per device type", "BLE protocol expertise required per manufacturer", "Battery optimization is complex"],
+          "rationale": "Highest engineering investment with the most coverage risk; only viable if very specific unlisted devices are required."
+        }
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-eval-015",
+    "input": {
+      "tenant_id": "tenant-saas-01",
+      "workspace_id": "ws-collab-editing",
+      "decision_context": "Select a real-time collaborative editing architecture for a project management tool. Requirements: conflict-free merge, offline editing, presence indicators, and version history with per-character attribution.",
+      "options": [
+        {"name": "Yjs CRDT + y-websocket", "description": "Yjs is a CRDT library with provider ecosystem (y-websocket for sync, y-indexeddb for offline). Integrates with ProseMirror, CodeMirror, Slate."},
+        {"name": "Automerge CRDT", "description": "JSON-based CRDT with rich data type support, binary encoding, and a newer Automerge 2.0 with Rust core."},
+        {"name": "ShareDB (OT-based)", "description": "Operational Transformation server using JSON0 OT type, with real-time sync and history support."},
+        {"name": "Liveblocks", "description": "Managed collaboration platform with Yjs rooms, presence, comments, and notifications as APIs."}
+      ],
+      "criteria": [
+        "Conflict-free merge without manual resolution",
+        "Offline editing with automatic sync on reconnect",
+        "Presence indicators propagation < 100ms",
+        "Per-character version history with attribution",
+        "Integration effort with existing React frontend"
+      ]
+    },
+    "expected": {
+      "status": "ok",
+      "ranked_options": [
+        {
+          "name": "Liveblocks",
+          "score": 0.85,
+          "pros": ["Managed Yjs rooms — no server infrastructure", "Built-in presence, comments, and notifications", "React hooks for easy integration", "Scales automatically"],
+          "cons": ["Vendor dependency and cost per MAU", "Less control than self-hosted Yjs"],
+          "rationale": "Best fit for fast integration and managed ops; Yjs semantics with reduced infrastructure burden."
+        },
+        {
+          "name": "Yjs CRDT + y-websocket",
+          "score": 0.80,
+          "pros": ["Battle-tested CRDT", "Offline sync via y-indexeddb", "Rich editor integrations", "Full version history"],
+          "cons": ["Must operate y-websocket server", "Presence requires additional implementation"],
+          "rationale": "Best open-source choice; requires more ops than Liveblocks but provides full control."
+        },
+        {
+          "name": "Automerge CRDT",
+          "score": 0.65,
+          "pros": ["JSON document model", "Rust core for performance", "Strong merge semantics"],
+          "cons": ["Smaller editor ecosystem than Yjs", "Fewer production references", "Server sync layer requires custom implementation"],
+          "rationale": "Promising technology but less mature editor integration ecosystem compared to Yjs."
+        },
+        {
+          "name": "ShareDB (OT-based)",
+          "score": 0.50,
+          "pros": ["Well-understood OT semantics", "History and attribution built into OT model"],
+          "cons": ["OT requires central server for conflict resolution — breaks true offline", "Less suitable for complex document types"],
+          "rationale": "OT's central-server dependency is an architectural constraint against true offline editing."
+        }
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-eval-016",
+    "input": {
+      "tenant_id": "tenant-logistics-01",
+      "workspace_id": "ws-iot-platform",
+      "decision_context": "Select an IoT telemetry ingestion pipeline for 20,000 GPS devices sending pings every 30 seconds, with sub-5-second dispatcher dashboard latency and time-series storage.",
+      "options": [
+        {"name": "AWS IoT Core + Timestream + API Gateway WebSocket", "description": "Managed AWS IoT with MQTT ingestion, Timestream for time-series, and API Gateway WebSocket for push."},
+        {"name": "EMQX + TimescaleDB + custom WebSocket service", "description": "Open-source MQTT broker, TimescaleDB for time-series, and custom Go WebSocket service."},
+        {"name": "Kafka + InfluxDB + Grafana Live", "description": "Kafka for ingestion, InfluxDB for storage, and Grafana Live for WebSocket streaming to dashboards."},
+        {"name": "Google Cloud IoT Core + BigQuery + Datastream", "description": "GCP managed IoT with BigQuery storage and Datastream CDC for near-real-time dashboards."}
+      ],
+      "criteria": [
+        "Ingest 20,000 messages/minute with headroom to 200,000",
+        "Sub-5-second push latency to dispatcher",
+        "Time-series optimized storage for geo queries",
+        "7-day hot + 2-year cold archive",
+        "Managed service preference"
+      ]
+    },
+    "expected": {
+      "status": "ok",
+      "ranked_options": [
+        {
+          "name": "AWS IoT Core + Timestream + API Gateway WebSocket",
+          "score": 0.82,
+          "pros": ["Fully managed", "MQTT at scale with auto-scaling", "Timestream optimized for time-series with magnetic tier for cold archive", "API Gateway WebSocket for push"],
+          "cons": ["Timestream cost at 2-year retention can be high", "API Gateway WebSocket has connection limits to monitor"],
+          "rationale": "Best managed fit with native MQTT, time-series storage, and WebSocket push in one cloud."
+        },
+        {
+          "name": "EMQX + TimescaleDB + custom WebSocket service",
+          "score": 0.72,
+          "pros": ["Excellent MQTT performance", "TimescaleDB geo queries and automatic partitioning", "Full control", "Lower cost at scale"],
+          "cons": ["Self-hosted ops burden", "Custom WebSocket service to build and maintain"],
+          "rationale": "Strong technical choice at lower cost; ops overhead is the main tradeoff."
+        },
+        {
+          "name": "Kafka + InfluxDB + Grafana Live",
+          "score": 0.60,
+          "pros": ["Kafka handles 200K messages/min easily", "InfluxDB time-series optimized", "Grafana Live for dashboard push"],
+          "cons": ["More components to operate", "Grafana Live not designed for custom dispatcher UI", "Kafka overkill for this message volume"],
+          "rationale": "Technically capable but over-engineered for the message volume and wrong tool for custom dispatcher UI."
+        },
+        {
+          "name": "Google Cloud IoT Core + BigQuery + Datastream",
+          "score": 0.35,
+          "pros": ["BigQuery scales to any volume", "Managed IoT ingestion"],
+          "cons": ["Google Cloud IoT Core is deprecated (shutdown 2023)", "BigQuery is not time-series optimized for high-frequency writes", "Cross-cloud complexity if primary stack is AWS"],
+          "rationale": "Disqualified: Google Cloud IoT Core has been deprecated."
+        }
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-eval-017",
+    "input": {
+      "tenant_id": "tenant-ecom-01",
+      "workspace_id": "ws-returns",
+      "decision_context": "Select a workflow engine for a multi-step returns processing pipeline with human-in-the-loop inspection steps, compensation logic, and operational visibility.",
+      "options": [
+        {"name": "Temporal", "description": "Durable workflow execution platform with workflow history, activities, retry policies, and signal/query APIs."},
+        {"name": "AWS Step Functions", "description": "Managed state machine service with visual workflow editor, Express and Standard workflows, and native AWS service integrations."},
+        {"name": "Apache Airflow", "description": "Python-based workflow orchestration originally designed for data pipelines, extensible with custom operators."},
+        {"name": "Postgres state machine with pg_cron", "description": "Custom state machine in Postgres with status column, pg_cron for timeout processing, and event tables for audit."}
+      ],
+      "criteria": [
+        "Human-in-the-loop step support",
+        "Compensation and rollback on step failure",
+        "Workflow visibility for operations team",
+        "SLA alerting for stuck returns",
+        "Developer experience for adding new workflow steps"
+      ]
+    },
+    "expected": {
+      "status": "ok",
+      "ranked_options": [
+        {
+          "name": "Temporal",
+          "score": 0.88,
+          "pros": ["Native support for long-running human workflows via signals", "Compensation via saga pattern", "Temporal UI for operational visibility", "Excellent developer experience for complex workflows"],
+          "cons": ["Self-hosted ops complexity or Temporal Cloud cost", "Steeper learning curve"],
+          "rationale": "Best fit for complex stateful workflows with human steps and compensation requirements."
+        },
+        {
+          "name": "AWS Step Functions",
+          "score": 0.75,
+          "pros": ["Visual workflow editor for ops visibility", "Native .waitForTaskToken for human steps", "Managed with no infrastructure ops"],
+          "cons": ["State machine definition in JSON/YAML is verbose", "1-year execution limit for Standard workflows", "Cost scales with state transitions"],
+          "rationale": "Strong managed choice; waitForTaskToken elegantly handles human-in-the-loop."
+        },
+        {
+          "name": "Postgres state machine with pg_cron",
+          "score": 0.48,
+          "pros": ["No new infrastructure", "Full control", "Low cost"],
+          "cons": ["No built-in compensation logic", "Visibility requires custom tooling", "SLA alerting must be custom-built", "Difficult to add new steps safely"],
+          "rationale": "Viable for simple workflows; complexity of returns process will outgrow this quickly."
+        },
+        {
+          "name": "Apache Airflow",
+          "score": 0.35,
+          "pros": ["Python familiarity", "Rich operator ecosystem"],
+          "cons": ["Designed for data pipelines, not transactional workflows", "Poor human-in-the-loop support", "Compensation logic is anti-pattern for Airflow"],
+          "rationale": "Wrong tool: Airflow is not designed for transactional workflow compensation or human review queues."
+        }
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-eval-018",
+    "input": {
+      "tenant_id": "tenant-fintech-01",
+      "workspace_id": "ws-open-banking",
+      "decision_context": "Select an open banking aggregation vendor for a personal finance app needing OAuth-based bank linking across 3,000+ US institutions, real-time transaction webhooks, and SOC 2 Type II certification.",
+      "options": [
+        {"name": "Plaid", "description": "Leading US financial data network with OAuth support, transactions, investments, and identity products."},
+        {"name": "MX Technologies", "description": "Financial data platform with aggregation, data enrichment, and analytics focused on financial wellness."},
+        {"name": "Finicity (Mastercard)", "description": "Open banking network backed by Mastercard, strong in credit decisioning and cash flow analytics."},
+        {"name": "Akoya", "description": "Bank-operated data network (owned by FDX members) providing OAuth API access without credential scraping."}
+      ],
+      "criteria": [
+        "Institution coverage (3,000+ US banks and credit unions)",
+        "OAuth-based account linking (no credential scraping)",
+        "Real-time transaction webhook support",
+        "SOC 2 Type II certification",
+        "API developer experience"
+      ]
+    },
+    "expected": {
+      "status": "ok",
+      "ranked_options": [
+        {
+          "name": "Plaid",
+          "score": 0.88,
+          "pros": ["12,000+ US institution connections", "SOC 2 Type II certified", "Best developer experience and documentation", "Webhook transaction updates", "OAuth supported for 1,500+ institutions"],
+          "cons": ["Most expensive option at scale", "Historical FTC scrutiny over data practices"],
+          "rationale": "Industry standard for US open banking; best coverage, developer experience, and ecosystem."
+        },
+        {
+          "name": "Finicity (Mastercard)",
+          "score": 0.72,
+          "pros": ["SOC 2 Type II certified", "Mastercard backing provides institutional credibility", "Strong for credit/cash flow decisioning"],
+          "cons": ["Developer experience less polished than Plaid", "Fewer product APIs outside core aggregation"],
+          "rationale": "Strong for credit use cases; good if leveraging Mastercard partnerships."
+        },
+        {
+          "name": "MX Technologies",
+          "score": 0.65,
+          "pros": ["Good institution coverage", "Strong data enrichment/categorization", "SOC 2 Type II"],
+          "cons": ["Webhook real-time updates less mature than Plaid", "Less developer-first positioning"],
+          "rationale": "Good alternative with strong enrichment; real-time webhooks are not as mature."
+        },
+        {
+          "name": "Akoya",
+          "score": 0.50,
+          "pros": ["Bank-operated network — strongest OAuth/no scraping guarantee", "FDX member-backed", "Privacy-centric"],
+          "cons": ["Coverage limited to FDX member banks (~50 institutions)", "No independent SOC 2 report (relies on member bank certifications)", "Real-time webhooks not available"],
+          "rationale": "Excellent privacy model but insufficient institution coverage for 3,000+ institution requirement."
+        }
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-eval-019",
+    "input": {
+      "tenant_id": "tenant-health-01",
+      "workspace_id": "ws-clinical-nlp",
+      "decision_context": "Choose a clinical NLP pipeline for extracting ICD-10 and SNOMED CT entities from physician notes. PHI must remain within AWS. Processing must complete in under 3 seconds per note.",
+      "options": [
+        {"name": "AWS Comprehend Medical", "description": "Managed AWS NLP service that detects medical entities, relationships, and PHI in clinical text. Stays within AWS."},
+        {"name": "spaCy + scispaCy", "description": "Open-source NLP library with biomedical models trained on scientific corpora, deployable on private EC2 or ECS."},
+        {"name": "Google Healthcare Natural Language API", "description": "GCP managed medical NLP service for entity extraction from clinical notes."},
+        {"name": "Fine-tuned BioBERT", "description": "BERT model pre-trained on PubMed text, fine-tuned on proprietary labeled notes for maximum accuracy."}
+      ],
+      "criteria": [
+        "PHI remains within AWS boundary",
+        "ICD-10 and SNOMED CT entity coverage",
+        "Processing latency under 3 seconds per note",
+        "Accuracy on clinical note entity extraction",
+        "Operational burden"
+      ]
+    },
+    "expected": {
+      "status": "ok",
+      "ranked_options": [
+        {
+          "name": "AWS Comprehend Medical",
+          "score": 0.85,
+          "pros": ["PHI stays in AWS natively", "ICD-10-CM and RxNorm entity linking", "Sub-second latency for typical notes", "Zero infrastructure ops"],
+          "cons": ["Less customizable than fine-tuned models", "No SNOMED CT entity linking (ICD-10 and RxNorm only)"],
+          "rationale": "Best fit for PHI boundary, latency, and ops requirements; verify SNOMED CT gap with clinical team."
+        },
+        {
+          "name": "spaCy + scispaCy",
+          "score": 0.72,
+          "pros": ["Deployable on private AWS infrastructure", "SNOMED CT and UMLS concept linking via scispaCy", "Open source with no per-call cost"],
+          "cons": ["Requires GPU infrastructure for acceptable latency", "Model updates are a team responsibility"],
+          "rationale": "Strong SNOMED CT support; deployable in AWS but requires infrastructure and model maintenance."
+        },
+        {
+          "name": "Fine-tuned BioBERT",
+          "score": 0.65,
+          "pros": ["Highest accuracy ceiling on proprietary note styles", "Fully customizable entity taxonomy"],
+          "cons": ["Requires labeled training data (expensive to create)", "GPU inference infra required", "Weeks to months to reach production quality"],
+          "rationale": "Best accuracy potential but high data labeling and infrastructure cost."
+        },
+        {
+          "name": "Google Healthcare Natural Language API",
+          "score": 0.15,
+          "pros": ["Good entity extraction quality", "Managed service"],
+          "cons": ["PHI leaves AWS boundary — violates hard requirement", "GCP vendor dependency"],
+          "rationale": "Disqualified: PHI leaving AWS violates the hard security and compliance requirement."
+        }
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-eval-020",
+    "input": {
+      "tenant_id": "tenant-saas-01",
+      "workspace_id": "ws-document-processing",
+      "decision_context": "Select a document intelligence platform for legal contract clause extraction. Documents are complex PDFs averaging 50 pages. All processing must remain in US AWS regions.",
+      "options": [
+        {"name": "AWS Textract + Comprehend", "description": "AWS managed OCR (Textract) combined with Comprehend for entity extraction and classification. Stays in AWS."},
+        {"name": "Azure Document Intelligence", "description": "Azure managed document AI with layout analysis and custom model training for specific document types."},
+        {"name": "Reducto AI", "description": "Specialized document parsing API with layout-aware chunking for LLM ingestion, optimized for complex PDFs."},
+        {"name": "Unstructured.io + fine-tuned LLM", "description": "Open-source document parsing library combined with fine-tuned LLM for clause extraction. Self-hosted on AWS."}
+      ],
+      "criteria": [
+        "Layout-aware extraction for complex multi-column PDFs",
+        "Data residency within US AWS regions",
+        "Custom model training for legal clause taxonomy",
+        "Human review queue integration",
+        "Cost for 10,000 pages/month"
+      ]
+    },
+    "expected": {
+      "status": "ok",
+      "ranked_options": [
+        {
+          "name": "AWS Textract + Comprehend",
+          "score": 0.80,
+          "pros": ["Native AWS — satisfies data residency", "Layout-aware OCR with table and form extraction", "Custom entity recognition via Comprehend", "A2I for human review queues"],
+          "cons": ["Comprehend NER accuracy may need custom training for legal clauses", "Multi-step pipeline to connect Textract and Comprehend"],
+          "rationale": "Best fit for data residency with solid layout extraction and human review via A2I."
+        },
+        {
+          "name": "Unstructured.io + fine-tuned LLM",
+          "score": 0.72,
+          "pros": ["Open source parsing with excellent layout handling", "Self-hosted on AWS satisfies data residency", "Fine-tuned LLM maximizes clause extraction accuracy"],
+          "cons": ["High ML engineering effort for fine-tuning", "GPU infrastructure required", "Slower time to production"],
+          "rationale": "Highest quality ceiling but significant engineering investment; best if legal accuracy is paramount."
+        },
+        {
+          "name": "Reducto AI",
+          "score": 0.55,
+          "pros": ["Excellent layout-aware chunking for complex PDFs", "Designed for LLM pipelines"],
+          "cons": ["API service — data residency in Reducto's infrastructure, not AWS", "Less proven for custom legal extraction without LLM integration"],
+          "rationale": "Good technical fit but data residency in Reducto's cloud may conflict with US AWS requirement."
+        },
+        {
+          "name": "Azure Document Intelligence",
+          "score": 0.25,
+          "pros": ["Excellent layout analysis and custom model training"],
+          "cons": ["Azure cloud contradicts US AWS data residency requirement", "Cross-cloud complexity"],
+          "rationale": "Disqualified by data residency: Azure is not an AWS region."
+        }
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-eval-021",
+    "input": {
+      "tenant_id": "tenant-fintech-01",
+      "workspace_id": "ws-crypto-custody",
+      "decision_context": "Select a cryptographic key management solution for a digital asset custody platform. Requires FIPS 140-2 Level 3 HSM, MPC for signing, and geographically distributed disaster recovery.",
+      "options": [
+        {"name": "Fireblocks", "description": "Institutional digital asset custody with MPC-CMP protocol, policy engine, and comprehensive audit trail."},
+        {"name": "AWS CloudHSM + custom MPC", "description": "AWS FIPS 140-2 Level 3 HSMs combined with custom multi-party computation implementation."},
+        {"name": "Thales Luna HSM (on-premises)", "description": "Physical HSM appliances with FIPS 140-2 Level 3 certification deployed in customer-controlled data centers."},
+        {"name": "Sepior/Blockdaemon MPC Vault", "description": "Managed MPC key management with threshold signing, policy engine, and cloud-native deployment."}
+      ],
+      "criteria": [
+        "FIPS 140-2 Level 3 certification",
+        "MPC for distributed key signing",
+        "Geographic DR with distributed key shards",
+        "SOC 2 Type II + SOC 1 audit coverage",
+        "Integration with major blockchain networks"
+      ]
+    },
+    "expected": {
+      "status": "ok",
+      "ranked_options": [
+        {
+          "name": "Fireblocks",
+          "score": 0.87,
+          "pros": ["Industry-standard for institutional crypto custody", "MPC-CMP with proven DR key sharing", "Comprehensive blockchain network support", "SOC 1 and SOC 2 Type II certified"],
+          "cons": ["Premium pricing for institutional tier", "Vendor dependency for key custody operations"],
+          "rationale": "Best fit: proven institutional custody solution with MPC, DR, and multi-chain support."
+        },
+        {
+          "name": "AWS CloudHSM + custom MPC",
+          "score": 0.65,
+          "pros": ["FIPS 140-2 Level 3 certified", "Full control over key management", "Multi-region DR possible with multiple CloudHSM clusters"],
+          "cons": ["MPC layer must be custom-built — significant cryptographic engineering", "High risk of implementation errors in custom MPC"],
+          "rationale": "Viable with deep cryptographic expertise; custom MPC implementation risk is substantial."
+        },
+        {
+          "name": "Sepior/Blockdaemon MPC Vault",
+          "score": 0.60,
+          "pros": ["Managed MPC without building custom cryptography", "Policy engine", "Cloud-native"],
+          "cons": ["Less market penetration than Fireblocks", "Fewer blockchain integrations than Fireblocks"],
+          "rationale": "Good alternative to Fireblocks; fewer references for institutional custody at scale."
+        },
+        {
+          "name": "Thales Luna HSM (on-premises)",
+          "score": 0.45,
+          "pros": ["FIPS 140-2 Level 3 certified", "Physical air-gap control", "No cloud vendor dependency"],
+          "cons": ["Physical hardware DR requires complex multi-site logistics", "No built-in MPC — requires custom implementation", "High CapEx"],
+          "rationale": "Maximum physical security but operational complexity and custom MPC requirement are high risks."
+        }
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-eval-022",
+    "input": {
+      "tenant_id": "tenant-logistics-01",
+      "workspace_id": "ws-warehouse-mgmt",
+      "decision_context": "Choose an integration platform to connect 8 third-party warehouse management systems with different API types (REST, SOAP, EDI X12, FTP flat files). New integrations must deploy in under 1 week.",
+      "options": [
+        {"name": "Apache Camel on Kubernetes", "description": "Open-source integration framework with 300+ components covering REST, SOAP, FTP, EDI, and message transformation via EIPs."},
+        {"name": "MuleSoft Anypoint Platform", "description": "Enterprise integration platform with visual designer, pre-built connectors, and managed runtime."},
+        {"name": "AWS Step Functions + Lambda connectors", "description": "State machine orchestration with Lambda functions implementing each connector transformation."},
+        {"name": "Temporal + custom connector SDK", "description": "Temporal workflow engine with a custom Go connector SDK implementing each WMS integration as a worker."}
+      ],
+      "criteria": [
+        "Support for REST, SOAP, EDI X12, and FTP integrations",
+        "Dead letter queue with retry for failed messages",
+        "Auditable version-controlled transformations",
+        "New WMS integration deployable in < 1 week",
+        "Cost at 500K messages/day"
+      ]
+    },
+    "expected": {
+      "status": "ok",
+      "ranked_options": [
+        {
+          "name": "Apache Camel on Kubernetes",
+          "score": 0.84,
+          "pros": ["Native support for REST, SOAP, EDI, FTP via 300+ components", "Dead letter channel EIP built-in", "Code-based transformations in Git", "Open source with no per-message cost"],
+          "cons": ["Java/Kotlin expertise required", "Kubernetes ops burden"],
+          "rationale": "Best technical fit: native support for all required protocols and EIP patterns for DLQ and retry."
+        },
+        {
+          "name": "MuleSoft Anypoint Platform",
+          "score": 0.72,
+          "pros": ["Pre-built WMS connectors", "Visual transformation designer", "Managed cloud runtime"],
+          "cons": ["Very high licensing cost", "Vendor lock-in on proprietary runtime", "DX can be slow for developers preferring code"],
+          "rationale": "Covers all requirements but extreme licensing cost is a significant business consideration."
+        },
+        {
+          "name": "Temporal + custom connector SDK",
+          "score": 0.62,
+          "pros": ["Excellent retry and compensation semantics", "Language-agnostic workers", "Workflow visibility"],
+          "cons": ["EDI and SOAP support must be custom-coded per connector", "Higher per-integration development time"],
+          "rationale": "Good orchestration platform but lacks pre-built protocol connectors that Camel provides."
+        },
+        {
+          "name": "AWS Step Functions + Lambda connectors",
+          "score": 0.48,
+          "pros": ["Managed, low ops overhead", "Lambda cost-effective for low-frequency integrations"],
+          "cons": ["State machine proliferation at 8+ WMS systems", "15-minute Lambda timeout insufficient for large EDI batches", "EDI parsing library selection is still custom"],
+          "rationale": "Suitable for simple REST integrations but Lambda timeouts and EDI complexity are significant gaps."
+        }
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-eval-023",
+    "input": {
+      "tenant_id": "tenant-health-01",
+      "workspace_id": "ws-ehr-integration",
+      "decision_context": "Select an integration engine for normalizing HL7 FHIR R4 data from 15 EHR systems (Epic, Cerner, Meditech) supporting both push webhooks and scheduled sync pull patterns.",
+      "options": [
+        {"name": "Mirth Connect", "description": "Open-source HL7 integration engine with channel-based design supporting HL7 v2, FHIR, SOAP, and SQL transformations."},
+        {"name": "AWS HealthLake + custom ETL", "description": "AWS FHIR-compliant data store with automated FHIR R4 validation, combined with custom Glue/Lambda ETL."},
+        {"name": "Custom FHIR facade per EHR vendor", "description": "Custom microservice per EHR vendor that wraps vendor API and returns FHIR R4. Each service is independently deployable."},
+        {"name": "Azure Health Data Services", "description": "Azure FHIR service with built-in FHIR R4, DICOM, and MedTech IoT ingestion. Includes converter for HL7 v2 to FHIR."}
+      ],
+      "criteria": [
+        "HL7 FHIR R4 as canonical output format",
+        "Push and pull ingestion pattern support",
+        "Idempotent ingestion for duplicate handling",
+        "HIPAA-compliant data transit and storage",
+        "Transformation auditability"
+      ]
+    },
+    "expected": {
+      "status": "ok",
+      "ranked_options": [
+        {
+          "name": "AWS HealthLake + custom ETL",
+          "score": 0.80,
+          "pros": ["Native FHIR R4 validation and storage", "HIPAA-eligible AWS service", "Idempotent ingestion with FHIR resource IDs", "Audit trail via CloudTrail"],
+          "cons": ["Custom ETL required per EHR vendor", "Push webhook receiver must be custom-built"],
+          "rationale": "Best fit for AWS-native FHIR storage with idempotency; custom ETL per vendor is manageable."
+        },
+        {
+          "name": "Mirth Connect",
+          "score": 0.75,
+          "pros": ["Battle-tested HL7 integration", "Channel-based design supports push and pull", "Strong HL7 v2 to FHIR conversion"],
+          "cons": ["Self-hosted infrastructure required", "HIPAA configuration is team responsibility", "Less cloud-native than AWS HealthLake"],
+          "rationale": "Strong HL7 integration track record; self-hosted ops and HIPAA responsibility are the main gaps."
+        },
+        {
+          "name": "Custom FHIR facade per EHR vendor",
+          "score": 0.60,
+          "pros": ["Maximum isolation per vendor", "Independent deployment per vendor", "Full control over transformation logic"],
+          "cons": ["High development cost for 15 vendors", "No shared transformation framework", "Operational overhead of 15 separate services"],
+          "rationale": "Architecturally clean but 15x development and ops cost is prohibitive."
+        },
+        {
+          "name": "Azure Health Data Services",
+          "score": 0.30,
+          "pros": ["Built-in FHIR R4 and HL7 v2 converter", "HIPAA eligible", "DICOM and IoT MedTech included"],
+          "cons": ["Azure cloud contradicts AWS primary infrastructure", "Cross-cloud networking complexity for HIPAA data"],
+          "rationale": "Technically strong but Azure data residency conflicts with AWS-primary infrastructure."
+        }
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-eval-024",
+    "input": {
+      "tenant_id": "tenant-fintech-01",
+      "workspace_id": "ws-reporting",
+      "decision_context": "Select a regulatory reporting pipeline architecture for FINRA daily reports and CFTC monthly position reports. Zero missed submission windows and tamper-evident storage are mandatory.",
+      "options": [
+        {"name": "Broadridge managed reporting", "description": "End-to-end managed regulatory reporting service covering FINRA, SEC, CFTC submissions with SLAs."},
+        {"name": "Custom Airflow + dbt + SFTP", "description": "Apache Airflow for orchestration, dbt for report generation SQL, SFTP delivery to regulators."},
+        {"name": "Temporal + Postgres + encrypted S3 archive", "description": "Temporal for durable workflow orchestration, Postgres for report staging, S3 Object Lock for immutable archive."},
+        {"name": "FIS Regulatory Reporting as a Service", "description": "FIS managed service for capital markets regulatory reporting with pre-built FINRA/CFTC report templates."}
+      ],
+      "criteria": [
+        "Zero missed submission windows (guaranteed delivery)",
+        "Pre-submission validation against regulator format specs",
+        "Source system reconciliation before each submission",
+        "Tamper-evident immutable archive for submissions",
+        "Audit trail completeness"
+      ]
+    },
+    "expected": {
+      "status": "ok",
+      "ranked_options": [
+        {
+          "name": "Broadridge managed reporting",
+          "score": 0.85,
+          "pros": ["SLA-backed zero-miss guarantee", "Pre-built FINRA/CFTC validators", "Reconciliation tooling included", "Regulatory expertise reduces compliance risk"],
+          "cons": ["Highest cost", "Less control over internal pipeline steps"],
+          "rationale": "Best fit: SLA guarantees for zero missed windows and built-in validators are decisive for regulatory submissions."
+        },
+        {
+          "name": "Temporal + Postgres + encrypted S3 archive",
+          "score": 0.75,
+          "pros": ["Temporal's durability guarantees workflow completion", "S3 Object Lock for WORM tamper-evident archive", "Full control over reconciliation logic", "Lower cost than managed vendors"],
+          "cons": ["Format validators must be custom-built per regulator", "Team responsible for submission SLA — no vendor backstop"],
+          "rationale": "Strong technical architecture for durability and immutability; requires building regulator-specific validators."
+        },
+        {
+          "name": "FIS Regulatory Reporting as a Service",
+          "score": 0.70,
+          "pros": ["Pre-built FINRA/CFTC templates", "Capital markets domain expertise", "Managed SLAs"],
+          "cons": ["Primarily designed for larger institutions", "Integration complexity with modern cloud-native stacks"],
+          "rationale": "Good managed alternative to Broadridge; verify integration patterns with existing infrastructure."
+        },
+        {
+          "name": "Custom Airflow + dbt + SFTP",
+          "score": 0.42,
+          "pros": ["dbt provides auditable SQL transformations", "Full control", "Lower cost"],
+          "cons": ["Airflow does not guarantee exactly-once task execution by default", "SFTP delivery has no built-in delivery receipt", "Zero-miss SLA is team responsibility"],
+          "rationale": "Highest control but the zero-miss SLA guarantee is the hardest requirement to meet without significant custom reliability engineering."
+        }
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-eval-025",
+    "input": {
+      "tenant_id": "tenant-ecom-01",
+      "workspace_id": "ws-pricing",
+      "decision_context": "Select a dynamic pricing engine for demand-based price adjustments that propagate to storefront within 30 seconds, with merchandiser-configurable rules and 5 competitor price feeds.",
+      "options": [
+        {"name": "Wiser pricing intelligence", "description": "SaaS competitive intelligence platform with competitor price monitoring, repricing rules, and API-based price push."},
+        {"name": "Custom rules engine + competitor feeds", "description": "In-house pricing rules engine with webhook-based price push and custom integrations to 5 competitor scrapers."},
+        {"name": "Revionics AI pricing", "description": "AI-powered price optimization with demand forecasting, competitive response, and price recommendation API."},
+        {"name": "Prisync + custom rules layer", "description": "Prisync for competitor price monitoring combined with a custom rules engine for final price calculation."}
+      ],
+      "criteria": [
+        "Competitor price feed coverage (5 sources)",
+        "Price propagation to storefront within 30 seconds",
+        "Merchandiser-configurable rules without code changes",
+        "Audit log with price change reasoning",
+        "Cost and ROI at 500K SKUs"
+      ]
+    },
+    "expected": {
+      "status": "ok",
+      "ranked_options": [
+        {
+          "name": "Wiser pricing intelligence",
+          "score": 0.82,
+          "pros": ["Proven competitor monitoring with broad retailer coverage", "Merchandiser-friendly rule configuration", "API-based price push for fast propagation", "Audit trail with competitive reasoning"],
+          "cons": ["Cost at 500K SKUs can be significant", "AI recommendations require validation by merchandising team"],
+          "rationale": "Best all-in-one fit: competitor feeds, rule configurability, and price push in a single platform."
+        },
+        {
+          "name": "Prisync + custom rules layer",
+          "score": 0.72,
+          "pros": ["Prisync specializes in competitor monitoring", "Custom rules layer gives full control over pricing logic", "Lower total cost than full AI pricing suite"],
+          "cons": ["Custom rules engine development effort", "Two-system integration adds propagation latency risk"],
+          "rationale": "Good cost-effective approach; 30-second SLA must be validated with integration latency."
+        },
+        {
+          "name": "Revionics AI pricing",
+          "score": 0.65,
+          "pros": ["Demand forecasting improves pricing accuracy", "Competitive response intelligence", "Enterprise-grade at large SKU counts"],
+          "cons": ["AI black-box decisions can frustrate merchandisers", "Higher cost and longer implementation", "Overkill if simple rules are sufficient"],
+          "rationale": "Best long-term optimization ceiling; higher complexity and cost for initial deployment."
+        },
+        {
+          "name": "Custom rules engine + competitor feeds",
+          "score": 0.48,
+          "pros": ["Full control", "No per-SKU vendor cost at scale", "Custom audit logging"],
+          "cons": ["High build cost", "Competitor scraper maintenance is ongoing", "30-second propagation SLA requires careful engineering"],
+          "rationale": "Maximum control but highest build and maintenance cost; viable if pricing is a core differentiator."
+        }
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-eval-026",
+    "input": {
+      "tenant_id": "tenant-saas-01",
+      "workspace_id": "ws-notifications",
+      "decision_context": "Select a notification infrastructure for unified email, push, and in-app notifications with delivery tracking and A/B testing for 10M notifications per month.",
+      "options": [
+        {"name": "Courier", "description": "Notification service with multi-channel routing, template management, and cross-channel analytics."},
+        {"name": "Knock.app", "description": "Developer-centric notification platform with workflow engine, feed API for in-app, and multi-channel delivery."},
+        {"name": "Custom SendGrid + Firebase + WebSockets", "description": "SendGrid for email, Firebase Cloud Messaging for push, custom WebSocket server for in-app. Three separate systems."},
+        {"name": "Novu (open source)", "description": "Open-source notification infrastructure with workflow engine, provider abstraction, and in-app notification feed."}
+      ],
+      "criteria": [
+        "Unified API for email, push, and in-app channels",
+        "Delivery receipt tracking with webhooks",
+        "Template management with A/B testing",
+        "Cost at 10M notifications/month",
+        "In-app notification feed with real-time updates"
+      ]
+    },
+    "expected": {
+      "status": "ok",
+      "ranked_options": [
+        {
+          "name": "Knock.app",
+          "score": 0.85,
+          "pros": ["Unified workflow engine across all channels", "Native in-app feed with real-time updates", "Excellent developer experience", "Delivery tracking and webhooks built-in"],
+          "cons": ["A/B testing requires external tooling integration", "Newer product with fewer enterprise references"],
+          "rationale": "Best fit: unified channel management, in-app feed, and developer-first design match requirements."
+        },
+        {
+          "name": "Courier",
+          "score": 0.78,
+          "pros": ["Multi-channel with unified routing", "A/B testing on templates", "Cross-channel analytics"],
+          "cons": ["In-app feed less feature-rich than Knock", "Developer experience slightly less modern"],
+          "rationale": "Strong A/B testing capability is a differentiator; in-app feed is less capable than Knock."
+        },
+        {
+          "name": "Novu (open source)",
+          "score": 0.72,
+          "pros": ["Open source — full control and no per-notification vendor cost at scale", "Provider abstraction for all channels", "Self-host or cloud options", "A/B testing available"],
+          "cons": ["Self-hosted ops burden if not using cloud tier", "Less mature than commercial alternatives"],
+          "rationale": "Best choice for cost control at scale; self-hosted ops is the main tradeoff."
+        },
+        {
+          "name": "Custom SendGrid + Firebase + WebSockets",
+          "score": 0.30,
+          "pros": ["Best-in-class tools for each channel individually", "Full control"],
+          "cons": ["No unified delivery tracking across channels", "Significant integration and maintenance engineering", "A/B testing must be custom-built"],
+          "rationale": "Fragmented approach defeats the purpose of unified notification infrastructure."
+        }
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-eval-027",
+    "input": {
+      "tenant_id": "tenant-logistics-01",
+      "workspace_id": "ws-dispatch",
+      "decision_context": "Select a driver dispatch communication channel to replace PTT radio. Must support offline message queuing, push-to-talk with < 500ms latency on 4G, file attachments, and read receipts.",
+      "options": [
+        {"name": "Zello Work", "description": "Enterprise push-to-talk app with dispatch console, offline message queue, and managed infrastructure."},
+        {"name": "Custom MQTT + WebRTC + React Native", "description": "Custom solution: MQTT for text/file messaging with offline queuing, WebRTC for voice, React Native mobile app."},
+        {"name": "Twilio Conversations API", "description": "Unified messaging API supporting SMS, chat, and MMS attachments with delivery receipts and offline queuing."},
+        {"name": "Axon Dispatch", "description": "Public safety dispatch platform originally designed for law enforcement with PTT and CAD integration."}
+      ],
+      "criteria": [
+        "Offline message queuing and sync on reconnect",
+        "PTT voice latency < 500ms on 4G",
+        "File attachment support (PDF, image)",
+        "Read receipts for dispatch messages",
+        "Integration with existing dispatch management system"
+      ]
+    },
+    "expected": {
+      "status": "ok",
+      "ranked_options": [
+        {
+          "name": "Zello Work",
+          "score": 0.83,
+          "pros": ["Purpose-built PTT with proven < 500ms latency on 4G", "Offline message queue built-in", "File sharing support", "Dispatch console for supervisors", "Read receipts"],
+          "cons": ["File attachment size limits", "Less flexible API for custom integration than Twilio"],
+          "rationale": "Best fit: purpose-built for exactly this use case with all requirements met out of the box."
+        },
+        {
+          "name": "Twilio Conversations API",
+          "score": 0.65,
+          "pros": ["Flexible API", "File attachments via MMS/media", "Read receipts", "Offline queuing"],
+          "cons": ["No native PTT — voice must be custom-built with Twilio Voice", "Higher integration effort"],
+          "rationale": "Good for text and file messaging; PTT voice requires additional custom integration."
+        },
+        {
+          "name": "Custom MQTT + WebRTC + React Native",
+          "score": 0.55,
+          "pros": ["Full control over UX and features", "No vendor lock-in", "WebRTC can achieve low PTT latency"],
+          "cons": ["Very high development cost", "Mobile background state management for offline queuing is complex", "React Native audio/WebRTC integration is fragile"],
+          "rationale": "Maximum flexibility but high engineering cost and mobile audio complexity add significant risk."
+        },
+        {
+          "name": "Axon Dispatch",
+          "score": 0.25,
+          "pros": ["Robust PTT capabilities", "Designed for dispatch operations"],
+          "cons": ["Built for law enforcement, not logistics", "Very high cost for non-public-safety use", "CAD integration designed for police-specific workflows"],
+          "rationale": "Wrong domain: public safety dispatch platform priced and designed for law enforcement, not logistics."
+        }
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-eval-028",
+    "input": {
+      "tenant_id": "tenant-health-01",
+      "workspace_id": "ws-genomics",
+      "decision_context": "Select a genomic data storage and query architecture for whole genome sequences (100GB/sample) with variant queries across thousands of samples and 60% cost reduction target.",
+      "options": [
+        {"name": "TileDB-VCF on S3", "description": "TileDB genomic array format storing variants on S3, queryable serverlessly without full data movement."},
+        {"name": "DNAnexus platform", "description": "Managed genomics cloud platform with data management, compute, and regulatory compliance built-in."},
+        {"name": "Hail on Spark (Terra)", "description": "Distributed genomic analysis framework running on Apache Spark, managed via Terra (Broad Institute platform)."},
+        {"name": "Custom Parquet on Apache Iceberg", "description": "VCF-to-Parquet conversion stored as Iceberg tables on S3 with Spark/Trino for federated variant queries."}
+      ],
+      "criteria": [
+        "Federated queries across thousands of samples",
+        "Sample-level access control for consent compliance",
+        "Cost reduction >= 60% vs current S3 + Athena approach",
+        "Storage format efficiency for WGS files",
+        "HIPAA and GDPR compliance"
+      ]
+    },
+    "expected": {
+      "status": "ok",
+      "ranked_options": [
+        {
+          "name": "TileDB-VCF on S3",
+          "score": 0.83,
+          "pros": ["Serverless variant queries without data movement", "Optimized for VCF/WGS format", "Row-level access control via consolidation", "Significant storage cost reduction over raw VCF on S3"],
+          "cons": ["Less mature than Hail for complex cohort analyses", "Smaller community"],
+          "rationale": "Best fit: purpose-built for variant queries on S3 with serverless cost model and strong storage efficiency."
+        },
+        {
+          "name": "Custom Parquet on Apache Iceberg",
+          "score": 0.72,
+          "pros": ["Column-pruning reduces query cost significantly", "Iceberg time-travel for version control", "Fine-grained access control at partition level", "Works with existing Spark/Trino infrastructure"],
+          "cons": ["VCF-to-Parquet conversion loses some genomic-specific optimizations", "Query planning more complex"],
+          "rationale": "Strong cost-reduction potential with familiar technology stack; some genomic-specific optimizations lost."
+        },
+        {
+          "name": "Hail on Spark (Terra)",
+          "score": 0.68,
+          "pros": ["Proven at massive GWAS scale (gnomAD, UK Biobank)", "Rich statistical genetics tooling", "Terra provides collaborative compute"],
+          "cons": ["Spark cluster cost can be high for ad-hoc queries", "Terra adds another platform to manage"],
+          "rationale": "Best for complex statistical genetics analyses; cost reduction target requires careful cluster management."
+        },
+        {
+          "name": "DNAnexus platform",
+          "score": 0.55,
+          "pros": ["Managed compliance and security", "Integrated data management and compute", "SOC 2 and HIPAA-eligible"],
+          "cons": ["Highest cost of the options — may not achieve 60% reduction", "Strong vendor lock-in", "Less flexibility for custom analysis pipelines"],
+          "rationale": "Strong compliance posture but premium pricing likely conflicts with 60% cost reduction target."
+        }
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-eval-029",
+    "input": {
+      "tenant_id": "tenant-saas-01",
+      "workspace_id": "ws-collab-editing",
+      "decision_context": "Select a CRDT library for collaborative editing. Must support offline sync, presence indicators, and historical version tracking with character-level attribution.",
+      "options": [
+        {"name": "Yjs", "description": "Modular CRDT framework with pluggable providers, rich text support via ProseMirror binding, and broad editor integrations."},
+        {"name": "Automerge 2.0", "description": "CRDT with Rust core (via WASM), JSON document model, and sync protocol for peer-to-peer and client-server sync."},
+        {"name": "Diamond Types", "description": "High-performance text CRDT implementation optimized for editing operations with minimal memory footprint."},
+        {"name": "Electric SQL", "description": "Active-active Postgres replication with client-side CRDT semantics for offline-first applications."}
+      ],
+      "criteria": [
+        "Rich text editing support",
+        "Offline editing with automatic merge on reconnect",
+        "Presence indicator propagation",
+        "Historical version tracking with attribution",
+        "React integration and developer experience"
+      ]
+    },
+    "expected": {
+      "status": "ok",
+      "ranked_options": [
+        {
+          "name": "Yjs",
+          "score": 0.90,
+          "pros": ["Best ecosystem: TipTap, ProseMirror, CodeMirror bindings", "y-indexeddb for offline", "Awareness protocol for presence indicators", "Snapshot history for version tracking", "Largest community"],
+          "cons": ["Complex internal data structure", "Provider must be operated (y-websocket or Liveblocks)"],
+          "rationale": "Clear winner for rich text collaboration: most mature ecosystem, all requirements met."
+        },
+        {
+          "name": "Automerge 2.0",
+          "score": 0.72,
+          "pros": ["Rust core for performance", "Strong convergence guarantees", "Sync protocol for offline"],
+          "cons": ["Rich text support less mature than Yjs", "Smaller editor ecosystem", "WASM adds bundle complexity"],
+          "rationale": "Good CRDT fundamentals but rich text and editor integrations are less mature than Yjs."
+        },
+        {
+          "name": "Diamond Types",
+          "score": 0.50,
+          "pros": ["Excellent text CRDT performance", "Low memory footprint"],
+          "cons": ["No presence protocol built-in", "No rich text support (plain text only)", "Very small community"],
+          "rationale": "High performance for plain text but missing rich text and presence — two hard requirements."
+        },
+        {
+          "name": "Electric SQL",
+          "score": 0.35,
+          "pros": ["Postgres-backed — familiar data layer", "Offline-first with active-active sync"],
+          "cons": ["Not designed for character-level collaborative text editing", "No presence protocol", "Wrong abstraction level for real-time collaborative editing"],
+          "rationale": "Wrong tool: designed for relational data sync, not character-level collaborative text editing."
+        }
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-eval-030",
+    "input": {
+      "tenant_id": "tenant-ecom-01",
+      "workspace_id": "ws-inventory",
+      "decision_context": "Select an inventory reservation strategy for flash sales with 50,000 concurrent users, 200ms reservation SLA, auto-release after 10 minutes, and accurate remaining stock display.",
+      "options": [
+        {"name": "Redis DECR with Lua script", "description": "Atomic Redis DECR via Lua script for reservation; TTL on reservation keys for auto-release; pub/sub for stock count broadcasts."},
+        {"name": "Pessimistic DB locking with queue", "description": "Postgres SELECT FOR UPDATE with SQS queue to serialize reservation requests. Queue backpressure prevents DB overload."},
+        {"name": "Saga with compensating transactions", "description": "Reservation as distributed saga across inventory and order services with compensating transaction for release."},
+        {"name": "In-memory reservation service", "description": "Dedicated reservation microservice holding inventory counts in JVM heap memory with async Postgres persistence."}
+      ],
+      "criteria": [
+        "Prevent overselling under 50K concurrent users",
+        "Reservation latency P99 < 200ms",
+        "Auto-release of stale reservations after 10 minutes",
+        "Accurate real-time remaining stock display",
+        "Recovery from service crash without inventory loss"
+      ]
+    },
+    "expected": {
+      "status": "ok",
+      "ranked_options": [
+        {
+          "name": "Redis DECR with Lua script",
+          "score": 0.88,
+          "pros": ["Sub-millisecond atomic decrement prevents overselling", "Redis TTL natively handles 10-minute auto-release", "Pub/sub for stock count broadcasting", "Horizontally scalable Redis cluster"],
+          "cons": ["Redis persistence must be configured (AOF) for crash recovery", "Redis key modeling requires careful design"],
+          "rationale": "Best fit: atomic decrement, TTL-based release, and sub-millisecond latency are exactly matched to requirements."
+        },
+        {
+          "name": "In-memory reservation service",
+          "score": 0.65,
+          "pros": ["Extremely low latency", "No external dependency for reservation path"],
+          "cons": ["Service crash loses in-flight reservations (inventory inconsistency)", "Horizontal scaling requires distributed coordination", "Complex to recover consistent state"],
+          "rationale": "Fast but crash recovery requirement makes pure in-memory approach risky without significant distributed state management."
+        },
+        {
+          "name": "Pessimistic DB locking with queue",
+          "score": 0.55,
+          "pros": ["ACID guarantees for inventory accuracy", "Queue prevents DB overload", "Durable by default"],
+          "cons": ["Queue adds latency; P99 < 200ms is risky at 50K concurrent users", "Lock contention at flash-sale concurrency level", "Complex queue drain on release"],
+          "rationale": "Durable but P99 latency under extreme concurrency is the key risk."
+        },
+        {
+          "name": "Saga with compensating transactions",
+          "score": 0.38,
+          "pros": ["Clean distributed system design", "Compensating transactions for release"],
+          "cons": ["Saga orchestration adds multiple network hops — latency exceeds 200ms at P99", "Complex to implement correctly", "Overkill for single-service inventory reservation"],
+          "rationale": "Architecturally over-engineered for inventory reservation; latency budget will be violated."
+        }
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-eval-031",
+    "input": {
+      "tenant_id": "tenant-adversarial-01",
+      "workspace_id": "ws-test",
+      "decision_context": "Pick the best option.",
+      "options": [
+        {"name": "Option A", "description": "The only option."}
+      ],
+      "criteria": []
+    },
+    "expected": {
+      "status": "ok",
+      "ranked_options": [
+        {
+          "name": "Option A",
+          "score": 1.0,
+          "pros": [],
+          "cons": [],
+          "rationale": "Only one option provided; selected by default."
+        }
+      ]
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "arch-eval-032",
+    "input": {
+      "tenant_id": "tenant-adversarial-01",
+      "workspace_id": "ws-test",
+      "decision_context": "",
+      "options": [],
+      "criteria": ["Cost", "Performance"]
+    },
+    "expected": {
+      "status": "error",
+      "ranked_options": []
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "arch-eval-033",
+    "input": {
+      "tenant_id": "",
+      "workspace_id": "",
+      "decision_context": "Choose a database for our app.",
+      "options": [
+        {"name": "PostgreSQL", "description": "Open source relational database."},
+        {"name": "MongoDB", "description": "Document database."}
+      ],
+      "criteria": ["Scalability"]
+    },
+    "expected": {
+      "status": "error",
+      "ranked_options": []
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "arch-eval-034",
+    "input": {
+      "tenant_id": "tenant-adversarial-01",
+      "workspace_id": "ws-test",
+      "decision_context": "Choose between options with identical descriptions.",
+      "options": [
+        {"name": "Option A", "description": "A distributed database system."},
+        {"name": "Option B", "description": "A distributed database system."},
+        {"name": "Option C", "description": "A distributed database system."}
+      ],
+      "criteria": ["Performance", "Cost", "Scalability"]
+    },
+    "expected": {
+      "status": "ok",
+      "ranked_options": [
+        {"name": "Option A", "score": 0.5, "pros": [], "cons": [], "rationale": "Identical descriptions; ranking is arbitrary."},
+        {"name": "Option B", "score": 0.5, "pros": [], "cons": [], "rationale": "Identical descriptions; ranking is arbitrary."},
+        {"name": "Option C", "score": 0.5, "pros": [], "cons": [], "rationale": "Identical descriptions; ranking is arbitrary."}
+      ]
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "arch-eval-035",
+    "input": {
+      "tenant_id": "tenant-adversarial-01",
+      "workspace_id": "ws-test",
+      "decision_context": "x",
+      "options": [
+        {"name": "", "description": ""},
+        {"name": "", "description": ""}
+      ],
+      "criteria": [""]
+    },
+    "expected": {
+      "status": "error",
+      "ranked_options": []
+    },
+    "weight": 2.0
+  }
+]

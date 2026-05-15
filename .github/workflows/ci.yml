@@ -19,6 +19,11 @@ jobs:
           - services/scaffolder
           - services/app-onboarding
           - services/policy-engine
+          - services/sdlc-orchestrator
+          - services/sdlc-iac
+          - services/healing-engine
+          - pkg/artifact-store-adapter
+          - pkg/workflow
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -38,6 +43,12 @@ jobs:
           python-version: "3.12"
       - name: Compile Alfred stub
         run: python -m compileall services/alfred
+      - name: Compile sdlc-architecture-skills
+        run: python -m compileall services/sdlc-architecture-skills
+      - name: Compile sdlc-design-skills
+        run: python -m compileall services/sdlc-design-skills
+      - name: Compile sdlc-qa-skills
+        run: python -m compileall services/sdlc-qa-skills
 
   node:
     name: portal
@@ -102,3 +113,20 @@ jobs:
           # falls back to synthetic mode that still validates milestone ordering.
           WORKSPACE_ID: ci-workspace
           RUNTIME_ID: rt-ci-1
+
+  intent-to-infrastructure-smoke:
+    name: intent-to-infrastructure smoke (sdlc-end-to-end)
+    runs-on: ubuntu-latest
+    needs: [go, python]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run intent-to-infrastructure smoke test
+        run: python scripts/integration/smoke_intent_to_infrastructure.py
+        env:
+          # Synthetic mode: validates milestone ordering without a live stack.
+          # Set LIVE_STACK=true + service URLs to test against a real cluster.
+          SYNTHETIC_MODE: "true"
+          CORRELATION_ID: "ci-${{ github.run_id }}"

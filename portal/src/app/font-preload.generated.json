@@ -1,0 +1,29 @@
+[
+  {
+    "family": "Fraunces",
+    "weights": [
+      400,
+      700
+    ],
+    "italic": true,
+    "source": "https://platform.forge.example/fonts/fraunces.woff2"
+  },
+  {
+    "family": "Inter",
+    "weights": [
+      400,
+      500,
+      600
+    ],
+    "italic": false,
+    "source": "https://platform.forge.example/fonts/inter.woff2"
+  },
+  {
+    "family": "JetBrains Mono",
+    "weights": [
+      400
+    ],
+    "italic": false,
+    "source": "https://platform.forge.example/fonts/jetbrains-mono-400.woff2"
+  }
+]

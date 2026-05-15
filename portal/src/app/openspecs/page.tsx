@@ -7,6 +7,9 @@ import { Button, Card } from "@/components/primitives";
 type SpecificationDocument = {
   openspec_id: string;
   workspace_id: string;
+  // Phase 5 (app-first-class-entity 10.4): OpenSpecs anchor to a parent App.
+  // Nullable on legacy records until the M5 NOT NULL cutover lands.
+  app_id?: string | null;
   title: string;
   business_intent: string;
   problem_statement: string;
@@ -21,6 +24,29 @@ type SpecificationDocument = {
   version: number;
   openspec_artifacts?: { change_id: string; root: string; files: string[] } | null;
 };
+
+// groupSpecsByApp returns specs partitioned by parent App. The `_unassigned`
+// bucket (specs without app_id) is always last and visually distinct in the
+// renderer (app-first-class-entity 10.3, 10.4).
+export function groupSpecsByApp(specs: SpecificationDocument[]): Array<{ appId: string | null; specs: SpecificationDocument[] }> {
+  const groups = new Map<string | null, SpecificationDocument[]>();
+  for (const spec of specs) {
+    const key = spec.app_id ?? null;
+    const list = groups.get(key) ?? [];
+    list.push(spec);
+    groups.set(key, list);
+  }
+  const entries: Array<{ appId: string | null; specs: SpecificationDocument[] }> = [];
+  for (const [appId, list] of groups.entries()) {
+    if (appId === null) continue;
+    entries.push({ appId, specs: list });
+  }
+  entries.sort((a, b) => (a.appId ?? "").localeCompare(b.appId ?? ""));
+  if (groups.has(null)) {
+    entries.push({ appId: null, specs: groups.get(null) ?? [] });
+  }
+  return entries;
+}
 
 type SearchParams = {
   workspace_id?: string;

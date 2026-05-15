@@ -3,7 +3,9 @@ package httpx
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/forge-eng-fabric/services/control-plane/internal/auth"
@@ -35,9 +37,15 @@ func (a *API) Routes(r chi.Router) {
 
 		r.Get("/tenants/{tenantID}/business-units", a.listBUs)
 		r.Post("/tenants/{tenantID}/business-units", a.createBU)
+		r.Get("/tenants/{tenantID}/feature-flags", a.getTenantFeatureFlags)
+		r.Patch("/tenants/{tenantID}/feature-flags", a.patchTenantFeatureFlags)
 
+		r.Get("/business-units", a.listAllBUs)
 		r.Get("/business-units/{buID}/workspaces", a.listWorkspaces)
 		r.Post("/business-units/{buID}/workspaces", a.createWorkspace)
+		r.Get("/business-units/{buID}/members", a.listBUMembers)
+
+		r.Get("/platform/users", a.listPlatformUsers)
 
 		r.Get("/workspaces", a.listAllWorkspaces)
 		r.Get("/workspaces/{workspaceID}", a.getWorkspace)
@@ -118,6 +126,60 @@ func (a *API) createTenant(w http.ResponseWriter, r *http.Request) {
 	}
 	_ = a.FGA.Write(r.Context(), "user:"+p.Subject, "admin", "tenant:"+t.ID.String())
 	writeJSON(w, 201, t)
+}
+
+// --- feature flags ------------------------------------------------------
+
+// resolveTenantID tries to parse tenantID as a UUID first; if that fails it
+// looks up the tenant by name so callers can use either the UUID or the slug.
+func (a *API) resolveTenantID(ctx context.Context, tenantID string) (uuid.UUID, error) {
+	if id, err := uuid.Parse(tenantID); err == nil {
+		return id, nil
+	}
+	// Fall back: look up by name/slug.
+	rows, err := a.DB.ListTenants(ctx)
+	if err != nil {
+		return uuid.UUID{}, err
+	}
+	for _, t := range rows {
+		if t.Name == tenantID {
+			return t.ID, nil
+		}
+	}
+	return uuid.UUID{}, errors.New("tenant not found: " + tenantID)
+}
+
+func (a *API) getTenantFeatureFlags(w http.ResponseWriter, r *http.Request) {
+	tid, err := a.resolveTenantID(r.Context(), chi.URLParam(r, "tenantID"))
+	if err != nil {
+		writeErr(w, r, 404, "not_found", err.Error())
+		return
+	}
+	flags, err := a.DB.GetTenantFeatureFlags(r.Context(), tid)
+	if err != nil {
+		writeErr(w, r, 500, "db_error", err.Error())
+		return
+	}
+	writeJSON(w, 200, flags)
+}
+
+func (a *API) patchTenantFeatureFlags(w http.ResponseWriter, r *http.Request) {
+	tid, err := a.resolveTenantID(r.Context(), chi.URLParam(r, "tenantID"))
+	if err != nil {
+		writeErr(w, r, 404, "not_found", err.Error())
+		return
+	}
+	var patch map[string]bool
+	if err := parseJSON(r, &patch); err != nil {
+		writeErr(w, r, 400, "bad_request", "body must be a JSON object of flag:bool pairs")
+		return
+	}
+	updated, err := a.DB.PatchTenantFeatureFlags(r.Context(), tid, patch)
+	if err != nil {
+		writeErr(w, r, 500, "db_error", err.Error())
+		return
+	}
+	writeJSON(w, 200, updated)
 }
 
 // --- business units -----------------------------------------------------
@@ -210,6 +272,79 @@ func (a *API) listWorkspaces(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, 200, rows)
+}
+
+type buMember struct {
+	Subject    string   `json:"subject"`
+	Workspaces []string `json:"workspaces"`
+}
+
+func (a *API) listPlatformUsers(w http.ResponseWriter, r *http.Request) {
+	prefix := strings.TrimSpace(r.URL.Query().Get("q"))
+	users, err := a.DB.ListPlatformUsers(r.Context(), prefix, 200)
+	if err != nil {
+		writeErr(w, r, 500, "db_error", err.Error())
+		return
+	}
+	writeJSON(w, 200, map[string]any{"users": users})
+}
+
+func (a *API) listBUMembers(w http.ResponseWriter, r *http.Request) {
+	buID, err := uuid.Parse(chi.URLParam(r, "buID"))
+	if err != nil {
+		writeErr(w, r, 400, "bad_request", "invalid buID")
+		return
+	}
+	rows, err := a.DB.ListWorkspaces(r.Context(), &buID)
+	if err != nil {
+		writeErr(w, r, 500, "db_error", err.Error())
+		return
+	}
+	bySubject := map[string][]string{}
+	order := []string{}
+	for _, ws := range rows {
+		for _, owner := range ws.Owners {
+			owner = strings.TrimSpace(owner)
+			if owner == "" {
+				continue
+			}
+			if _, seen := bySubject[owner]; !seen {
+				order = append(order, owner)
+			}
+			bySubject[owner] = append(bySubject[owner], ws.Name)
+		}
+	}
+	members := make([]buMember, 0, len(order))
+	for _, subject := range order {
+		members = append(members, buMember{Subject: subject, Workspaces: bySubject[subject]})
+	}
+	writeJSON(w, 200, map[string]any{"members": members})
+}
+
+func (a *API) listAllBUs(w http.ResponseWriter, r *http.Request) {
+	rows, err := a.DB.ListAllBUs(r.Context())
+	if err != nil {
+		writeErr(w, r, 500, "db_error", err.Error())
+		return
+	}
+	p := principal(r)
+	if hasRole(p, "platform-admin") {
+		writeJSON(w, 200, rows)
+		return
+	}
+	// FGA-scope: only BUs the principal can view. Mirrors listAllWorkspaces.
+	out := []store.BusinessUnit{}
+	for _, b := range rows {
+		ok, err := a.FGA.Check(r.Context(), "user:"+p.Subject, "can_view", "business_unit:"+b.ID.String())
+		if err != nil {
+			writeErr(w, r, 500, "fga_error", err.Error())
+			return
+		}
+		if ok {
+			out = append(out, b)
+		}
+	}
+	writeJSON(w, 200, out)
 }
 
 func (a *API) listAllWorkspaces(w http.ResponseWriter, r *http.Request) {

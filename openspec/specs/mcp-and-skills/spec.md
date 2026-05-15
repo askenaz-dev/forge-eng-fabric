@@ -26,11 +26,16 @@ The platform SHALL ship at least three reference Skills: `create-user-stories`, 
 - **THEN** the Skill executes through the runner with policy checks, returns structured outputs validated against `outputs_schema`, and produces audit and telemetry records
 
 ### Requirement: Identity propagation and policy hooks for tools
-Every MCP/Skill invocation SHALL propagate the calling principal's identity, evaluate policy before execution, and emit audit and telemetry on success/failure.
+Every MCP/Skill invocation SHALL be routed through `mcp-gateway`. The gateway SHALL propagate the calling principal's identity via signed headers, evaluate policy before execution, and emit audit and telemetry on success/failure. Direct dial to an MCP endpoint by any internal caller SHALL be blocked by network policy once `gateway.enforced=true` is set for the Tenant.
 
 #### Scenario: Tool call denied by policy
 - **WHEN** Alfred attempts to invoke a tool whose policy evaluates to `deny`
-- **THEN** the call is blocked, the user-facing error explains the policy decision, and an audit event is emitted
+- **THEN** the gateway MUST block the call, return a structured policy-denial error and emit `policy.decision.v1` with `outcome=deny`
+
+#### Scenario: Direct dial bypass blocked
+- **GIVEN** a runner attempting to call an MCP endpoint directly without traversing `mcp-gateway` in a Tenant with `gateway.enforced=true`
+- **WHEN** the request is sent
+- **THEN** the network policy MUST drop the connection and emit `guardrail.trip.v1` with reason `mcp_direct_dial_blocked`
 
 ### Requirement: Allowlists per trust level and data classification
 Sensitive tools SHALL be invocable only when the caller's context (trust level, data classification, environment, criticality) is on the allowlist defined by Security policy.
@@ -174,3 +179,84 @@ The three reference skills mandated by this capability — `create-user-stories`
 - **GIVEN** a developer with a valid PAT
 - **WHEN** they run `forge skills install generate-test-cases`
 - **THEN** the bundle resolves, verifies, and lands in the active client's skills directory
+
+### Requirement: External MCP onboarding
+
+The platform SHALL support registering an external (third-party) MCP server as an Asset Registry asset with `provenance=external`. Onboarding SHALL require: endpoint URL, per-Tenant `credential_ref` (vault path), optional tool `allowlist`, and a one-time manifest fetch + hash. Approval and trust-level promotion SHALL follow the standard lifecycle.
+
+#### Scenario: Operator onboards vendor MCP
+
+- **GIVEN** Tenant `t1` with a Nexus-stored credential at `vault://t1/vendor-x/api-key`
+- **WHEN** an operator submits an external MCP registration for `vendor-x` with endpoint `https://vendor-x.example.com/mcp` and `allowlist=[read_doc, list_docs]`
+- **THEN** the registry MUST fetch the live manifest, persist its hash, create the asset with `provenance=external, lifecycle_state=proposed` and emit `com.forge.asset.external_registered.v1`
+
+#### Scenario: External MCP credential never exposed
+
+- **GIVEN** external MCP `vendor-x` with `credential_ref=vault://t1/vendor-x/api-key`
+- **WHEN** the gateway forwards a tool call to `vendor-x`
+- **THEN** the credential MUST be resolved at execution time, attached to the outbound request only, and MUST NOT appear in logs, traces, audit payloads or telemetry
+
+### Requirement: MCP discovery flows through the gateway catalog
+
+Consumers SHALL discover available MCPs (internal and external) through the gateway catalog endpoint, which surfaces every approved MCP regardless of provenance with consistent metadata, `how_to` and `active_surface` blocks.
+
+#### Scenario: Catalog lists internal and external MCPs uniformly
+
+- **GIVEN** Tenant `t1` with internal MCPs `github`, `jira` and external MCP `vendor-x` all in `lifecycle_state=approved`
+- **WHEN** a caller queries `GET /v1/gw/mcp/catalog`
+- **THEN** all three MUST be returned with `provenance`, `active_surface.endpoint`, `how_to.install` and `how_to.usage`
+
+### Requirement: Hybrid sync model for registry assets
+
+Asset registry entries (skills, MCPs, agents) SHALL be kept in sync with their origin via a hybrid push+pull model.
+
+**Push (preferred):** origin repositories notify Forge on new releases via a webhook. For internal repos this is the existing CI `gateway-publish` hook. For public-origin assets (npm, GitHub Packages public), publishers MAY opt in to a Forge-provided webhook receiver endpoint; Forge SHALL expose `POST /v1/registry/webhooks/npm` and `POST /v1/registry/webhooks/github` to accept standard release event payloads from those registries.
+
+**Pull (backstop):** a Sync Worker SHALL poll each registered asset's origin periodically (configurable per-Tenant, default: weekly). On detecting a version newer than the latest registry entry, the Sync Worker SHALL trigger the mirror flow (for public-origin skills) or a version-update notification (for private-origin assets). The Sync Worker MUST batch origin queries to respect source API rate limits and MUST emit `registry.sync.completed.v1` with counts of checked, drifted and mirrored assets after each run.
+
+#### Scenario: npm webhook triggers mirror on new release
+
+- **GIVEN** asset `cool-skill` registered with `origin_ref=npm:cool-skill` and npm hook configured to `POST /v1/registry/webhooks/npm`
+- **WHEN** publisher releases `cool-skill@2.3.0` on npm
+- **THEN** Forge MUST receive the webhook, fetch and mirror `2.3.0`, set `lifecycle_state=mirrored`, notify the asset owner
+
+#### Scenario: Sync Worker detects drift and auto-mirrors
+
+- **GIVEN** weekly Sync Worker run; registry has `cool-skill@2.1.0` approved; npm has `2.2.0`
+- **WHEN** the worker queries the npm registry API
+- **THEN** it MUST detect the version gap, mirror `2.2.0`, emit `asset.version.mirrored.v1`, and notify the asset owner (or auto-promote if `auto_promote_policy` permits)
+
+#### Scenario: Sync Worker respects API rate limits
+
+- **GIVEN** a Tenant with 500 public-origin assets
+- **WHEN** the weekly sync run starts
+- **THEN** the worker MUST batch npm registry API queries (≤100 req/min) and MUST NOT exhaust the origin's rate limit allowance
+
+### Requirement: MCP tool-list drift detection
+
+The `mcp-gateway` SHALL compare the live `tools/list` response from an MCP server against the cached tool list in the registry on every new client session. When a difference is detected (tools added, removed, or renamed), the gateway SHALL:
+
+1. Emit `mcp.tool_list.drifted.v1` with the full before/after diff.
+2. Update the registry cache with the new tool list immediately (so subsequent callers see current tools).
+3. Notify the asset owner that the registered tool list has changed and invite confirmation of the updated metadata.
+
+This replaces the need to poll MCP endpoints separately — the gateway's existing connection is the pull mechanism for MCPs.
+
+#### Scenario: Gateway detects new tool on connection
+
+- **GIVEN** MCP `vendor-x` has registry cache `[read_doc, list_docs]`
+- **WHEN** a new session connects and `tools/list` returns `[read_doc, list_docs, exec_command]`
+- **THEN** the gateway MUST emit `mcp.tool_list.drifted.v1{added=[exec_command]}`
+- **AND** update the registry cache to `[read_doc, list_docs, exec_command]`
+- **AND** notify the asset owner
+
+#### Scenario: Removed tool triggers drift notification
+
+- **GIVEN** MCP `vendor-x` has registry cache `[read_doc, list_docs, exec_command]`
+- **WHEN** `tools/list` returns `[read_doc, list_docs]` (exec_command gone)
+- **THEN** the gateway MUST emit `mcp.tool_list.drifted.v1{removed=[exec_command]}`
+- **AND** the asset owner MUST be notified so they can update any workflow steps referencing `exec_command`
+
+### Requirement: Public-origin badge in catalog and asset UI
+
+Assets with `is_public_origin=true` SHALL be visually distinguished in the Portal asset catalog and asset detail page with a **PUBLIC ORIGIN** badge. The badge tooltip SHALL display `origin_ref` and `last_synced_at`. The asset's `auto_promote_policy` setting SHALL be editable by the asset owner from the detail page.

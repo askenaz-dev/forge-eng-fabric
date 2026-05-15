@@ -134,6 +134,32 @@ type Step struct {
 
 	// event-trigger
 	EventPattern *EventPattern `yaml:"event_pattern,omitempty" json:"event_pattern,omitempty"`
+
+	// active_surface pins the gateway endpoint chosen for this step at
+	// design time. Persisted by the visual editor (active-registry-gateways
+	// §7.5) so the runtime does not need to re-resolve the surface from
+	// the registry on every dispatch. Optional; when absent the runtime
+	// resolves the surface lazily as before.
+	ActiveSurface *NodeActiveSurface `yaml:"active_surface,omitempty" json:"active_surface,omitempty"`
+
+	// targets declares the SDLC phase-target override for this step.
+	// The key is the canonical SDLC phase name (e.g. "iac", "qa"); the value
+	// is one of the four allowed policy strings. When present the orchestrator
+	// merges this map on top of App.targets at plan-build time subject to the
+	// tightening rule: a per-step override MAY only make a phase more strict,
+	// never more permissive. See sdlc-end-to-end spec for full semantics.
+	Targets map[string]string `yaml:"targets,omitempty" json:"targets,omitempty"`
+}
+
+// NodeActiveSurface is the per-step projection of an Asset Registry
+// row's active_surface block. The shape mirrors Asset.active_surface so
+// round-trips via JSON/YAML preserve the field byte-for-byte.
+type NodeActiveSurface struct {
+	Family          string `yaml:"family" json:"family"`
+	Endpoint        string `yaml:"endpoint,omitempty" json:"endpoint,omitempty"`
+	ArtifactPointer string `yaml:"artifact_pointer,omitempty" json:"artifact_pointer,omitempty"`
+	Digest          string `yaml:"digest,omitempty" json:"digest,omitempty"`
+	SignatureID     string `yaml:"signature_id,omitempty" json:"signature_id,omitempty"`
 }
 
 // Branch is one arm of a `branch` node.

@@ -88,12 +88,21 @@ class PlanRevision(BaseModel):
     inserted_step_idx: int | None = None
 
 
+ALLOWED_START_STEPS = frozenset(
+    {"discovery", "architect", "design", "test", "iac", "deploy"}
+)
+
+COMMITTED_LIFECYCLE_STATES = frozenset({"approved", "committed"})
+
+
 class StartSessionRequest(BaseModel):
     workspace_id: uuid.UUID
     openspec_id: str
     intent: str
     correlation_id: str | None = None
     metadata: dict[str, Any] = Field(default_factory=dict)
+    # alfred-console-redesign 7.1: optional jump to a specific SDLC step.
+    start_step: str | None = None
 
 
 class FollowUpRequest(BaseModel):

@@ -589,6 +589,186 @@ The evolution loop captures simulated and applied remediations as candidate Open
 
 Phase 6 sign-off requires: healing action catalog populated, ≥ 1 simulated remediation under guardrails, ≥ 1 evolution-loop record proposing an OpenSpec update.
 
+## New Phases: `iac` and `observability`
+
+Two new SDLC phases were introduced after Phase 4 and are opt-in by default for all tenants. Feature flags control their availability per tenant before global rollout.
+
+### New Phases Summary
+
+| Phase | Position in order | Default target policy | Description |
+|---|---|---|---|
+| `iac` | Between `devops` and `sre` | `opt-in` | Infrastructure-as-Code generation and drift reconciliation |
+| `observability` | After `finops` (end of pipeline) | `opt-in` | Observability harness provisioning, SLO definition, dashboard seeding |
+
+### Full Phase Targets Matrix
+
+The table below shows the default target policy for every phase as returned by `DefaultTargets()` in `services/sdlc-orchestrator/internal/sdlc/types.go`. Policies are applied at workflow-plan creation time and can be overridden per-app or per-spec run.
+
+| Phase | Default target policy | Notes |
+|---|---|---|
+| `product` | not configured (skipped if absent) | Managed by the product owner outside the SDLC orchestrator |
+| `architecture` | `required` | Gate failure blocks progression |
+| `design` | `optional` | Gate failure emits a warning; progression continues |
+| `development` | `required` | Gate failure blocks progression |
+| `qa` | `required` | Gate failure blocks progression |
+| `security` | `required` | Gate failure blocks progression |
+| `devops` | `required` | Gate failure blocks progression |
+| `iac` | `opt-in` | Phase runs only when explicitly requested; must be enabled via feature flag `forge.sdlc.iac.enabled` |
+| `sre` | `optional` | Gate failure emits a warning; progression continues |
+| `finops` | `opt-in` | Phase runs only when explicitly requested |
+| `observability` | `opt-in` | Phase runs only when explicitly requested; must be enabled via feature flag |
+
+### Enabling opt-in phases per tenant
+
+```bash
+# Enable iac phase for a tenant
+curl -s -X PATCH http://localhost:8082/v1/tenants/{tenant_id}/feature-flags \
+  -H "content-type: application/json" \
+  -d '{"forge.sdlc.iac.enabled": true}'
+
+# Enable observability phase for a tenant
+curl -s -X PATCH http://localhost:8082/v1/tenants/{tenant_id}/feature-flags \
+  -H "content-type: application/json" \
+  -d '{"forge.sdlc.observability.enabled": true}'
+
+# Verify
+curl http://localhost:8082/v1/tenants/{tenant_id}/feature-flags | jq .
+```
+
+The control-plane serves these endpoints at `:8082`. See the per-tenant rollout sequence in `docs/runbooks/sdlc-phase-rollout.md`.
+
+## Alfred Console Redesign (cross-phase capability)
+
+Source of truth: `openspec/changes/alfred-console-redesign/`. This change ships across all phases because the console is the primary operator surface.
+
+### Friendly and Advanced views
+
+The Alfred console (`/alfred`) now resolves one of two views per user session:
+
+| View | Target audience | Default for |
+|---|---|---|
+| Friendly | Product owners, PMs, business stakeholders | `workspace.member` role on first sign-in |
+| Advanced | Engineers and platform operators | `workspace.developer` and above on first sign-in |
+
+The resolver runs in order: explicit `?view=` query param → `user.console_view_preference` (persisted) → role-based default from `resolveAndPersistDefault()`.
+
+#### Role-based default rules
+
+| OpenFGA role | Resolved default |
+|---|---|
+| `workspace:member` only | Friendly |
+| `workspace:developer` | Advanced |
+| `workspace:admin` | Advanced |
+| `workspace:owner` | Advanced |
+| No workspace membership found | Friendly (safe fallback) |
+
+The resolved default is persisted via `PUT /api/user/preferences` (`console_view_preference: "friendly" | "advanced"`) so the resolver runs only once per user.
+
+#### Tenant-level default override
+
+Set `tenant.console_default_view` in the tenant config record to override the role-based default for all new users in that tenant:
+
+```sh
+# Example: force Friendly for a non-technical tenant
+curl -X PATCH http://localhost:8081/v1/tenants/<tenant_id>/config \
+  -H 'content-type: application/json' \
+  -d '{"console_default_view": "friendly"}'
+```
+
+Valid values: `"friendly"`, `"advanced"`. The tenant override takes precedence over the role-based rule but is overridden by any explicit user preference already persisted.
+
+#### Feature flag
+
+The console v2 is gated by the `ALFRED_CONSOLE_V2_ENABLED` environment variable on the Alfred service (`services/alfred/alfred/config.py`) and the per-tenant `forge.alfred_console_v2.enabled` flag. Both must be enabled for a tenant to access the new views.
+
+```sh
+# Alfred service env
+ALFRED_CONSOLE_V2_ENABLED=true
+
+# Per-tenant flag (via control-plane API)
+curl -X PUT http://localhost:8081/v1/tenants/<tenant_id>/flags/forge.alfred_console_v2.enabled \
+  -d '{"value": true}'
+```
+
+See the tenant rollout runbook at `docs/runbooks/alfred-console-rollout.md`.
+
+### Spec deduplication (RAG match)
+
+When a user submits an intent, Alfred runs a Milvus retrieval pass before creating a draft. If a candidate spec scores above the tenant threshold (default 0.80, floor 0.65), the UI shows the match dialog.
+
+| Config key | Default | Description |
+|---|---|---|
+| `SPEC_MATCH_THRESHOLD_DEFAULT` | `0.80` | Score at or above which the match dialog fires |
+| `SPEC_MATCH_THRESHOLD_FLOOR` | `0.65` | Minimum allowed threshold; writes below this return `422 threshold_below_floor` |
+| `DEDUP_INDEX_URL` | `http://localhost:8086` | Milvus/index service URL |
+
+The dedup index is kept current by `services/alfred/alfred/dedup_indexer.py` which reacts to `spec.purged.v1`, `spec.reparented.v1`, and `intent.committed.v1` events.
+
+### `/forge` command (replaces `/openspec`)
+
+The canonical command is now `/forge` in all surfaces (CLI, Portal palette, docs). `/openspec` is kept as a deprecated alias for two minor versions and emits `alfred.command.deprecated_alias.v1` on every invocation.
+
+| Surface | Canonical | Deprecated alias |
+|---|---|---|
+| Portal command palette | `/forge new`, `/forge list` | `/openspec new` (shows yellow toast) |
+| CLI | `forge new`, `forge list`, … | `openspec …` (prints stderr warning) |
+| Docs | `/forge` | — |
+
+Removal of the `/openspec` alias is tracked in the release calendar. Tenants that need more time can set `force_keep_openspec_alias: true` — see the runbook at `docs/runbooks/alfred-openspec-alias-exception.md`.
+
+### Dashboards
+
+Import `docs/dashboards/alfred-console-v2.json` into Grafana. The board contains:
+
+| Panel | Source metric |
+|---|---|
+| Friendly vs Advanced ratio | `alfred_console_view_total` by `view` label |
+| Match-found rate | `alfred.intent.match_found.v1` / total intents |
+| Match dismissed rate | `alfred.intent.match_dismissed.v1` / match-found |
+| False-positive ratio | manual survey input (monthly) |
+| `/openspec` alias volume | `alfred.command.deprecated_alias.v1` count by tenant |
+
+### SLOs
+
+| SLO | Target | Measurement |
+|---|---|---|
+| Dedup retrieval p95 latency | < 100 ms | `/v1/intent/match` response time, Tempo traces |
+| Friendly view first-paint p95 | < 1 s | Portal RUM (Grafana Faro or equivalent) |
+
+Both SLOs are checked by the Grafana alerting rules in `infra/grafana/alerts/alfred-console-v2.yaml`.
+
+### Agent-mode `start_step`
+
+Agent-mode sessions now accept `start_step` in `POST /v1/agent-mode/sessions` to jump directly to a specific SDLC phase without running the discovery/architect ramp-up:
+
+| Value | Requires spec lifecycle state |
+|---|---|
+| `discovery` | any |
+| `architect` | `approved` or `committed` |
+| `design`, `test`, `iac`, `deploy` | any |
+
+If the spec is not ready for the requested step, the API returns `409 spec_not_ready_for_architect`.
+
+## Active Registry Gateways (cross-phase capability)
+
+Status: rolling out across releases N → N+3. Spec: [openspec/changes/active-registry-gateways](../openspec/changes/active-registry-gateways/). Operator guide: [docs/platform/active-registry-gateways.md](platform/active-registry-gateways.md).
+
+Three platform capabilities ship together; each registers an active runtime gateway in front of an asset family that previously had only a catalog. The Asset Registry gains `how_to_json` and `active_surface_json` on every row; the lifecycle gate for `approved` requires both blocks to be populated.
+
+| Capability | Service / Package | Default port | New env vars |
+|---|---|---|---|
+| `mcp-gateway` | [services/mcp-gateway](../services/mcp-gateway/) | 8092 | `REGISTRY_URL`, `POLICY_ENGINE_URL`, `BUDGET_URL`, `REDIS_ADDR`, `IDENTITY_ROTATION`, `SSE_BUFFER_SIZE` |
+| `a2a-gateway` | [services/a2a-gateway](../services/a2a-gateway/) | 8093 | same envs as mcp-gateway |
+| `skill-artifact-store` (adapter) | [pkg/artifact-store-adapter](../pkg/artifact-store-adapter/) — N drivers (Nexus, Artifactory, GitHub Packages, CodeArtifact) | n/a (library) | per-binding configured in `artifact_store_binding` |
+
+Runtime ingress flips through a per-Tenant `gateway.enforced` flag, defaulting `false` for compatibility through Release N+2 and `true` from Release N+3. Operators read the per-release rollout in [docs/platform/active-registry-gateways-rollout.md](platform/active-registry-gateways-rollout.md) and the per-task runbooks under [docs/runbooks/active-registry-gateways/](runbooks/active-registry-gateways/).
+
+Migrations: registry [0007_active_registry_gateways.sql](../db/migrations/registry/0007_active_registry_gateways.sql) introduces `how_to_json`, `active_surface_json`, `external_provenance` and the three side-tables (`external_mcp_endpoint`, `external_a2a_agent`, `artifact_store_binding`).
+
+OpenFGA: new principal types `gateway_caller` and `external_partner` in [contracts/openfga/authorization-model.json](../contracts/openfga/authorization-model.json).
+
+Policy bundles: [policies/gateway/mcp.rego](../policies/gateway/mcp.rego) and [policies/gateway/a2a.rego](../policies/gateway/a2a.rego).
+
 ## Standard Validation Matrix
 
 Run the relevant subset for every change:

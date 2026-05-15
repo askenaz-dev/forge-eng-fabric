@@ -1,0 +1,5 @@
+asset_id: sdlc.architecture.lightweight-threat-model.eval
+version: "1.0.0"
+description: "Graded fixtures for lightweight-threat-model skill: STRIDE-style report."
+trust_level: T1
+fixtures: fixtures.json

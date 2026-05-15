@@ -1,0 +1,5 @@
+asset_id: sdlc.design.generate-ui-blueprint.eval
+version: "1.0.0"
+description: "Graded fixtures for generate-ui-blueprint skill: Figma export JSON, Design System references."
+trust_level: T1
+fixtures: fixtures.json

@@ -2,7 +2,7 @@
 
 import * as Dialog from "@radix-ui/react-dialog";
 import { Command } from "cmdk";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useCommandPalette } from "../providers/CommandPaletteProvider";
 import { useLang } from "../providers/LangProvider";
@@ -23,9 +23,20 @@ export function CommandPalette() {
   const { setDensity } = useDensity();
   const toast = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [query, setQuery] = useState("");
   const [responses, setResponses] = useState<PaletteSourceResponse[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // alfred-console-redesign §8.8: detect Friendly view; palette / command
+  // disabled. The `/` keystroke is NOT globally captured in Friendly view.
+  const isFriendly =
+    typeof window !== "undefined" &&
+    window.location.pathname.startsWith("/alfred") &&
+    (searchParams.get("view") === "friendly" ||
+      (!searchParams.get("view") &&
+        typeof localStorage !== "undefined" &&
+        localStorage.getItem("alfred_view") !== "advanced"));
 
   // Reset state when reopened.
   useEffect(() => {
@@ -103,9 +114,57 @@ export function CommandPalette() {
         toast.success(t("toast_workspace"));
         router.refresh();
         break;
+      case "forge-command":
+        // alfred-console-redesign §8.3-8.4: show deprecation toast for /openspec
+        if (action.deprecated) {
+          toast.error(t("alfred_cmd_deprecated_toast"));
+          // Emit deprecated_alias audit event (§8.3).
+          void fetch("/api/command-palette/audit", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              source: "palette",
+              target_id: `openspec.${action.subcommand}`,
+              query,
+              event_type: "alfred.command.deprecated_alias.v1",
+            }),
+            keepalive: true,
+          });
+        }
+        router.push(`/alfred?view=advanced&cmd=forge.${action.subcommand}`);
+        break;
     }
     hide();
   }
+
+  // alfred-console-redesign §8.1-8.2: /forge (primary) and /openspec (deprecated alias).
+  // §8.8: hidden when in Friendly view.
+  const forgeActions = useMemo<PaletteResult[]>(() => {
+    if (isFriendly) return [];
+    return [
+      {
+        id: "forge.new",
+        source: "nav",
+        title: "/forge new",
+        subtitle: "Create a new specification",
+        hrefOrAction: { kind: "action", action: { type: "forge-command", subcommand: "new" } },
+      },
+      {
+        id: "forge.list",
+        source: "nav",
+        title: "/forge list",
+        subtitle: "List specifications",
+        hrefOrAction: { kind: "action", action: { type: "forge-command", subcommand: "list" } },
+      },
+      {
+        id: "openspec.new",
+        source: "nav",
+        title: "/openspec new (deprecated)",
+        subtitle: "Use /forge new instead",
+        hrefOrAction: { kind: "action", action: { type: "forge-command", subcommand: "new", deprecated: true } },
+      },
+    ];
+  }, [isFriendly]);
 
   const localActions = useMemo<PaletteResult[]>(() => {
     return [
@@ -154,7 +213,7 @@ export function CommandPalette() {
     ];
   }, [t]);
 
-  // Merge server responses with the always-available local actions.
+  // Merge server responses, forge commands, and local actions.
   const merged: PaletteSourceResponse[] = useMemo(() => {
     const filtered = query.startsWith(">") ? [] : responses;
     const actionsResp: PaletteSourceResponse = {
@@ -162,14 +221,48 @@ export function CommandPalette() {
       status: "ok",
       results: localActions,
     };
-    return [...filtered, actionsResp];
-  }, [responses, localActions, query]);
+    // Inject /forge entries into the nav group (§8.1).
+    const navResp: PaletteSourceResponse = {
+      source: "nav",
+      status: "ok",
+      results: forgeActions,
+    };
+    const existing = filtered.find((r) => r.source === "nav");
+    const mergedFiltered = existing
+      ? filtered.map((r) =>
+          r.source === "nav" ? { ...r, results: [...forgeActions, ...r.results] } : r,
+        )
+      : forgeActions.length > 0
+        ? [navResp, ...filtered]
+        : filtered;
+    return [...mergedFiltered, actionsResp];
+  }, [responses, localActions, forgeActions, query]);
+
+  // alfred-console-redesign §8.8: in Friendly view, don't open palette on `/`.
+  // This is enforced in the CommandPaletteProvider trigger — handled here by
+  // checking isFriendly in the keyboard listener so the key is delivered as text.
+  useEffect(() => {
+    if (!isFriendly) return;
+    function blockSlashOpen(e: KeyboardEvent) {
+      if (e.key === "/" && !["INPUT", "TEXTAREA"].includes((e.target as HTMLElement)?.tagName)) {
+        // Friendly view: don't open palette, deliver the keystroke as text.
+        e.stopPropagation();
+      }
+    }
+    window.addEventListener("keydown", blockSlashOpen, { capture: true });
+    return () => window.removeEventListener("keydown", blockSlashOpen, { capture: true });
+  }, [isFriendly]);
 
   return (
     <Dialog.Root open={open} onOpenChange={(o) => (o ? null : hide())}>
       <Dialog.Portal>
         <Dialog.Overlay className="scrim" />
-        <Dialog.Content className="cmdk-root" aria-label="command palette">
+        <Dialog.Content
+          className="cmdk-root"
+          aria-label="command palette"
+          aria-describedby={undefined}
+        >
+          <Dialog.Title className="sr-only">{t("tb_search")}</Dialog.Title>
           <Command label={t("tb_search")} loop shouldFilter>
             <div className="cmdk-input-row">
               <Command.Input

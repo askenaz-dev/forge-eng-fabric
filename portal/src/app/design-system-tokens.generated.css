@@ -1,0 +1,39 @@
+/* desing-system-4 — marketing. Bold display serif, saturated accent, generous
+   radius. Designed for outward-facing surfaces (product pages, landing
+   pages, public dashboards). */
+:root {
+  --color-ink: #1B1235;
+  --color-paper: #FBF9F2;
+  --color-bg-app: #FBF9F2;
+  --color-bg-card: #FFFFFF;
+  --color-fg: #1B1235;
+  --color-fg-2: #5C547A;
+  --color-border: #E8E2D2;
+  --color-primary: #FF4F87;
+  --color-primary-fg: #FFFFFF;
+
+  --font-display: "Fraunces", "Cormorant Garamond", Georgia, serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+
+  --radius-1: 8px;
+  --radius-2: 12px;
+  --radius-3: 16px;
+  --radius-4: 24px;
+  --radius-pill: 999px;
+
+  --shadow-1: 0 1px 0 rgba(27,18,53,.06);
+  --shadow-pop: 0 16px 40px -16px rgba(27,18,53,.28);
+}
+
+[data-theme="dark"] {
+  --color-ink: #FBF9F2;
+  --color-paper: #1B1235;
+  --color-bg-app: #1B1235;
+  --color-bg-card: #261947;
+  --color-fg: #FBF9F2;
+  --color-fg-2: #B8AED6;
+  --color-border: #2E2055;
+  --color-primary: #FF77A1;
+  --color-primary-fg: #1B1235;
+}

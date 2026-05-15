@@ -1,0 +1,425 @@
+apiVersion: forge.workflows/v1
+kind: Workflow
+metadata:
+  id: forge.reference.intent-to-infrastructure@1
+  name: Intent to Infrastructure
+  version: 1.0.0
+  visibility: forge-certified
+  criticality: high
+  owners:
+    - platform-engineering
+  description: |
+    The canonical "go all the way" SDLC reference workflow. Strings together
+    intent → architect → design → development → qa → security → devops →
+    iac → deploy → sre → observability. Each phase is gated by App.targets:
+    required phases block on failure, optional phases warn and continue, opt-in
+    phases run only when the operator includes them at start time, skipped
+    phases are removed from the plan entirely.
+
+    Coexists with forge.reference.intent-to-deploy@1 (the smaller default).
+    The Friendly view's "Nueva App" CTA uses this workflow.
+  tags:
+    - forge
+    - reference
+    - sdlc
+    - intent-to-infrastructure
+  success_metric: intent_to_first_infrastructure_apply
+  openspec_ids:
+    - sdlc-end-to-end
+
+spec:
+  inputs:
+    - name: app_id
+      type: string
+      required: true
+      description: The App entity id (UUID) that anchors this workflow run.
+    - name: openspec_id
+      type: string
+      required: true
+      description: The OpenSpec that is driving this run.
+    - name: correlation_id
+      type: string
+      required: true
+      description: Caller-supplied correlation id propagated to every step event.
+    - name: include
+      type: array
+      required: false
+      default: []
+      description: |
+        List of opt-in phase names to include in this run (e.g. ["iac", "observability"]).
+        Has no effect on required/optional/skipped phases.
+
+  outputs:
+    - name: deploy_url
+      type: string
+    - name: observability_urls
+      type: array
+    - name: run_report_path
+      type: string
+
+  steps:
+    # ── Intent capture ──────────────────────────────────────────────────────
+    - id: commit-intent
+      type: skill
+      ref: registry:skill/sdlc-product/capture-intent@1.0.0
+      inputs:
+        app_id: $inputs.app_id
+        openspec_id: $inputs.openspec_id
+        correlation_id: $inputs.correlation_id
+      outputs:
+        - intent_id
+        - repo_scaffold_ready
+
+    # ── Repository scaffold ──────────────────────────────────────────────────
+    - id: scaffold-repo
+      type: mcp
+      ref: registry:mcp/scaffolder@write
+      tool: render_template
+      depends_on:
+        - commit-intent
+      inputs:
+        app_id: $inputs.app_id
+        intent_id: $steps.commit-intent.outputs.intent_id
+        correlation_id: $inputs.correlation_id
+      outputs:
+        - repo_url
+
+    # ── Architecture phase ──────────────────────────────────────────────────
+    - id: propose-adr
+      type: skill
+      ref: registry:skill/sdlc-architecture/propose-adr@1.0.0
+      depends_on:
+        - scaffold-repo
+      inputs:
+        app_id: $inputs.app_id
+        openspec_id: $inputs.openspec_id
+        correlation_id: $inputs.correlation_id
+        repo_url: $steps.scaffold-repo.outputs.repo_url
+      targets:
+        architect: required
+      outputs:
+        - adr_path
+        - decision_log_entry
+
+    - id: generate-api-contract
+      type: skill
+      ref: registry:skill/sdlc-architecture/generate-api-contract@1.0.0
+      depends_on:
+        - propose-adr
+      inputs:
+        app_id: $inputs.app_id
+        openspec_id: $inputs.openspec_id
+        correlation_id: $inputs.correlation_id
+        adr_path: $steps.propose-adr.outputs.adr_path
+      targets:
+        architect: required
+      outputs:
+        - api_contract_path
+        - api_contract_pr_url
+
+    - id: propose-data-model
+      type: skill
+      ref: registry:skill/sdlc-architecture/propose-data-model@1.0.0
+      depends_on:
+        - generate-api-contract
+      inputs:
+        app_id: $inputs.app_id
+        openspec_id: $inputs.openspec_id
+        correlation_id: $inputs.correlation_id
+        api_contract_path: $steps.generate-api-contract.outputs.api_contract_path
+      targets:
+        architect: required
+      outputs:
+        - data_model_path
+
+    - id: lightweight-threat-model
+      type: skill
+      ref: registry:skill/sdlc-architecture/lightweight-threat-model@1.0.0
+      depends_on:
+        - propose-data-model
+      inputs:
+        app_id: $inputs.app_id
+        openspec_id: $inputs.openspec_id
+        correlation_id: $inputs.correlation_id
+        api_contract_path: $steps.generate-api-contract.outputs.api_contract_path
+        data_model_path: $steps.propose-data-model.outputs.data_model_path
+      targets:
+        security: required
+      outputs:
+        - threat_model_path
+
+    # ── Design phase ────────────────────────────────────────────────────────
+    - id: generate-ui-blueprint
+      type: skill
+      ref: registry:skill/sdlc-design/generate-ui-blueprint@1.0.0
+      depends_on:
+        - generate-api-contract
+      inputs:
+        app_id: $inputs.app_id
+        openspec_id: $inputs.openspec_id
+        correlation_id: $inputs.correlation_id
+        api_contract_path: $steps.generate-api-contract.outputs.api_contract_path
+      targets:
+        design: optional
+      outputs:
+        - blueprint_path
+
+    - id: generate-component-stubs
+      type: skill
+      ref: registry:skill/sdlc-design/generate-component-stubs@1.0.0
+      depends_on:
+        - generate-ui-blueprint
+      inputs:
+        app_id: $inputs.app_id
+        openspec_id: $inputs.openspec_id
+        correlation_id: $inputs.correlation_id
+        blueprint_path: $steps.generate-ui-blueprint.outputs.blueprint_path
+      targets:
+        design: optional
+      outputs:
+        - stub_files
+
+    - id: accessibility-audit
+      type: skill
+      ref: registry:skill/sdlc-design/accessibility-audit@1.0.0
+      depends_on:
+        - generate-component-stubs
+      inputs:
+        app_id: $inputs.app_id
+        correlation_id: $inputs.correlation_id
+        stub_files: $steps.generate-component-stubs.outputs.stub_files
+      targets:
+        design: optional
+      outputs:
+        - audit_report
+        - audit_passed
+
+    # ── Development phase ───────────────────────────────────────────────────
+    - id: open-development-pr
+      type: mcp
+      ref: registry:mcp/github@write
+      tool: create_pr
+      depends_on:
+        - generate-component-stubs
+      inputs:
+        app_id: $inputs.app_id
+        correlation_id: $inputs.correlation_id
+        repo_url: $steps.scaffold-repo.outputs.repo_url
+        title: "feat: scaffold from intent"
+      targets:
+        development: required
+      outputs:
+        - pr_url
+        - pr_number
+
+    # ── QA phase ────────────────────────────────────────────────────────────
+    - id: generate-test-plan
+      type: skill
+      ref: registry:skill/sdlc-qa/generate-test-plan@1.0.0
+      depends_on:
+        - generate-api-contract
+      inputs:
+        app_id: $inputs.app_id
+        openspec_id: $inputs.openspec_id
+        correlation_id: $inputs.correlation_id
+        api_contract_path: $steps.generate-api-contract.outputs.api_contract_path
+      targets:
+        qa: required
+      outputs:
+        - test_plan_path
+
+    - id: generate-e2e-tests
+      type: skill
+      ref: registry:skill/sdlc-qa/generate-e2e-tests@1.0.0
+      depends_on:
+        - generate-test-plan
+      inputs:
+        app_id: $inputs.app_id
+        openspec_id: $inputs.openspec_id
+        correlation_id: $inputs.correlation_id
+        test_plan_path: $steps.generate-test-plan.outputs.test_plan_path
+      targets:
+        qa: required
+      outputs:
+        - e2e_suite_path
+
+    # ── Security gate ───────────────────────────────────────────────────────
+    - id: security-review
+      type: human-in-the-loop
+      approver_role: security-reviewer
+      on_timeout: escalate
+      escalation_role: security-admin
+      depends_on:
+        - lightweight-threat-model
+        - generate-e2e-tests
+      inputs:
+        app_id: $inputs.app_id
+        openspec_id: $inputs.openspec_id
+        correlation_id: $inputs.correlation_id
+        threat_model_path: $steps.lightweight-threat-model.outputs.threat_model_path
+      targets:
+        security: required
+
+    # ── DevOps phase ────────────────────────────────────────────────────────
+    - id: ci-pipeline-setup
+      type: mcp
+      ref: registry:mcp/devops@write
+      tool: configure_ci
+      depends_on:
+        - security-review
+      inputs:
+        app_id: $inputs.app_id
+        correlation_id: $inputs.correlation_id
+        repo_url: $steps.scaffold-repo.outputs.repo_url
+        e2e_suite_path: $steps.generate-e2e-tests.outputs.e2e_suite_path
+      targets:
+        devops: required
+      outputs:
+        - pipeline_url
+
+    # ── Infrastructure (IaC) phase ───────────────────────────────────────────
+    - id: generate-terraform
+      type: skill
+      ref: registry:skill/sdlc-iac/generate-terraform@1.0.0
+      depends_on:
+        - security-review
+      inputs:
+        app_id: $inputs.app_id
+        openspec_id: $inputs.openspec_id
+        correlation_id: $inputs.correlation_id
+        api_contract_path: $steps.generate-api-contract.outputs.api_contract_path
+      targets:
+        iac: opt-in
+      outputs:
+        - terraform_module_path
+
+    - id: generate-helm-values
+      type: skill
+      ref: registry:skill/sdlc-iac/generate-helm-values@1.0.0
+      depends_on:
+        - generate-terraform
+      inputs:
+        app_id: $inputs.app_id
+        correlation_id: $inputs.correlation_id
+        terraform_module_path: $steps.generate-terraform.outputs.terraform_module_path
+      targets:
+        iac: opt-in
+      outputs:
+        - helm_values_path
+
+    - id: validate-iac
+      type: skill
+      ref: registry:skill/sdlc-iac/validate-iac@1.0.0
+      depends_on:
+        - generate-helm-values
+      inputs:
+        app_id: $inputs.app_id
+        correlation_id: $inputs.correlation_id
+        terraform_module_path: $steps.generate-terraform.outputs.terraform_module_path
+        helm_values_path: $steps.generate-helm-values.outputs.helm_values_path
+      targets:
+        iac: opt-in
+      outputs:
+        - validation_report
+        - validation_passed
+
+    - id: apply-iac
+      type: skill
+      ref: registry:skill/sdlc-iac/apply-iac@1.0.0
+      depends_on:
+        - validate-iac
+      inputs:
+        app_id: $inputs.app_id
+        correlation_id: $inputs.correlation_id
+        terraform_module_path: $steps.generate-terraform.outputs.terraform_module_path
+        helm_values_path: $steps.generate-helm-values.outputs.helm_values_path
+        validation_report: $steps.validate-iac.outputs.validation_report
+      targets:
+        iac: opt-in
+      outputs:
+        - iac_pr_url
+
+    # ── Deploy phase ─────────────────────────────────────────────────────────
+    - id: deploy-staging
+      type: mcp
+      ref: registry:mcp/deploy-orchestrator@write
+      tool: deploy
+      depends_on:
+        - ci-pipeline-setup
+      inputs:
+        app_id: $inputs.app_id
+        correlation_id: $inputs.correlation_id
+        env: staging
+        pr_url: $steps.open-development-pr.outputs.pr_url
+      targets:
+        devops: required
+      outputs:
+        - staging_url
+
+    - id: approve-prod-deploy
+      type: human-in-the-loop
+      approver_role: app-owner
+      on_timeout: escalate
+      escalation_role: platform-admin
+      depends_on:
+        - deploy-staging
+      inputs:
+        app_id: $inputs.app_id
+        correlation_id: $inputs.correlation_id
+        staging_url: $steps.deploy-staging.outputs.staging_url
+
+    - id: deploy-prod
+      type: mcp
+      ref: registry:mcp/deploy-orchestrator@write
+      tool: deploy
+      depends_on:
+        - approve-prod-deploy
+      inputs:
+        app_id: $inputs.app_id
+        correlation_id: $inputs.correlation_id
+        env: prod
+      targets:
+        devops: required
+      outputs:
+        - deploy_url
+
+    # ── SRE phase ────────────────────────────────────────────────────────────
+    - id: configure-slo
+      type: skill
+      ref: registry:skill/sdlc-sre/configure-slo@1.0.0
+      depends_on:
+        - deploy-prod
+      inputs:
+        app_id: $inputs.app_id
+        openspec_id: $inputs.openspec_id
+        correlation_id: $inputs.correlation_id
+        deploy_url: $steps.deploy-prod.outputs.deploy_url
+      targets:
+        sre: optional
+      outputs:
+        - slo_config_path
+
+    # ── Observability phase ───────────────────────────────────────────────────
+    - id: provision-dashboards
+      type: skill
+      ref: registry:skill/sdlc-observability/provision-dashboards@1.0.0
+      depends_on:
+        - configure-slo
+      inputs:
+        app_id: $inputs.app_id
+        openspec_id: $inputs.openspec_id
+        correlation_id: $inputs.correlation_id
+        deploy_url: $steps.deploy-prod.outputs.deploy_url
+      targets:
+        observability: opt-in
+      outputs:
+        - dashboard_urls
+
+  on_failure:
+    - id: notify-failure
+      type: skill
+      ref: registry:skill/sdlc-devops/post-incident-note@1.0.0
+      inputs:
+        app_id: $inputs.app_id
+        correlation_id: $inputs.correlation_id
+        message: "forge.reference.intent-to-infrastructure@1 failed — see attached context."

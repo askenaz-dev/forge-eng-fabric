@@ -51,13 +51,16 @@ func RequiredGates(phase Phase, criticality string) []GateDefinition {
 		},
 		PhaseArchitecture: {
 			{Name: "adrs_published"},
+			{Name: "api_contract_published"},
+			{Name: "data_model_documented"},
+			{Name: "threat_model_present", MinCriticality: "medium"},
 			{Name: "security_review_passed"},
 			{Name: "openspec_updated"},
 		},
 		PhaseDesign: {
-			{Name: "api_contracts_defined"},
-			{Name: "threat_model_present", MinCriticality: "medium"},
-			{Name: "data_model_documented"},
+			{Name: "ui_blueprint_present"},
+			{Name: "component_stubs_committed"},
+			{Name: "accessibility_audit_passed"},
 		},
 		PhaseDevelopment: {
 			{Name: "code_complete"},
@@ -82,6 +85,11 @@ func RequiredGates(phase Phase, criticality string) []GateDefinition {
 			{Name: "deploy_to_stage_successful"},
 			{Name: "rollback_plan_present"},
 		},
+		PhaseInfrastructure: {
+			{Name: "iac_generated"},
+			{Name: "iac_validated"},
+			{Name: "iac_applied"},
+		},
 		PhaseSRE: {
 			{Name: "slos_defined"},
 			{Name: "runbook_published"},
@@ -91,6 +99,11 @@ func RequiredGates(phase Phase, criticality string) []GateDefinition {
 		PhaseFinOps: {
 			{Name: "cost_estimate_within_budget"},
 			{Name: "llm_budget_within_limit"},
+		},
+		PhaseObservability: {
+			{Name: "dashboards_provisioned"},
+			{Name: "log_pipeline_active"},
+			{Name: "tracing_enabled"},
 		},
 	}
 	out := []GateDefinition{}

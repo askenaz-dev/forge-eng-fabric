@@ -31,6 +31,29 @@ tuples:
   - user: user:bob
     relation: assignable_developer
     object: workspace:workspace-a
+  - user: tenant:acme
+    relation: tenant
+    object: gateway_caller:acme-mcp-gateway
+  - user: tenant:acme
+    relation: tenant
+    object: gateway_caller:acme-a2a-gateway
+  - user: tenant:acme
+    relation: tenant
+    object: external_partner:vendor-x
+  # App entity tuples (Phase 5 app-first-class-entity)
+  - user: workspace:workspace-a
+    relation: parent
+    object: app:app-a
+  - user: user:alice
+    relation: owner
+    object: app:app-a
+  - user: workspace:workspace-a
+    relation: parent
+    object: app:app-unassigned
+  # App with no workspace tuple, only a direct editor override (e.g. contractor)
+  - user: user:carol
+    relation: editor
+    object: app:app-override
 tests:
   - name: workspace owners can view their own workspace
     check:
@@ -95,3 +118,71 @@ tests:
         assertions:
           can_alfred_agent_mode_run: false
           can_alfred_agent_mode_cancel: false
+  - name: gateway callers are bound to their tenant
+    check:
+      - user: tenant:acme
+        object: gateway_caller:acme-mcp-gateway
+        assertions:
+          tenant: true
+      - user: tenant:acme
+        object: gateway_caller:acme-a2a-gateway
+        assertions:
+          tenant: true
+  - name: gateway callers do not cross tenant boundaries
+    check:
+      - user: tenant:other
+        object: gateway_caller:acme-mcp-gateway
+        assertions:
+          tenant: false
+      - user: tenant:other
+        object: gateway_caller:acme-a2a-gateway
+        assertions:
+          tenant: false
+  - name: external partners are bound to their tenant
+    check:
+      - user: tenant:acme
+        object: external_partner:vendor-x
+        assertions:
+          tenant: true
+  - name: external partners do not cross tenant boundaries
+    check:
+      - user: tenant:other
+        object: external_partner:vendor-x
+        assertions:
+          tenant: false
+  - name: workspace viewer inherits app viewer through parent relation
+    check:
+      - user: user:alice
+        object: app:app-a
+        assertions:
+          can_view: true
+          can_edit: true
+          can_admin: true
+  - name: app owner can edit and view their app
+    check:
+      - user: user:alice
+        object: app:app-a
+        assertions:
+          can_view: true
+          can_edit: true
+          can_admin: true
+  - name: explicit app editor override grants edit without workspace access
+    check:
+      - user: user:carol
+        object: app:app-override
+        assertions:
+          can_view: true
+          can_edit: true
+          can_admin: false
+      - user: user:carol
+        object: workspace:workspace-a
+        assertions:
+          can_view: false
+          can_edit: false
+  - name: external developers cannot reach apps in unrelated workspaces
+    check:
+      - user: user:bob
+        object: app:app-a
+        assertions:
+          can_view: false
+          can_edit: false

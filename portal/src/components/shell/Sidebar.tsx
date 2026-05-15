@@ -78,6 +78,32 @@ export function Sidebar({
   const initial = (displayName.match(/[A-Za-zÁ-Úá-ú]/) || ["F"])[0].toUpperCase();
   const subtitle = user?.email && user.email !== displayName ? user.email : t("foot_role");
 
+  // alfred-console-redesign §3.4: developer mode toggle state.
+  const [devMode, setDevMode] = useState<boolean | null>(null);
+  useEffect(() => {
+    fetch("/api/user/preferences", { cache: "no-store" })
+      .then((r) => r.ok ? r.json() : null)
+      .then((d: { console_view_preference?: string } | null) => {
+        setDevMode((d?.console_view_preference ?? "friendly") === "advanced");
+      })
+      .catch(() => setDevMode(false));
+  }, []);
+
+  function toggleDevMode() {
+    const next = !devMode;
+    setDevMode(next);
+    // Persist via the preferences API (§3.5 emits view_toggled event server-side).
+    void fetch("/api/user/preferences", {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ console_view_preference: next ? "advanced" : "friendly" }),
+    });
+    // Switch the active Alfred page if on it.
+    if (typeof window !== "undefined" && window.location.pathname.startsWith("/alfred")) {
+      window.location.href = `/alfred?view=${next ? "advanced" : "friendly"}`;
+    }
+  }
+
   // When the rail is collapsed (icon-only mode) the section labels are hidden,
   // so we always expand the items inside; otherwise respect the per-group state.
   const groupExpanded = useMemo(() => {
@@ -170,6 +196,49 @@ export function Sidebar({
                 <b>{displayName}</b>
                 <small>{subtitle}</small>
               </div>
+              <DropdownMenu.Separator className="pop-divider" />
+              {/* alfred-console-redesign §3.4: developer mode toggle */}
+              {devMode !== null && (
+                <DropdownMenu.Item
+                  className="pop-item"
+                  onSelect={(event) => {
+                    event.preventDefault();
+                    toggleDevMode();
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", gap: 12 }}>
+                    <span>{t("alfred_dev_mode_toggle")}</span>
+                    <span
+                      style={{
+                        display: "inline-block",
+                        width: 32,
+                        height: 18,
+                        borderRadius: 9,
+                        background: devMode ? "var(--primary)" : "var(--bg-hover)",
+                        position: "relative",
+                        transition: "background 0.15s",
+                        flexShrink: 0,
+                      }}
+                      aria-checked={devMode}
+                      role="switch"
+                    >
+                      <span
+                        style={{
+                          position: "absolute",
+                          top: 2,
+                          left: devMode ? 16 : 2,
+                          width: 14,
+                          height: 14,
+                          borderRadius: "50%",
+                          background: "white",
+                          transition: "left 0.15s",
+                          boxShadow: "0 1px 2px rgba(0,0,0,0.2)",
+                        }}
+                      />
+                    </span>
+                  </div>
+                </DropdownMenu.Item>
+              )}
               <DropdownMenu.Separator className="pop-divider" />
               <DropdownMenu.Item
                 className="pop-item danger"

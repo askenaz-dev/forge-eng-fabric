@@ -1,0 +1,764 @@
+[
+  {
+    "id": "arch-api-001",
+    "input": {
+      "tenant_id": "tenant-ecom-01",
+      "workspace_id": "ws-ecom-platform",
+      "service_name": "order-service",
+      "endpoints": [
+        {"method": "POST", "path": "/orders", "summary": "Place a new order", "requestBody": {"customerId": "string", "items": [{"productId": "string", "quantity": "integer"}], "shippingAddressId": "string"}, "responses": {"201": "OrderCreated", "400": "ValidationError", "422": "InsufficientInventory"}},
+        {"method": "GET", "path": "/orders/{orderId}", "summary": "Get order by ID", "responses": {"200": "Order", "404": "NotFound"}},
+        {"method": "PATCH", "path": "/orders/{orderId}/cancel", "summary": "Cancel an order", "responses": {"200": "OrderCancelled", "409": "OrderNotCancellable"}},
+        {"method": "GET", "path": "/orders", "summary": "List orders for a customer", "query": {"customerId": "string", "status": "string", "limit": "integer", "cursor": "string"}, "responses": {"200": "OrderPage"}}
+      ],
+      "output_dir": "contracts/openapi"
+    },
+    "expected": {
+      "status": "ok",
+      "openapi_path": "contracts/openapi/order-service.yaml",
+      "spectral_lint_passed": true,
+      "lint_warnings": []
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-api-002",
+    "input": {
+      "tenant_id": "tenant-fintech-01",
+      "workspace_id": "ws-payments",
+      "service_name": "payment-service",
+      "endpoints": [
+        {"method": "POST", "path": "/payments/initiate", "summary": "Initiate a payment transaction", "requestBody": {"amount": "integer", "currency": "string", "paymentMethodId": "string", "idempotencyKey": "string"}, "responses": {"202": "PaymentInitiated", "400": "ValidationError", "402": "PaymentDeclined"}},
+        {"method": "GET", "path": "/payments/{paymentId}", "summary": "Get payment status", "responses": {"200": "Payment", "404": "NotFound"}},
+        {"method": "POST", "path": "/payments/{paymentId}/refund", "summary": "Refund a payment", "requestBody": {"amount": "integer", "reason": "string"}, "responses": {"200": "RefundCreated", "409": "AlreadyRefunded"}},
+        {"method": "GET", "path": "/payments/{paymentId}/events", "summary": "Get payment event history", "responses": {"200": "PaymentEventList"}}
+      ],
+      "output_dir": "contracts/openapi"
+    },
+    "expected": {
+      "status": "ok",
+      "openapi_path": "contracts/openapi/payment-service.yaml",
+      "spectral_lint_passed": true,
+      "lint_warnings": []
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-api-003",
+    "input": {
+      "tenant_id": "tenant-health-01",
+      "workspace_id": "ws-patient-portal",
+      "service_name": "patient-record-service",
+      "endpoints": [
+        {"method": "GET", "path": "/patients/{patientId}", "summary": "Get patient demographics", "responses": {"200": "Patient", "403": "Forbidden", "404": "NotFound"}},
+        {"method": "GET", "path": "/patients/{patientId}/encounters", "summary": "List patient encounters", "query": {"from": "date", "to": "date", "limit": "integer"}, "responses": {"200": "EncounterList"}},
+        {"method": "POST", "path": "/patients/{patientId}/observations", "summary": "Record a clinical observation", "requestBody": {"code": "string", "value": "string", "unit": "string", "timestamp": "datetime"}, "responses": {"201": "Observation", "400": "InvalidCode"}},
+        {"method": "GET", "path": "/patients/{patientId}/medications", "summary": "Get active medication list", "responses": {"200": "MedicationList"}},
+        {"method": "POST", "path": "/patients/{patientId}/consent", "summary": "Record patient consent", "requestBody": {"consentType": "string", "granted": "boolean", "timestamp": "datetime"}, "responses": {"201": "ConsentRecord"}}
+      ],
+      "output_dir": "contracts/openapi"
+    },
+    "expected": {
+      "status": "ok",
+      "openapi_path": "contracts/openapi/patient-record-service.yaml",
+      "spectral_lint_passed": true,
+      "lint_warnings": []
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-api-004",
+    "input": {
+      "tenant_id": "tenant-saas-01",
+      "workspace_id": "ws-multi-tenant-app",
+      "service_name": "tenant-management-service",
+      "endpoints": [
+        {"method": "POST", "path": "/tenants", "summary": "Provision a new tenant", "requestBody": {"name": "string", "plan": "string", "adminEmail": "string"}, "responses": {"202": "TenantProvisioningStarted", "409": "TenantAlreadyExists"}},
+        {"method": "GET", "path": "/tenants/{tenantId}", "summary": "Get tenant details", "responses": {"200": "Tenant", "404": "NotFound"}},
+        {"method": "PATCH", "path": "/tenants/{tenantId}", "summary": "Update tenant settings", "requestBody": {"name": "string", "plan": "string"}, "responses": {"200": "Tenant"}},
+        {"method": "DELETE", "path": "/tenants/{tenantId}", "summary": "Deprovision a tenant", "responses": {"202": "TenantDeprovisioningStarted", "409": "TenantHasActiveSubscription"}}
+      ],
+      "output_dir": "contracts/openapi"
+    },
+    "expected": {
+      "status": "ok",
+      "openapi_path": "contracts/openapi/tenant-management-service.yaml",
+      "spectral_lint_passed": true,
+      "lint_warnings": []
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-api-005",
+    "input": {
+      "tenant_id": "tenant-logistics-01",
+      "workspace_id": "ws-routing-engine",
+      "service_name": "route-optimization-service",
+      "endpoints": [
+        {"method": "POST", "path": "/routes/optimize", "summary": "Submit route optimization job", "requestBody": {"depot": {"lat": "number", "lng": "number"}, "stops": [{"id": "string", "lat": "number", "lng": "number", "timeWindowStart": "string", "timeWindowEnd": "string"}], "vehicleCount": "integer"}, "responses": {"202": "OptimizationJob"}},
+        {"method": "GET", "path": "/routes/jobs/{jobId}", "summary": "Get optimization job status and result", "responses": {"200": "OptimizationResult", "202": "StillProcessing", "404": "NotFound"}},
+        {"method": "GET", "path": "/routes/{routeId}", "summary": "Get a specific optimized route", "responses": {"200": "Route", "404": "NotFound"}}
+      ],
+      "output_dir": "contracts/openapi"
+    },
+    "expected": {
+      "status": "ok",
+      "openapi_path": "contracts/openapi/route-optimization-service.yaml",
+      "spectral_lint_passed": true,
+      "lint_warnings": []
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-api-006",
+    "input": {
+      "tenant_id": "tenant-fintech-01",
+      "workspace_id": "ws-fraud-detection",
+      "service_name": "fraud-scoring-service",
+      "endpoints": [
+        {"method": "POST", "path": "/scores", "summary": "Score a transaction for fraud risk", "requestBody": {"transactionId": "string", "amount": "integer", "currency": "string", "merchantId": "string", "paymentMethodId": "string", "ipAddress": "string", "deviceFingerprint": "string"}, "responses": {"200": "FraudScore", "400": "ValidationError", "503": "ModelUnavailable"}},
+        {"method": "POST", "path": "/feedback", "summary": "Submit fraud outcome feedback", "requestBody": {"transactionId": "string", "outcome": "string", "confirmedFraud": "boolean"}, "responses": {"204": "FeedbackAccepted"}},
+        {"method": "GET", "path": "/models/current", "summary": "Get current active model metadata", "responses": {"200": "ModelInfo"}}
+      ],
+      "output_dir": "contracts/openapi"
+    },
+    "expected": {
+      "status": "ok",
+      "openapi_path": "contracts/openapi/fraud-scoring-service.yaml",
+      "spectral_lint_passed": true,
+      "lint_warnings": []
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-api-007",
+    "input": {
+      "tenant_id": "tenant-ecom-01",
+      "workspace_id": "ws-search",
+      "service_name": "product-search-service",
+      "endpoints": [
+        {"method": "GET", "path": "/search", "summary": "Search products", "query": {"q": "string", "category": "string", "priceMin": "number", "priceMax": "number", "inStock": "boolean", "sort": "string", "page": "integer", "pageSize": "integer"}, "responses": {"200": "SearchResults"}},
+        {"method": "GET", "path": "/search/autocomplete", "summary": "Autocomplete query suggestions", "query": {"q": "string", "limit": "integer"}, "responses": {"200": "AutocompleteResults"}},
+        {"method": "POST", "path": "/index/products", "summary": "Index a product for search", "requestBody": {"productId": "string", "title": "string", "description": "string", "category": "string", "price": "number", "inventory": "integer", "attributes": "object"}, "responses": {"202": "IndexingQueued"}},
+        {"method": "DELETE", "path": "/index/products/{productId}", "summary": "Remove a product from search index", "responses": {"204": "Deleted", "404": "NotFound"}}
+      ],
+      "output_dir": "contracts/openapi"
+    },
+    "expected": {
+      "status": "ok",
+      "openapi_path": "contracts/openapi/product-search-service.yaml",
+      "spectral_lint_passed": true,
+      "lint_warnings": []
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-api-008",
+    "input": {
+      "tenant_id": "tenant-health-01",
+      "workspace_id": "ws-telehealth",
+      "service_name": "appointment-service",
+      "endpoints": [
+        {"method": "POST", "path": "/appointments", "summary": "Book a telehealth appointment", "requestBody": {"patientId": "string", "providerId": "string", "slotId": "string", "appointmentType": "string", "chiefComplaint": "string"}, "responses": {"201": "Appointment", "409": "SlotTaken"}},
+        {"method": "GET", "path": "/appointments/{appointmentId}", "summary": "Get appointment details", "responses": {"200": "Appointment", "404": "NotFound"}},
+        {"method": "POST", "path": "/appointments/{appointmentId}/join", "summary": "Get video session token for appointment", "responses": {"200": "VideoSessionToken", "403": "TooEarly", "410": "AppointmentEnded"}},
+        {"method": "POST", "path": "/appointments/{appointmentId}/cancel", "summary": "Cancel an appointment", "requestBody": {"reason": "string"}, "responses": {"200": "AppointmentCancelled", "409": "TooLateToCancel"}},
+        {"method": "GET", "path": "/providers/{providerId}/availability", "summary": "Get available appointment slots", "query": {"date": "date", "appointmentType": "string"}, "responses": {"200": "AvailabilitySlots"}}
+      ],
+      "output_dir": "contracts/openapi"
+    },
+    "expected": {
+      "status": "ok",
+      "openapi_path": "contracts/openapi/appointment-service.yaml",
+      "spectral_lint_passed": true,
+      "lint_warnings": []
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-api-009",
+    "input": {
+      "tenant_id": "tenant-saas-01",
+      "workspace_id": "ws-billing",
+      "service_name": "usage-metering-service",
+      "endpoints": [
+        {"method": "POST", "path": "/events", "summary": "Ingest a usage metering event", "requestBody": {"customerId": "string", "eventType": "string", "quantity": "number", "timestamp": "datetime", "idempotencyKey": "string", "metadata": "object"}, "responses": {"202": "EventAccepted", "400": "ValidationError"}},
+        {"method": "POST", "path": "/events/batch", "summary": "Ingest a batch of metering events", "requestBody": {"events": "array"}, "responses": {"202": "BatchAccepted", "207": "PartialFailure"}},
+        {"method": "GET", "path": "/usage/{customerId}", "summary": "Get usage summary for a customer", "query": {"from": "datetime", "to": "datetime", "eventType": "string"}, "responses": {"200": "UsageSummary"}},
+        {"method": "GET", "path": "/usage/{customerId}/raw", "summary": "Get raw usage events for a customer", "query": {"from": "datetime", "to": "datetime", "cursor": "string", "limit": "integer"}, "responses": {"200": "RawEventPage"}}
+      ],
+      "output_dir": "contracts/openapi"
+    },
+    "expected": {
+      "status": "ok",
+      "openapi_path": "contracts/openapi/usage-metering-service.yaml",
+      "spectral_lint_passed": true,
+      "lint_warnings": []
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-api-010",
+    "input": {
+      "tenant_id": "tenant-logistics-01",
+      "workspace_id": "ws-iot-platform",
+      "service_name": "device-telemetry-service",
+      "endpoints": [
+        {"method": "POST", "path": "/devices/{deviceId}/telemetry", "summary": "Ingest telemetry ping from device", "requestBody": {"lat": "number", "lng": "number", "speed": "number", "heading": "number", "timestamp": "datetime", "batteryLevel": "number"}, "responses": {"202": "Accepted", "400": "ValidationError"}},
+        {"method": "GET", "path": "/devices/{deviceId}/location", "summary": "Get latest device location", "responses": {"200": "DeviceLocation", "404": "DeviceNotFound"}},
+        {"method": "GET", "path": "/devices/{deviceId}/history", "summary": "Get location history for a device", "query": {"from": "datetime", "to": "datetime", "interval": "string"}, "responses": {"200": "LocationHistory"}},
+        {"method": "GET", "path": "/devices", "summary": "List all active devices", "query": {"status": "string", "driverId": "string"}, "responses": {"200": "DeviceList"}}
+      ],
+      "output_dir": "contracts/openapi"
+    },
+    "expected": {
+      "status": "ok",
+      "openapi_path": "contracts/openapi/device-telemetry-service.yaml",
+      "spectral_lint_passed": true,
+      "lint_warnings": []
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-api-011",
+    "input": {
+      "tenant_id": "tenant-fintech-01",
+      "workspace_id": "ws-open-banking",
+      "service_name": "account-aggregation-service",
+      "endpoints": [
+        {"method": "POST", "path": "/link-sessions", "summary": "Create a bank account linking session", "requestBody": {"userId": "string", "redirectUri": "string"}, "responses": {"201": "LinkSession"}},
+        {"method": "GET", "path": "/accounts", "summary": "List linked accounts for a user", "query": {"userId": "string"}, "responses": {"200": "AccountList"}},
+        {"method": "GET", "path": "/accounts/{accountId}/transactions", "summary": "Get transactions for an account", "query": {"from": "date", "to": "date", "limit": "integer", "cursor": "string"}, "responses": {"200": "TransactionPage"}},
+        {"method": "GET", "path": "/accounts/{accountId}/balance", "summary": "Get current balance for an account", "responses": {"200": "Balance"}},
+        {"method": "DELETE", "path": "/accounts/{accountId}", "summary": "Unlink a bank account", "responses": {"204": "Unlinked"}}
+      ],
+      "output_dir": "contracts/openapi"
+    },
+    "expected": {
+      "status": "ok",
+      "openapi_path": "contracts/openapi/account-aggregation-service.yaml",
+      "spectral_lint_passed": true,
+      "lint_warnings": []
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-api-012",
+    "input": {
+      "tenant_id": "tenant-saas-01",
+      "workspace_id": "ws-notifications",
+      "service_name": "notification-service",
+      "endpoints": [
+        {"method": "POST", "path": "/notifications/send", "summary": "Send a notification to a user", "requestBody": {"recipientId": "string", "channel": "string", "templateId": "string", "data": "object", "idempotencyKey": "string"}, "responses": {"202": "NotificationQueued", "400": "ValidationError"}},
+        {"method": "GET", "path": "/notifications/{notificationId}/status", "summary": "Get delivery status of a notification", "responses": {"200": "NotificationStatus", "404": "NotFound"}},
+        {"method": "GET", "path": "/users/{userId}/notifications", "summary": "Get in-app notification feed for a user", "query": {"unreadOnly": "boolean", "cursor": "string", "limit": "integer"}, "responses": {"200": "NotificationFeed"}},
+        {"method": "POST", "path": "/users/{userId}/notifications/mark-read", "summary": "Mark notifications as read", "requestBody": {"notificationIds": "array"}, "responses": {"204": "Marked"}},
+        {"method": "POST", "path": "/templates", "summary": "Create a notification template", "requestBody": {"id": "string", "channel": "string", "subject": "string", "body": "string"}, "responses": {"201": "Template", "409": "TemplateAlreadyExists"}}
+      ],
+      "output_dir": "contracts/openapi"
+    },
+    "expected": {
+      "status": "ok",
+      "openapi_path": "contracts/openapi/notification-service.yaml",
+      "spectral_lint_passed": true,
+      "lint_warnings": []
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-api-013",
+    "input": {
+      "tenant_id": "tenant-ecom-01",
+      "workspace_id": "ws-returns",
+      "service_name": "returns-service",
+      "endpoints": [
+        {"method": "POST", "path": "/returns", "summary": "Initiate a return request", "requestBody": {"orderId": "string", "items": [{"orderItemId": "string", "reason": "string", "quantity": "integer"}]}, "responses": {"201": "ReturnRequest", "400": "ValidationError", "422": "ItemNotReturnable"}},
+        {"method": "GET", "path": "/returns/{returnId}", "summary": "Get return request status", "responses": {"200": "ReturnRequest", "404": "NotFound"}},
+        {"method": "GET", "path": "/returns/{returnId}/label", "summary": "Get prepaid shipping label for return", "responses": {"200": "ShippingLabel", "400": "LabelNotYetAvailable"}},
+        {"method": "POST", "path": "/returns/{returnId}/inspection", "summary": "Record warehouse inspection result", "requestBody": {"condition": "string", "approved": "boolean", "notes": "string", "inspectorId": "string"}, "responses": {"200": "InspectionRecorded", "409": "AlreadyInspected"}},
+        {"method": "GET", "path": "/returns", "summary": "List returns for a customer", "query": {"customerId": "string", "status": "string", "limit": "integer", "cursor": "string"}, "responses": {"200": "ReturnPage"}}
+      ],
+      "output_dir": "contracts/openapi"
+    },
+    "expected": {
+      "status": "ok",
+      "openapi_path": "contracts/openapi/returns-service.yaml",
+      "spectral_lint_passed": true,
+      "lint_warnings": []
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-api-014",
+    "input": {
+      "tenant_id": "tenant-health-01",
+      "workspace_id": "ws-remote-monitoring",
+      "service_name": "vitals-monitoring-service",
+      "endpoints": [
+        {"method": "POST", "path": "/readings", "summary": "Ingest a device reading", "requestBody": {"patientId": "string", "deviceType": "string", "value": "number", "unit": "string", "timestamp": "datetime"}, "responses": {"202": "ReadingAccepted", "400": "ValidationError"}},
+        {"method": "GET", "path": "/patients/{patientId}/readings", "summary": "Get readings for a patient", "query": {"metric": "string", "from": "datetime", "to": "datetime", "limit": "integer"}, "responses": {"200": "ReadingPage"}},
+        {"method": "GET", "path": "/patients/{patientId}/alerts", "summary": "Get clinical alerts for a patient", "query": {"resolved": "boolean"}, "responses": {"200": "AlertList"}},
+        {"method": "POST", "path": "/patients/{patientId}/alerts/{alertId}/resolve", "summary": "Resolve a clinical alert", "requestBody": {"resolvedBy": "string", "resolution": "string"}, "responses": {"200": "AlertResolved", "404": "NotFound"}}
+      ],
+      "output_dir": "contracts/openapi"
+    },
+    "expected": {
+      "status": "ok",
+      "openapi_path": "contracts/openapi/vitals-monitoring-service.yaml",
+      "spectral_lint_passed": true,
+      "lint_warnings": []
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-api-015",
+    "input": {
+      "tenant_id": "tenant-fintech-01",
+      "workspace_id": "ws-kyc",
+      "service_name": "identity-verification-service",
+      "endpoints": [
+        {"method": "POST", "path": "/verifications", "summary": "Start an identity verification session", "requestBody": {"userId": "string", "redirectUrl": "string", "requiredChecks": ["document", "liveness", "aml"]}, "responses": {"201": "VerificationSession"}},
+        {"method": "GET", "path": "/verifications/{verificationId}", "summary": "Get verification status and result", "responses": {"200": "Verification", "404": "NotFound"}},
+        {"method": "POST", "path": "/verifications/webhook", "summary": "Receive verification completion webhook from vendor", "requestBody": {"event": "string", "verificationId": "string", "result": "object"}, "responses": {"200": "Acknowledged"}},
+        {"method": "GET", "path": "/users/{userId}/verification-status", "summary": "Get current KYC status for a user", "responses": {"200": "KycStatus", "404": "NotFound"}}
+      ],
+      "output_dir": "contracts/openapi"
+    },
+    "expected": {
+      "status": "ok",
+      "openapi_path": "contracts/openapi/identity-verification-service.yaml",
+      "spectral_lint_passed": true,
+      "lint_warnings": []
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-api-016",
+    "input": {
+      "tenant_id": "tenant-saas-01",
+      "workspace_id": "ws-document-processing",
+      "service_name": "document-processing-service",
+      "endpoints": [
+        {"method": "POST", "path": "/documents", "summary": "Upload a document for processing", "requestBody": {"fileUrl": "string", "documentType": "string", "metadata": "object"}, "responses": {"202": "DocumentJob"}},
+        {"method": "GET", "path": "/documents/{documentId}", "summary": "Get document processing result", "responses": {"200": "DocumentResult", "202": "StillProcessing", "404": "NotFound"}},
+        {"method": "GET", "path": "/documents/{documentId}/extractions", "summary": "Get extracted clauses and entities", "responses": {"200": "ExtractionResult"}},
+        {"method": "POST", "path": "/documents/{documentId}/review", "summary": "Submit human review decision for a low-confidence extraction", "requestBody": {"extractionId": "string", "correctedValue": "string", "reviewerId": "string"}, "responses": {"200": "ReviewRecorded"}}
+      ],
+      "output_dir": "contracts/openapi"
+    },
+    "expected": {
+      "status": "ok",
+      "openapi_path": "contracts/openapi/document-processing-service.yaml",
+      "spectral_lint_passed": true,
+      "lint_warnings": []
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-api-017",
+    "input": {
+      "tenant_id": "tenant-ecom-01",
+      "workspace_id": "ws-inventory",
+      "service_name": "inventory-service",
+      "endpoints": [
+        {"method": "POST", "path": "/reservations", "summary": "Reserve inventory for an order", "requestBody": {"orderId": "string", "items": [{"skuId": "string", "quantity": "integer"}], "ttlSeconds": "integer"}, "responses": {"200": "ReservationConfirmed", "409": "InsufficientStock"}},
+        {"method": "DELETE", "path": "/reservations/{reservationId}", "summary": "Release an inventory reservation", "responses": {"204": "Released", "404": "NotFound"}},
+        {"method": "GET", "path": "/products/{skuId}/stock", "summary": "Get available stock level for a SKU", "responses": {"200": "StockLevel"}},
+        {"method": "POST", "path": "/products/{skuId}/stock/adjust", "summary": "Adjust stock level (warehouse receipt, shrinkage)", "requestBody": {"delta": "integer", "reason": "string", "referenceId": "string"}, "responses": {"200": "NewStockLevel"}},
+        {"method": "GET", "path": "/products/{skuId}/stock/history", "summary": "Get stock movement history for a SKU", "query": {"from": "datetime", "to": "datetime"}, "responses": {"200": "StockHistory"}}
+      ],
+      "output_dir": "contracts/openapi"
+    },
+    "expected": {
+      "status": "ok",
+      "openapi_path": "contracts/openapi/inventory-service.yaml",
+      "spectral_lint_passed": true,
+      "lint_warnings": []
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-api-018",
+    "input": {
+      "tenant_id": "tenant-saas-01",
+      "workspace_id": "ws-auth",
+      "service_name": "auth-service",
+      "endpoints": [
+        {"method": "POST", "path": "/sso/initiate", "summary": "Initiate SSO login flow for an enterprise tenant", "requestBody": {"tenantSlug": "string", "redirectUri": "string"}, "responses": {"302": "Redirect"}},
+        {"method": "POST", "path": "/sso/callback", "summary": "Handle SSO callback and issue session token", "requestBody": {"code": "string", "state": "string"}, "responses": {"200": "SessionToken", "400": "InvalidCallback"}},
+        {"method": "POST", "path": "/mfa/enroll", "summary": "Enroll in MFA (TOTP or WebAuthn)", "requestBody": {"userId": "string", "method": "string"}, "responses": {"200": "EnrollmentChallenge"}},
+        {"method": "POST", "path": "/mfa/verify", "summary": "Verify MFA challenge", "requestBody": {"userId": "string", "method": "string", "code": "string"}, "responses": {"200": "MfaVerified", "401": "InvalidCode"}},
+        {"method": "POST", "path": "/tokens/revoke", "summary": "Revoke a user session or refresh token", "requestBody": {"token": "string"}, "responses": {"204": "Revoked"}}
+      ],
+      "output_dir": "contracts/openapi"
+    },
+    "expected": {
+      "status": "ok",
+      "openapi_path": "contracts/openapi/auth-service.yaml",
+      "spectral_lint_passed": true,
+      "lint_warnings": []
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-api-019",
+    "input": {
+      "tenant_id": "tenant-logistics-01",
+      "workspace_id": "ws-dispatch",
+      "service_name": "dispatch-messaging-service",
+      "endpoints": [
+        {"method": "POST", "path": "/messages", "summary": "Send a dispatch message to a driver", "requestBody": {"driverId": "string", "senderId": "string", "content": "string", "attachments": "array", "priority": "string"}, "responses": {"202": "MessageQueued"}},
+        {"method": "GET", "path": "/drivers/{driverId}/messages", "summary": "Get messages for a driver", "query": {"since": "datetime", "unreadOnly": "boolean"}, "responses": {"200": "MessageList"}},
+        {"method": "POST", "path": "/messages/{messageId}/receipt", "summary": "Acknowledge receipt of a message", "requestBody": {"driverId": "string", "readAt": "datetime"}, "responses": {"200": "ReceiptRecorded"}},
+        {"method": "POST", "path": "/ptt/sessions", "summary": "Start a push-to-talk voice session", "requestBody": {"initiatorId": "string", "recipientIds": "array"}, "responses": {"200": "PttSession"}}
+      ],
+      "output_dir": "contracts/openapi"
+    },
+    "expected": {
+      "status": "ok",
+      "openapi_path": "contracts/openapi/dispatch-messaging-service.yaml",
+      "spectral_lint_passed": true,
+      "lint_warnings": []
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-api-020",
+    "input": {
+      "tenant_id": "tenant-fintech-01",
+      "workspace_id": "ws-reporting",
+      "service_name": "regulatory-reporting-service",
+      "endpoints": [
+        {"method": "POST", "path": "/reports", "summary": "Trigger generation of a regulatory report", "requestBody": {"reportType": "string", "reportingPeriod": "string", "submitterEntity": "string"}, "responses": {"202": "ReportGenerationStarted"}},
+        {"method": "GET", "path": "/reports/{reportId}", "summary": "Get report status and download URL", "responses": {"200": "Report", "404": "NotFound"}},
+        {"method": "POST", "path": "/reports/{reportId}/submit", "summary": "Submit a report to the regulator", "responses": {"202": "SubmissionInitiated", "409": "AlreadySubmitted"}},
+        {"method": "GET", "path": "/reports/{reportId}/submission-receipt", "summary": "Get regulatory acknowledgement receipt", "responses": {"200": "SubmissionReceipt", "400": "SubmissionNotYetAcknowledged"}},
+        {"method": "GET", "path": "/reports", "summary": "List reports with filter and status", "query": {"reportType": "string", "status": "string", "from": "date", "to": "date"}, "responses": {"200": "ReportList"}}
+      ],
+      "output_dir": "contracts/openapi"
+    },
+    "expected": {
+      "status": "ok",
+      "openapi_path": "contracts/openapi/regulatory-reporting-service.yaml",
+      "spectral_lint_passed": true,
+      "lint_warnings": []
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-api-021",
+    "input": {
+      "tenant_id": "tenant-ecom-01",
+      "workspace_id": "ws-pricing",
+      "service_name": "pricing-service",
+      "endpoints": [
+        {"method": "GET", "path": "/prices/{skuId}", "summary": "Get current price for a SKU", "responses": {"200": "Price", "404": "NotFound"}},
+        {"method": "POST", "path": "/prices/bulk", "summary": "Get prices for multiple SKUs", "requestBody": {"skuIds": "array"}, "responses": {"200": "PriceMap"}},
+        {"method": "PUT", "path": "/rules", "summary": "Update merchandiser pricing rules", "requestBody": {"rules": "array"}, "responses": {"200": "RulesUpdated"}},
+        {"method": "GET", "path": "/prices/{skuId}/history", "summary": "Get price change history for a SKU", "query": {"from": "datetime", "to": "datetime"}, "responses": {"200": "PriceHistory"}}
+      ],
+      "output_dir": "contracts/openapi"
+    },
+    "expected": {
+      "status": "ok",
+      "openapi_path": "contracts/openapi/pricing-service.yaml",
+      "spectral_lint_passed": true,
+      "lint_warnings": []
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-api-022",
+    "input": {
+      "tenant_id": "tenant-health-01",
+      "workspace_id": "ws-ehr-integration",
+      "service_name": "fhir-gateway-service",
+      "endpoints": [
+        {"method": "GET", "path": "/fhir/Patient/{id}", "summary": "Get FHIR Patient resource by ID", "responses": {"200": "FHIRPatient", "404": "NotFound"}},
+        {"method": "GET", "path": "/fhir/Observation", "summary": "Search FHIR Observation resources", "query": {"patient": "string", "code": "string", "date": "string"}, "responses": {"200": "FHIRBundle"}},
+        {"method": "POST", "path": "/fhir/Bundle", "summary": "Submit a FHIR transaction bundle", "requestBody": {"resourceType": "Bundle", "type": "transaction", "entry": "array"}, "responses": {"200": "FHIRBundle", "422": "UnprocessableEntity"}},
+        {"method": "GET", "path": "/fhir/metadata", "summary": "Get FHIR capability statement", "responses": {"200": "CapabilityStatement"}}
+      ],
+      "output_dir": "contracts/openapi"
+    },
+    "expected": {
+      "status": "ok",
+      "openapi_path": "contracts/openapi/fhir-gateway-service.yaml",
+      "spectral_lint_passed": true,
+      "lint_warnings": []
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-api-023",
+    "input": {
+      "tenant_id": "tenant-saas-01",
+      "workspace_id": "ws-analytics-platform",
+      "service_name": "analytics-service",
+      "endpoints": [
+        {"method": "POST", "path": "/events/track", "summary": "Track a product analytics event", "requestBody": {"tenantId": "string", "userId": "string", "event": "string", "properties": "object", "timestamp": "datetime"}, "responses": {"202": "Tracked"}},
+        {"method": "POST", "path": "/queries/run", "summary": "Run an analytics query", "requestBody": {"metric": "string", "dimensions": "array", "filters": "array", "dateRange": "object", "granularity": "string"}, "responses": {"200": "QueryResult", "400": "InvalidQuery"}},
+        {"method": "GET", "path": "/reports/retention", "summary": "Get cohort retention report", "query": {"cohortDate": "date", "eventName": "string", "periods": "integer"}, "responses": {"200": "RetentionReport"}},
+        {"method": "POST", "path": "/exports", "summary": "Export raw events to S3", "requestBody": {"from": "datetime", "to": "datetime", "format": "string", "destination": "string"}, "responses": {"202": "ExportStarted"}}
+      ],
+      "output_dir": "contracts/openapi"
+    },
+    "expected": {
+      "status": "ok",
+      "openapi_path": "contracts/openapi/analytics-service.yaml",
+      "spectral_lint_passed": true,
+      "lint_warnings": []
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-api-024",
+    "input": {
+      "tenant_id": "tenant-logistics-01",
+      "workspace_id": "ws-warehouse-mgmt",
+      "service_name": "wms-integration-service",
+      "endpoints": [
+        {"method": "POST", "path": "/shipments/notify", "summary": "Notify WMS of a new outbound shipment order", "requestBody": {"shipmentId": "string", "warehouseId": "string", "items": "array", "shippingMethod": "string", "requiredByDate": "date"}, "responses": {"202": "NotificationQueued"}},
+        {"method": "GET", "path": "/shipments/{shipmentId}/status", "summary": "Get WMS fulfillment status for a shipment", "responses": {"200": "ShipmentStatus", "404": "NotFound"}},
+        {"method": "POST", "path": "/warehouses/{warehouseId}/inventory-sync", "summary": "Trigger inventory sync from a WMS", "responses": {"202": "SyncStarted"}},
+        {"method": "POST", "path": "/webhooks/wms-callback", "summary": "Receive status callbacks from WMS systems", "requestBody": {"warehouseId": "string", "event": "string", "shipmentId": "string", "payload": "object"}, "responses": {"200": "Acknowledged"}}
+      ],
+      "output_dir": "contracts/openapi"
+    },
+    "expected": {
+      "status": "ok",
+      "openapi_path": "contracts/openapi/wms-integration-service.yaml",
+      "spectral_lint_passed": true,
+      "lint_warnings": []
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-api-025",
+    "input": {
+      "tenant_id": "tenant-fintech-01",
+      "workspace_id": "ws-crypto-custody",
+      "service_name": "custody-wallet-service",
+      "endpoints": [
+        {"method": "POST", "path": "/wallets", "summary": "Create a custodial wallet for a user", "requestBody": {"userId": "string", "assetType": "string", "network": "string"}, "responses": {"201": "Wallet"}},
+        {"method": "GET", "path": "/wallets/{walletId}/balance", "summary": "Get wallet balance", "responses": {"200": "WalletBalance", "404": "NotFound"}},
+        {"method": "POST", "path": "/wallets/{walletId}/transactions/send", "summary": "Initiate an outbound asset transfer with MPC signing approval", "requestBody": {"destinationAddress": "string", "amount": "string", "approvalPolicyId": "string", "note": "string"}, "responses": {"202": "TransferInitiated", "403": "PolicyRejected"}},
+        {"method": "GET", "path": "/wallets/{walletId}/transactions", "summary": "List wallet transaction history", "query": {"limit": "integer", "cursor": "string"}, "responses": {"200": "TransactionPage"}}
+      ],
+      "output_dir": "contracts/openapi"
+    },
+    "expected": {
+      "status": "ok",
+      "openapi_path": "contracts/openapi/custody-wallet-service.yaml",
+      "spectral_lint_passed": true,
+      "lint_warnings": []
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-api-026",
+    "input": {
+      "tenant_id": "tenant-saas-01",
+      "workspace_id": "ws-collab-editing",
+      "service_name": "collaboration-service",
+      "endpoints": [
+        {"method": "POST", "path": "/documents/{documentId}/rooms", "summary": "Create or join a collaboration room for a document", "requestBody": {"userId": "string"}, "responses": {"200": "RoomToken"}},
+        {"method": "GET", "path": "/documents/{documentId}/presence", "summary": "Get current collaborators in a document", "responses": {"200": "PresenceList"}},
+        {"method": "GET", "path": "/documents/{documentId}/history", "summary": "Get document version history", "query": {"limit": "integer", "cursor": "string"}, "responses": {"200": "VersionHistory"}},
+        {"method": "POST", "path": "/documents/{documentId}/history/{versionId}/restore", "summary": "Restore a document to a historical version", "responses": {"202": "RestoreStarted"}}
+      ],
+      "output_dir": "contracts/openapi"
+    },
+    "expected": {
+      "status": "ok",
+      "openapi_path": "contracts/openapi/collaboration-service.yaml",
+      "spectral_lint_passed": true,
+      "lint_warnings": []
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-api-027",
+    "input": {
+      "tenant_id": "tenant-ecom-01",
+      "workspace_id": "ws-recommendation",
+      "service_name": "recommendation-service",
+      "endpoints": [
+        {"method": "GET", "path": "/recommendations/user/{userId}", "summary": "Get personalized product recommendations for a user", "query": {"context": "string", "limit": "integer", "excludeProductIds": "array"}, "responses": {"200": "RecommendationList"}},
+        {"method": "GET", "path": "/recommendations/product/{productId}/similar", "summary": "Get similar products", "query": {"limit": "integer"}, "responses": {"200": "RecommendationList"}},
+        {"method": "POST", "path": "/events/interaction", "summary": "Track a user interaction event for personalization", "requestBody": {"userId": "string", "productId": "string", "eventType": "string", "sessionId": "string"}, "responses": {"202": "Tracked"}}
+      ],
+      "output_dir": "contracts/openapi"
+    },
+    "expected": {
+      "status": "ok",
+      "openapi_path": "contracts/openapi/recommendation-service.yaml",
+      "spectral_lint_passed": true,
+      "lint_warnings": []
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-api-028",
+    "input": {
+      "tenant_id": "tenant-health-01",
+      "workspace_id": "ws-genomics",
+      "service_name": "genomics-query-service",
+      "endpoints": [
+        {"method": "POST", "path": "/variants/query", "summary": "Query variants across a cohort of samples", "requestBody": {"geneId": "string", "chromosome": "string", "positionStart": "integer", "positionEnd": "integer", "sampleIds": "array", "minAlleleFrequency": "number"}, "responses": {"202": "QueryJob"}},
+        {"method": "GET", "path": "/variants/jobs/{jobId}", "summary": "Get variant query result", "responses": {"200": "VariantQueryResult", "202": "StillRunning"}},
+        {"method": "GET", "path": "/samples/{sampleId}/consent-status", "summary": "Check data access consent for a sample", "responses": {"200": "ConsentStatus", "403": "ConsentNotGranted"}}
+      ],
+      "output_dir": "contracts/openapi"
+    },
+    "expected": {
+      "status": "ok",
+      "openapi_path": "contracts/openapi/genomics-query-service.yaml",
+      "spectral_lint_passed": true,
+      "lint_warnings": []
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-api-029",
+    "input": {
+      "tenant_id": "tenant-logistics-01",
+      "workspace_id": "ws-dispatch",
+      "service_name": "driver-management-service",
+      "endpoints": [
+        {"method": "GET", "path": "/drivers/{driverId}", "summary": "Get driver profile", "responses": {"200": "Driver", "404": "NotFound"}},
+        {"method": "PUT", "path": "/drivers/{driverId}/status", "summary": "Update driver availability status", "requestBody": {"status": "string", "reason": "string"}, "responses": {"200": "Driver"}},
+        {"method": "POST", "path": "/drivers/{driverId}/assignments", "summary": "Assign a route to a driver", "requestBody": {"routeId": "string", "vehicleId": "string"}, "responses": {"201": "Assignment", "409": "DriverUnavailable"}},
+        {"method": "DELETE", "path": "/drivers/{driverId}/assignments/{assignmentId}", "summary": "Unassign a driver from a route", "responses": {"204": "Unassigned"}},
+        {"method": "GET", "path": "/drivers", "summary": "List drivers with availability filter", "query": {"status": "string", "zone": "string"}, "responses": {"200": "DriverList"}}
+      ],
+      "output_dir": "contracts/openapi"
+    },
+    "expected": {
+      "status": "ok",
+      "openapi_path": "contracts/openapi/driver-management-service.yaml",
+      "spectral_lint_passed": true,
+      "lint_warnings": []
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-api-030",
+    "input": {
+      "tenant_id": "tenant-fintech-01",
+      "workspace_id": "ws-payments",
+      "service_name": "payout-service",
+      "endpoints": [
+        {"method": "POST", "path": "/payouts", "summary": "Initiate a payout to a bank account or wallet", "requestBody": {"recipientId": "string", "amount": "integer", "currency": "string", "payoutMethod": "string", "idempotencyKey": "string"}, "responses": {"202": "PayoutInitiated", "400": "ValidationError"}},
+        {"method": "GET", "path": "/payouts/{payoutId}", "summary": "Get payout status", "responses": {"200": "Payout", "404": "NotFound"}},
+        {"method": "GET", "path": "/payouts", "summary": "List payouts for a recipient", "query": {"recipientId": "string", "status": "string", "from": "date", "to": "date"}, "responses": {"200": "PayoutList"}},
+        {"method": "POST", "path": "/payouts/{payoutId}/cancel", "summary": "Cancel a pending payout", "responses": {"200": "PayoutCancelled", "409": "PayoutAlreadyProcessed"}}
+      ],
+      "output_dir": "contracts/openapi"
+    },
+    "expected": {
+      "status": "ok",
+      "openapi_path": "contracts/openapi/payout-service.yaml",
+      "spectral_lint_passed": true,
+      "lint_warnings": []
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-api-031",
+    "input": {
+      "tenant_id": "tenant-adversarial-01",
+      "workspace_id": "ws-test",
+      "service_name": "",
+      "endpoints": [
+        {"method": "GET", "path": "/health", "summary": "Health check"}
+      ],
+      "output_dir": "contracts/openapi"
+    },
+    "expected": {
+      "status": "error",
+      "openapi_path": null,
+      "spectral_lint_passed": false,
+      "lint_warnings": []
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "arch-api-032",
+    "input": {
+      "tenant_id": "tenant-adversarial-01",
+      "workspace_id": "ws-test",
+      "service_name": "empty-endpoints-service",
+      "endpoints": [],
+      "output_dir": "contracts/openapi"
+    },
+    "expected": {
+      "status": "error",
+      "openapi_path": null,
+      "spectral_lint_passed": false,
+      "lint_warnings": []
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "arch-api-033",
+    "input": {
+      "tenant_id": "tenant-adversarial-01",
+      "workspace_id": "ws-test",
+      "service_name": "bad-method-service",
+      "endpoints": [
+        {"method": "FETCH", "path": "/things", "summary": "Get things with invalid HTTP method"}
+      ],
+      "output_dir": "contracts/openapi"
+    },
+    "expected": {
+      "status": "ok",
+      "openapi_path": "contracts/openapi/bad-method-service.yaml",
+      "spectral_lint_passed": false,
+      "lint_warnings": ["Invalid HTTP method 'FETCH' at /things"]
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "arch-api-034",
+    "input": {
+      "tenant_id": "",
+      "workspace_id": "",
+      "service_name": "no-tenant-service",
+      "endpoints": [
+        {"method": "GET", "path": "/items", "summary": "List items", "responses": {"200": "ItemList"}}
+      ],
+      "output_dir": "contracts/openapi"
+    },
+    "expected": {
+      "status": "error",
+      "openapi_path": null,
+      "spectral_lint_passed": false,
+      "lint_warnings": []
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "arch-api-035",
+    "input": {
+      "tenant_id": "tenant-adversarial-01",
+      "workspace_id": "ws-test",
+      "service_name": "missing-summary-service",
+      "endpoints": [
+        {"method": "GET", "path": "/items", "summary": "", "responses": {"200": "ItemList"}},
+        {"method": "POST", "path": "/items", "summary": "", "requestBody": {"name": "string"}, "responses": {"201": "Item"}}
+      ],
+      "output_dir": "contracts/openapi"
+    },
+    "expected": {
+      "status": "ok",
+      "openapi_path": "contracts/openapi/missing-summary-service.yaml",
+      "spectral_lint_passed": false,
+      "lint_warnings": [
+        "Operation GET /items is missing a summary",
+        "Operation POST /items is missing a summary"
+      ]
+    },
+    "weight": 2.0
+  }
+]

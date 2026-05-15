@@ -19,8 +19,9 @@ log = get_logger(__name__)
 
 SOURCE = "forge://service/alfred"
 
-# Registry of supported agent-mode event types (used for validation and docs).
+# Registry of supported event types (used for validation and docs).
 EVENT_TYPES = (
+    # Agent-mode lifecycle (alfred-agent-mode-orchestrator)
     "alfred.agent_mode.session_started.v1",
     "alfred.agent_mode.step_started.v1",
     "alfred.agent_mode.step_completed.v1",
@@ -31,6 +32,11 @@ EVENT_TYPES = (
     "alfred.agent_mode.completed.v1",
     "alfred.agent_mode.aborted.v1",
     "alfred.agent_mode.failed.v1",
+    # Console & intent events (alfred-console-redesign)
+    "alfred.console.view_toggled.v1",
+    "alfred.intent.match_found.v1",
+    "alfred.intent.match_dismissed.v1",
+    "alfred.command.deprecated_alias.v1",
 )
 
 

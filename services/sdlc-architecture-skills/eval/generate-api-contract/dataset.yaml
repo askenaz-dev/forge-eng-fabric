@@ -1,0 +1,5 @@
+asset_id: sdlc.architecture.generate-api-contract.eval
+version: "1.0.0"
+description: "Graded fixtures for generate-api-contract skill: OpenAPI document generation, Spectral lint."
+trust_level: T1
+fixtures: fixtures.json

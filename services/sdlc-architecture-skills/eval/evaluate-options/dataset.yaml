@@ -1,0 +1,5 @@
+asset_id: sdlc.architecture.evaluate-options.eval
+version: "1.0.0"
+description: "Graded fixtures for evaluate-options skill: ranked output with cited rationale, citation enforcer."
+trust_level: T1
+fixtures: fixtures.json

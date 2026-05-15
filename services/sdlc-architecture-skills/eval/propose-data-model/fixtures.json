@@ -1,0 +1,804 @@
+[
+  {
+    "id": "arch-dm-001",
+    "input": {
+      "tenant_id": "tenant-ecom-01",
+      "workspace_id": "ws-ecom-platform",
+      "domain": "order-management",
+      "entities": ["Order", "OrderItem", "Customer", "Address", "Product", "Promotion", "PaymentAttempt"],
+      "relationships": [
+        "Order belongs to one Customer",
+        "Order has many OrderItems",
+        "OrderItem references one Product",
+        "Order has one shipping Address",
+        "Order may have one Promotion applied",
+        "Order has many PaymentAttempts"
+      ],
+      "output_dir": "docs/data-model"
+    },
+    "expected": {
+      "status": "ok",
+      "model_path": "docs/data-model/order-management.md",
+      "event_type": "sdlc.data_model.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-dm-002",
+    "input": {
+      "tenant_id": "tenant-fintech-01",
+      "workspace_id": "ws-payments",
+      "domain": "transaction-ledger",
+      "entities": ["Transaction", "Account", "LedgerEntry", "Currency", "TransactionEvent", "Merchant"],
+      "relationships": [
+        "Transaction has one source Account and one destination Account",
+        "Transaction has many LedgerEntries (double-entry bookkeeping)",
+        "LedgerEntry references one Currency",
+        "Transaction has many TransactionEvents (state transitions)",
+        "Transaction may reference one Merchant"
+      ],
+      "output_dir": "docs/data-model"
+    },
+    "expected": {
+      "status": "ok",
+      "model_path": "docs/data-model/transaction-ledger.md",
+      "event_type": "sdlc.data_model.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-dm-003",
+    "input": {
+      "tenant_id": "tenant-health-01",
+      "workspace_id": "ws-patient-portal",
+      "domain": "clinical-records",
+      "entities": ["Patient", "Encounter", "Observation", "Condition", "Medication", "MedicationOrder", "Practitioner", "Organization", "Consent"],
+      "relationships": [
+        "Patient has many Encounters",
+        "Encounter involves one Practitioner",
+        "Encounter occurs at one Organization",
+        "Encounter has many Observations",
+        "Encounter may result in many Conditions",
+        "Condition may lead to many MedicationOrders",
+        "MedicationOrder references one Medication",
+        "Patient has many Consents"
+      ],
+      "output_dir": "docs/data-model"
+    },
+    "expected": {
+      "status": "ok",
+      "model_path": "docs/data-model/clinical-records.md",
+      "event_type": "sdlc.data_model.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-dm-004",
+    "input": {
+      "tenant_id": "tenant-saas-01",
+      "workspace_id": "ws-multi-tenant-app",
+      "domain": "multi-tenant-access-control",
+      "entities": ["Tenant", "User", "Role", "Permission", "ResourcePolicy", "Invitation", "AuditLog"],
+      "relationships": [
+        "Tenant has many Users (via membership)",
+        "User can have many Roles within a Tenant",
+        "Role has many Permissions",
+        "Permission is scoped to a resource type and action",
+        "ResourcePolicy defines object-level access rules",
+        "Invitation belongs to Tenant and invites one User",
+        "All access changes are recorded in AuditLog"
+      ],
+      "output_dir": "docs/data-model"
+    },
+    "expected": {
+      "status": "ok",
+      "model_path": "docs/data-model/multi-tenant-access-control.md",
+      "event_type": "sdlc.data_model.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-dm-005",
+    "input": {
+      "tenant_id": "tenant-logistics-01",
+      "workspace_id": "ws-routing-engine",
+      "domain": "delivery-routing",
+      "entities": ["RouteOptimizationJob", "Route", "Stop", "Vehicle", "Driver", "Depot", "TimeWindow"],
+      "relationships": [
+        "RouteOptimizationJob produces many Routes",
+        "Route is assigned to one Vehicle and one Driver",
+        "Route starts and ends at one Depot",
+        "Route has many ordered Stops",
+        "Stop has one TimeWindow constraint",
+        "Driver is assigned to one Vehicle per Route"
+      ],
+      "output_dir": "docs/data-model"
+    },
+    "expected": {
+      "status": "ok",
+      "model_path": "docs/data-model/delivery-routing.md",
+      "event_type": "sdlc.data_model.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-dm-006",
+    "input": {
+      "tenant_id": "tenant-fintech-01",
+      "workspace_id": "ws-fraud-detection",
+      "domain": "fraud-detection",
+      "entities": ["RiskScore", "Transaction", "FraudCase", "ReviewDecision", "DeviceFingerprint", "RiskRule", "ModelVersion"],
+      "relationships": [
+        "RiskScore is computed for one Transaction",
+        "RiskScore references one ModelVersion",
+        "High-risk RiskScores may create one FraudCase",
+        "FraudCase may have many ReviewDecisions",
+        "Transaction may reference one DeviceFingerprint",
+        "RiskScore may be influenced by many RiskRules"
+      ],
+      "output_dir": "docs/data-model"
+    },
+    "expected": {
+      "status": "ok",
+      "model_path": "docs/data-model/fraud-detection.md",
+      "event_type": "sdlc.data_model.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-dm-007",
+    "input": {
+      "tenant_id": "tenant-health-01",
+      "workspace_id": "ws-telehealth",
+      "domain": "telehealth-scheduling",
+      "entities": ["Appointment", "AvailabilitySlot", "Provider", "Patient", "ProviderSchedule", "VideoSession", "WaitlistEntry"],
+      "relationships": [
+        "Appointment references one AvailabilitySlot",
+        "AvailabilitySlot belongs to one Provider",
+        "Provider has many ProviderSchedules (recurring availability)",
+        "Appointment has one Patient and one Provider",
+        "Appointment may have one VideoSession",
+        "WaitlistEntry references one AvailabilitySlot type and one Patient"
+      ],
+      "output_dir": "docs/data-model"
+    },
+    "expected": {
+      "status": "ok",
+      "model_path": "docs/data-model/telehealth-scheduling.md",
+      "event_type": "sdlc.data_model.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-dm-008",
+    "input": {
+      "tenant_id": "tenant-saas-01",
+      "workspace_id": "ws-billing",
+      "domain": "usage-based-billing",
+      "entities": ["Customer", "Subscription", "Plan", "MeteringEvent", "UsageAggregate", "Invoice", "LineItem", "PaymentMethod"],
+      "relationships": [
+        "Customer has one active Subscription",
+        "Subscription references one Plan",
+        "MeteringEvent is emitted by Customer usage",
+        "UsageAggregate summarizes MeteringEvents per billing period",
+        "Invoice is generated per billing period for a Customer",
+        "Invoice has many LineItems (one per metered dimension)",
+        "Customer has one or more PaymentMethods"
+      ],
+      "output_dir": "docs/data-model"
+    },
+    "expected": {
+      "status": "ok",
+      "model_path": "docs/data-model/usage-based-billing.md",
+      "event_type": "sdlc.data_model.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-dm-009",
+    "input": {
+      "tenant_id": "tenant-ecom-01",
+      "workspace_id": "ws-returns",
+      "domain": "returns-management",
+      "entities": ["ReturnRequest", "ReturnLineItem", "Order", "OrderItem", "ShippingLabel", "InspectionRecord", "Refund"],
+      "relationships": [
+        "ReturnRequest references one Order",
+        "ReturnRequest has many ReturnLineItems",
+        "ReturnLineItem references one OrderItem",
+        "ReturnRequest may have one ShippingLabel",
+        "ReturnRequest may have one InspectionRecord after warehouse receipt",
+        "Approved ReturnRequest leads to one Refund"
+      ],
+      "output_dir": "docs/data-model"
+    },
+    "expected": {
+      "status": "ok",
+      "model_path": "docs/data-model/returns-management.md",
+      "event_type": "sdlc.data_model.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-dm-010",
+    "input": {
+      "tenant_id": "tenant-fintech-01",
+      "workspace_id": "ws-kyc",
+      "domain": "identity-verification",
+      "entities": ["User", "VerificationSession", "DocumentCheck", "LivenessCheck", "AmlScreening", "KycStatus", "AuditEvent"],
+      "relationships": [
+        "User has one current KycStatus",
+        "VerificationSession belongs to one User",
+        "VerificationSession has one DocumentCheck",
+        "VerificationSession has one LivenessCheck",
+        "VerificationSession has one AmlScreening",
+        "All KycStatus transitions are recorded as AuditEvents"
+      ],
+      "output_dir": "docs/data-model"
+    },
+    "expected": {
+      "status": "ok",
+      "model_path": "docs/data-model/identity-verification.md",
+      "event_type": "sdlc.data_model.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-dm-011",
+    "input": {
+      "tenant_id": "tenant-saas-01",
+      "workspace_id": "ws-analytics-platform",
+      "domain": "product-analytics",
+      "entities": ["AnalyticsEvent", "User", "Session", "Tenant", "Funnel", "FunnelStep", "CohortDefinition"],
+      "relationships": [
+        "AnalyticsEvent belongs to one User and one Session",
+        "Session belongs to one User and one Tenant",
+        "Funnel belongs to one Tenant and has ordered FunnelSteps",
+        "FunnelStep references an event name",
+        "CohortDefinition belongs to one Tenant and references entry events"
+      ],
+      "output_dir": "docs/data-model"
+    },
+    "expected": {
+      "status": "ok",
+      "model_path": "docs/data-model/product-analytics.md",
+      "event_type": "sdlc.data_model.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-dm-012",
+    "input": {
+      "tenant_id": "tenant-health-01",
+      "workspace_id": "ws-remote-monitoring",
+      "domain": "remote-patient-monitoring",
+      "entities": ["Patient", "Device", "DeviceEnrollment", "VitalReading", "ThresholdRule", "ClinicalAlert", "AlertResolution"],
+      "relationships": [
+        "Patient has many DeviceEnrollments",
+        "DeviceEnrollment references one Device",
+        "Device produces many VitalReadings",
+        "ThresholdRule belongs to one Patient and defines alert conditions",
+        "VitalReading may trigger one ClinicalAlert via ThresholdRule",
+        "ClinicalAlert may have one AlertResolution"
+      ],
+      "output_dir": "docs/data-model"
+    },
+    "expected": {
+      "status": "ok",
+      "model_path": "docs/data-model/remote-patient-monitoring.md",
+      "event_type": "sdlc.data_model.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-dm-013",
+    "input": {
+      "tenant_id": "tenant-logistics-01",
+      "workspace_id": "ws-iot-platform",
+      "domain": "vehicle-telemetry",
+      "entities": ["Vehicle", "Driver", "TelemetryPing", "Trip", "GeofenceZone", "GeofenceEvent"],
+      "relationships": [
+        "Vehicle is assigned to one Driver per Trip",
+        "Trip has many ordered TelemetryPings",
+        "TelemetryPing records location, speed, and heading",
+        "GeofenceZone defines geographic boundaries",
+        "GeofenceEvent is triggered when a Vehicle enters or exits a GeofenceZone"
+      ],
+      "output_dir": "docs/data-model"
+    },
+    "expected": {
+      "status": "ok",
+      "model_path": "docs/data-model/vehicle-telemetry.md",
+      "event_type": "sdlc.data_model.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-dm-014",
+    "input": {
+      "tenant_id": "tenant-fintech-01",
+      "workspace_id": "ws-open-banking",
+      "domain": "financial-account-aggregation",
+      "entities": ["User", "LinkSession", "Institution", "LinkedAccount", "AccountBalance", "Transaction", "TransactionCategory"],
+      "relationships": [
+        "User has many LinkedAccounts (via LinkSessions)",
+        "LinkSession references one Institution",
+        "LinkedAccount belongs to one Institution",
+        "LinkedAccount has one current AccountBalance",
+        "LinkedAccount has many Transactions",
+        "Transaction may have one TransactionCategory"
+      ],
+      "output_dir": "docs/data-model"
+    },
+    "expected": {
+      "status": "ok",
+      "model_path": "docs/data-model/financial-account-aggregation.md",
+      "event_type": "sdlc.data_model.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-dm-015",
+    "input": {
+      "tenant_id": "tenant-saas-01",
+      "workspace_id": "ws-document-processing",
+      "domain": "document-intelligence",
+      "entities": ["Document", "ProcessingJob", "Extraction", "Clause", "ReviewQueue", "ReviewDecision", "HumanReviewer"],
+      "relationships": [
+        "Document is submitted as one ProcessingJob",
+        "ProcessingJob produces many Extractions",
+        "Extraction may identify many Clauses",
+        "Low-confidence Extractions are added to ReviewQueue",
+        "ReviewQueue item may have one ReviewDecision",
+        "ReviewDecision is made by one HumanReviewer"
+      ],
+      "output_dir": "docs/data-model"
+    },
+    "expected": {
+      "status": "ok",
+      "model_path": "docs/data-model/document-intelligence.md",
+      "event_type": "sdlc.data_model.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-dm-016",
+    "input": {
+      "tenant_id": "tenant-ecom-01",
+      "workspace_id": "ws-recommendation",
+      "domain": "product-recommendations",
+      "entities": ["User", "Product", "UserInteraction", "Recommendation", "ModelVersion", "RecommendationFeedback", "ProductCatalogItem"],
+      "relationships": [
+        "UserInteraction records one User's event with one Product",
+        "Recommendation is generated for one User from one ModelVersion",
+        "Recommendation contains many ordered ProductCatalogItems",
+        "RecommendationFeedback links one Recommendation to one User's click or purchase",
+        "Product has one current ProductCatalogItem (price, inventory status)"
+      ],
+      "output_dir": "docs/data-model"
+    },
+    "expected": {
+      "status": "ok",
+      "model_path": "docs/data-model/product-recommendations.md",
+      "event_type": "sdlc.data_model.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-dm-017",
+    "input": {
+      "tenant_id": "tenant-fintech-01",
+      "workspace_id": "ws-crypto-custody",
+      "domain": "digital-asset-custody",
+      "entities": ["User", "Wallet", "AssetBalance", "Transfer", "MpcSigningRequest", "ApprovalPolicy", "PolicyApproval", "AuditLog"],
+      "relationships": [
+        "User has one or more Wallets per asset type",
+        "Wallet has many AssetBalances (one per token/network)",
+        "Transfer is initiated from one Wallet to an external address",
+        "Transfer requires one MpcSigningRequest",
+        "MpcSigningRequest is evaluated against one ApprovalPolicy",
+        "ApprovalPolicy requires one or more PolicyApprovals",
+        "All Wallet and Transfer operations are immutably recorded in AuditLog"
+      ],
+      "output_dir": "docs/data-model"
+    },
+    "expected": {
+      "status": "ok",
+      "model_path": "docs/data-model/digital-asset-custody.md",
+      "event_type": "sdlc.data_model.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-dm-018",
+    "input": {
+      "tenant_id": "tenant-saas-01",
+      "workspace_id": "ws-auth",
+      "domain": "identity-and-access-management",
+      "entities": ["User", "Organization", "SsoConnection", "Session", "MfaEnrollment", "Role", "Permission", "AccessToken"],
+      "relationships": [
+        "User belongs to one or more Organizations",
+        "Organization may have one SsoConnection (SAML/OIDC)",
+        "User has many Sessions",
+        "User may have many MfaEnrollments (TOTP, WebAuthn)",
+        "User has many Roles within an Organization",
+        "Role has many Permissions",
+        "Session produces AccessTokens with Permission scope"
+      ],
+      "output_dir": "docs/data-model"
+    },
+    "expected": {
+      "status": "ok",
+      "model_path": "docs/data-model/identity-and-access-management.md",
+      "event_type": "sdlc.data_model.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-dm-019",
+    "input": {
+      "tenant_id": "tenant-health-01",
+      "workspace_id": "ws-ehr-integration",
+      "domain": "ehr-integration",
+      "entities": ["EhrSystem", "SyncJob", "FhirResource", "IntegrationError", "ResourceMapping", "InboundWebhook", "DeduplicationRecord"],
+      "relationships": [
+        "EhrSystem has many SyncJobs (scheduled pulls)",
+        "SyncJob produces many FhirResources",
+        "InboundWebhook is received from one EhrSystem and produces FhirResources",
+        "FhirResource references one ResourceMapping (vendor format to FHIR R4)",
+        "FhirResource may have one DeduplicationRecord",
+        "Failed SyncJobs or webhook processing produce IntegrationErrors"
+      ],
+      "output_dir": "docs/data-model"
+    },
+    "expected": {
+      "status": "ok",
+      "model_path": "docs/data-model/ehr-integration.md",
+      "event_type": "sdlc.data_model.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-dm-020",
+    "input": {
+      "tenant_id": "tenant-logistics-01",
+      "workspace_id": "ws-warehouse-mgmt",
+      "domain": "warehouse-integration",
+      "entities": ["WarehouseSystem", "OutboundShipment", "ShipmentItem", "IntegrationMessage", "DeadLetterMessage", "InventorySnapshot", "FulfillmentEvent"],
+      "relationships": [
+        "OutboundShipment is assigned to one WarehouseSystem",
+        "OutboundShipment has many ShipmentItems",
+        "Each interaction with a WarehouseSystem creates one IntegrationMessage",
+        "Failed IntegrationMessages are moved to DeadLetterMessage for retry",
+        "WarehouseSystem sends FulfillmentEvents (picked, packed, shipped) for each OutboundShipment",
+        "InventorySnapshot is pulled from WarehouseSystem on scheduled sync"
+      ],
+      "output_dir": "docs/data-model"
+    },
+    "expected": {
+      "status": "ok",
+      "model_path": "docs/data-model/warehouse-integration.md",
+      "event_type": "sdlc.data_model.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-dm-021",
+    "input": {
+      "tenant_id": "tenant-ecom-01",
+      "workspace_id": "ws-inventory",
+      "domain": "inventory-management",
+      "entities": ["Sku", "Warehouse", "StockLevel", "Reservation", "StockMovement", "Supplier", "PurchaseOrder", "PurchaseOrderLine"],
+      "relationships": [
+        "StockLevel tracks available units of one Sku at one Warehouse",
+        "Reservation holds units of one Sku at one Warehouse for a limited time",
+        "StockMovement records every change to StockLevel with reason and reference",
+        "PurchaseOrder belongs to one Supplier",
+        "PurchaseOrder has many PurchaseOrderLines",
+        "PurchaseOrderLine references one Sku"
+      ],
+      "output_dir": "docs/data-model"
+    },
+    "expected": {
+      "status": "ok",
+      "model_path": "docs/data-model/inventory-management.md",
+      "event_type": "sdlc.data_model.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-dm-022",
+    "input": {
+      "tenant_id": "tenant-fintech-01",
+      "workspace_id": "ws-reporting",
+      "domain": "regulatory-reporting",
+      "entities": ["Report", "ReportVersion", "ReportLineItem", "SubmissionRecord", "RegulatoryAcknowledgement", "ReconciliationRun", "ReconciliationDiscrepancy"],
+      "relationships": [
+        "Report has one or more ReportVersions (draft, final, corrected)",
+        "ReportVersion has many ReportLineItems",
+        "ReportVersion that is submitted creates one SubmissionRecord",
+        "SubmissionRecord may receive one RegulatoryAcknowledgement",
+        "Each ReportVersion triggers one ReconciliationRun against source data",
+        "ReconciliationRun may produce many ReconciliationDiscrepancies"
+      ],
+      "output_dir": "docs/data-model"
+    },
+    "expected": {
+      "status": "ok",
+      "model_path": "docs/data-model/regulatory-reporting.md",
+      "event_type": "sdlc.data_model.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-dm-023",
+    "input": {
+      "tenant_id": "tenant-saas-01",
+      "workspace_id": "ws-notifications",
+      "domain": "notification-infrastructure",
+      "entities": ["NotificationTemplate", "NotificationJob", "DeliveryAttempt", "UserNotificationPreference", "InAppNotification", "NotificationChannel"],
+      "relationships": [
+        "NotificationJob references one NotificationTemplate",
+        "NotificationJob targets one recipient User",
+        "NotificationJob has many DeliveryAttempts per NotificationChannel",
+        "User has one UserNotificationPreference (opt-in/out per channel)",
+        "Email/push DeliveryAttempt result is an InAppNotification if channel is in-app"
+      ],
+      "output_dir": "docs/data-model"
+    },
+    "expected": {
+      "status": "ok",
+      "model_path": "docs/data-model/notification-infrastructure.md",
+      "event_type": "sdlc.data_model.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-dm-024",
+    "input": {
+      "tenant_id": "tenant-health-01",
+      "workspace_id": "ws-clinical-nlp",
+      "domain": "clinical-nlp",
+      "entities": ["ClinicalNote", "NlpJob", "ExtractedEntity", "EntityConcept", "ReviewFlag", "FeedbackCorrection"],
+      "relationships": [
+        "ClinicalNote is processed by one NlpJob",
+        "NlpJob produces many ExtractedEntities",
+        "ExtractedEntity maps to one EntityConcept (ICD-10, SNOMED CT, RxNorm)",
+        "Low-confidence ExtractedEntities create ReviewFlags",
+        "ReviewFlag may be resolved with one FeedbackCorrection by a clinician"
+      ],
+      "output_dir": "docs/data-model"
+    },
+    "expected": {
+      "status": "ok",
+      "model_path": "docs/data-model/clinical-nlp.md",
+      "event_type": "sdlc.data_model.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-dm-025",
+    "input": {
+      "tenant_id": "tenant-logistics-01",
+      "workspace_id": "ws-dispatch",
+      "domain": "driver-dispatch",
+      "entities": ["Driver", "DispatchMessage", "MessageAttachment", "ReadReceipt", "PttSession", "PttParticipant", "DispatchZone"],
+      "relationships": [
+        "DispatchMessage is sent to one Driver from one dispatcher User",
+        "DispatchMessage may have many MessageAttachments",
+        "DispatchMessage may have one ReadReceipt from the Driver",
+        "PttSession has many PttParticipants (drivers and dispatchers)",
+        "Driver belongs to one DispatchZone for routing messages to correct dispatcher"
+      ],
+      "output_dir": "docs/data-model"
+    },
+    "expected": {
+      "status": "ok",
+      "model_path": "docs/data-model/driver-dispatch.md",
+      "event_type": "sdlc.data_model.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-dm-026",
+    "input": {
+      "tenant_id": "tenant-ecom-01",
+      "workspace_id": "ws-pricing",
+      "domain": "dynamic-pricing",
+      "entities": ["Sku", "PricePoint", "PricingRule", "CompetitorPrice", "CompetitorSource", "PriceChangeAuditLog"],
+      "relationships": [
+        "Sku has one current PricePoint",
+        "PricePoint is calculated from one or more PricingRules",
+        "PricingRule may reference CompetitorPrices for a Sku",
+        "CompetitorPrice is sourced from one CompetitorSource",
+        "Every PricePoint change creates one PriceChangeAuditLog entry with applied rules"
+      ],
+      "output_dir": "docs/data-model"
+    },
+    "expected": {
+      "status": "ok",
+      "model_path": "docs/data-model/dynamic-pricing.md",
+      "event_type": "sdlc.data_model.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-dm-027",
+    "input": {
+      "tenant_id": "tenant-fintech-01",
+      "workspace_id": "ws-payments",
+      "domain": "payout-management",
+      "entities": ["Recipient", "BankAccount", "PayoutRequest", "PayoutBatch", "PayoutEvent", "RecipientVerification"],
+      "relationships": [
+        "Recipient has one or more verified BankAccounts",
+        "PayoutRequest is made to one Recipient's BankAccount",
+        "PayoutRequests may be grouped into one PayoutBatch for rail processing",
+        "PayoutRequest has many PayoutEvents (submitted, processing, settled, failed)",
+        "Recipient may have one RecipientVerification record (micro-deposit or Plaid Verify)"
+      ],
+      "output_dir": "docs/data-model"
+    },
+    "expected": {
+      "status": "ok",
+      "model_path": "docs/data-model/payout-management.md",
+      "event_type": "sdlc.data_model.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-dm-028",
+    "input": {
+      "tenant_id": "tenant-saas-01",
+      "workspace_id": "ws-collab-editing",
+      "domain": "collaborative-editing",
+      "entities": ["Document", "CollaborationRoom", "DocumentVersion", "UserPresence", "Comment", "CommentThread", "VersionDiff"],
+      "relationships": [
+        "Document has one active CollaborationRoom at a time",
+        "CollaborationRoom has many UserPresences (active collaborators)",
+        "Document has many DocumentVersions over time",
+        "Consecutive DocumentVersions have one VersionDiff (character-level changes with author attribution)",
+        "Document has many CommentThreads",
+        "CommentThread has many Comments"
+      ],
+      "output_dir": "docs/data-model"
+    },
+    "expected": {
+      "status": "ok",
+      "model_path": "docs/data-model/collaborative-editing.md",
+      "event_type": "sdlc.data_model.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-dm-029",
+    "input": {
+      "tenant_id": "tenant-health-01",
+      "workspace_id": "ws-genomics",
+      "domain": "genomics-data",
+      "entities": ["Sample", "SequencingRun", "VariantCall", "Gene", "Phenotype", "ConsentRecord", "DataAccessRequest"],
+      "relationships": [
+        "Sample is from one Patient and has one or more SequencingRuns",
+        "SequencingRun produces many VariantCalls",
+        "VariantCall is located within one Gene",
+        "Patient may have many Phenotypes (clinical observations)",
+        "Sample has one ConsentRecord defining permitted data uses",
+        "DataAccessRequest references one or more Samples and must be validated against ConsentRecords"
+      ],
+      "output_dir": "docs/data-model"
+    },
+    "expected": {
+      "status": "ok",
+      "model_path": "docs/data-model/genomics-data.md",
+      "event_type": "sdlc.data_model.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-dm-030",
+    "input": {
+      "tenant_id": "tenant-ecom-01",
+      "workspace_id": "ws-search",
+      "domain": "product-search",
+      "entities": ["ProductIndex", "SearchQuery", "SearchResult", "Facet", "FacetValue", "QuerySynonym", "SearchAnalyticsEvent"],
+      "relationships": [
+        "SearchQuery returns many SearchResults",
+        "SearchResults are filtered by Facets and FacetValues",
+        "SearchQuery may be expanded using QuerySynonyms",
+        "Each SearchQuery generates one SearchAnalyticsEvent",
+        "SearchResult references one ProductIndex entry",
+        "Facet has many FacetValues available for a given search context"
+      ],
+      "output_dir": "docs/data-model"
+    },
+    "expected": {
+      "status": "ok",
+      "model_path": "docs/data-model/product-search.md",
+      "event_type": "sdlc.data_model.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-dm-031",
+    "input": {
+      "tenant_id": "tenant-adversarial-01",
+      "workspace_id": "ws-test",
+      "domain": "",
+      "entities": ["Entity"],
+      "relationships": ["Entity relates to itself"],
+      "output_dir": "docs/data-model"
+    },
+    "expected": {
+      "status": "error",
+      "model_path": null,
+      "event_type": "sdlc.data_model.proposed.v1"
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "arch-dm-032",
+    "input": {
+      "tenant_id": "tenant-adversarial-01",
+      "workspace_id": "ws-test",
+      "domain": "empty-entities-domain",
+      "entities": [],
+      "relationships": ["Order has many Items"],
+      "output_dir": "docs/data-model"
+    },
+    "expected": {
+      "status": "error",
+      "model_path": null,
+      "event_type": "sdlc.data_model.proposed.v1"
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "arch-dm-033",
+    "input": {
+      "tenant_id": "",
+      "workspace_id": "",
+      "domain": "user-domain",
+      "entities": ["User", "Profile"],
+      "relationships": ["User has one Profile"],
+      "output_dir": "docs/data-model"
+    },
+    "expected": {
+      "status": "error",
+      "model_path": null,
+      "event_type": "sdlc.data_model.proposed.v1"
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "arch-dm-034",
+    "input": {
+      "tenant_id": "tenant-adversarial-01",
+      "workspace_id": "ws-test",
+      "domain": "circular-domain",
+      "entities": ["A", "B", "C"],
+      "relationships": ["A references B", "B references C", "C references A"],
+      "output_dir": "docs/data-model"
+    },
+    "expected": {
+      "status": "ok",
+      "model_path": "docs/data-model/circular-domain.md",
+      "event_type": "sdlc.data_model.proposed.v1"
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "arch-dm-035",
+    "input": {
+      "tenant_id": "tenant-adversarial-01",
+      "workspace_id": "ws-test",
+      "domain": "single-entity-domain",
+      "entities": ["Thing"],
+      "relationships": [],
+      "output_dir": "docs/data-model"
+    },
+    "expected": {
+      "status": "ok",
+      "model_path": "docs/data-model/single-entity-domain.md",
+      "event_type": "sdlc.data_model.proposed.v1"
+    },
+    "weight": 2.0
+  }
+]

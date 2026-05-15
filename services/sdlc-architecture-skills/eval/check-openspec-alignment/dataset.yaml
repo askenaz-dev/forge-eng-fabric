@@ -1,0 +1,5 @@
+asset_id: sdlc.architecture.check-openspec-alignment.eval
+version: "1.0.0"
+description: "Graded fixtures for check-openspec-alignment skill: cross-check ADR vs OpenSpec requirements."
+trust_level: T1
+fixtures: fixtures.json

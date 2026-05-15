@@ -1,0 +1,5 @@
+asset_id: sdlc.iac.validate-iac.eval
+version: "1.0.0"
+description: "Graded fixtures for validate-iac skill: terraform fmt/plan, helm lint/template, conftest policy, adversarial sentinel failures."
+trust_level: T1
+fixtures: fixtures.json

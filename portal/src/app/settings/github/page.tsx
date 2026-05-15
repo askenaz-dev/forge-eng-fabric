@@ -25,7 +25,7 @@ async function recordInstallation(formData: FormData) {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/api/auth/signin");
   const token = (session as any).accessToken as string | undefined;
-  if (!token) throw new Error("missing access token");
+  if (!token) redirect("/api/auth/signin");
 
   const workspaceId = String(formData.get("workspace_id") ?? "").trim();
   const installationId = String(formData.get("installation_id") ?? "").trim();

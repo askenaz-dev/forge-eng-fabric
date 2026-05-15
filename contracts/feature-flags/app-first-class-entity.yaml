@@ -1,0 +1,67 @@
+# Feature flags introduced by app-first-class-entity.
+# Format mirrors the existing `contracts/feature-flags/*.yaml` convention; the
+# rollout pipeline consumes this to seed the per-workspace flag service.
+
+apiVersion: forge.platform/v1
+kind: FeatureFlagSet
+metadata:
+  change: app-first-class-entity
+spec:
+  flags:
+    - key: forge.app_entity.enabled
+      description: |
+        When on, the openspec backbone refuses writes without `app_id` and the
+        registry, onboarding and asset publication paths enforce the App
+        invariant. Per-workspace; default false. Set true only after the
+        per-workspace migration sentinel is recorded in
+        `registry.application_backfill_sentinel`.
+      default: false
+      scope: workspace
+      owner: platform-sdlc
+      rollout_stages:
+        - M0: dark-launch (code shipped, flag off everywhere)
+        - M3: per-workspace true after backfill completes
+        - M6: global default true; flag removed after all pilots are migrated
+
+    - key: forge.app_scope.wizard_step.enabled
+      description: |
+        Surfaces the App scope step as the wizard's first step in the Alfred
+        Console. Independent of `forge.app_entity.enabled` so the wizard step
+        can be turned on for soft validation before the backbone enforces it.
+      default: false
+      scope: workspace
+      owner: portal-team
+      rollout_stages:
+        - M0: dark-launch
+        - M2: per-workspace true once the workspace owner has signed off on the dry-run report
+        - M6: global default true
+
+  dashboards:
+    - name: app-rollout
+      panels:
+        - title: App create rate
+          query: sum(rate(app_created_total[5m])) by (workspace_id)
+        - title: Orphan count remaining (per workspace)
+          query: sum(spec_migration_orphan_pending) by (workspace_id)
+        - title: Migration progress %
+          query: |
+            (sum(spec_migration_backfilled_total) by (workspace_id))
+            / clamp_min(sum(spec_total) by (workspace_id), 1) * 100
+        - title: NOT NULL readiness per workspace
+          query: max(application_backfill_sentinel_set) by (workspace_id)
+
+  slos:
+    - name: app_crud_p95_latency
+      target_ms: 250
+      window: 5m
+      query: histogram_quantile(0.95, sum(rate(app_crud_request_seconds_bucket[5m])) by (le)) * 1000
+    - name: migration_dry_run_per_10k_specs
+      target_minutes: 15
+      window: per-run
+      description: dry-run completes within 15 min per 10k specs
+
+  runbooks:
+    - id: cutover
+      path: docs/runbooks/app-first-class-entity-cutover.md
+    - id: orphan_restore
+      path: docs/runbooks/app-first-class-entity-orphan-restore.md

@@ -38,6 +38,16 @@ jobs:
       FORGE_REGISTRY_URL: ${{ vars.FORGE_REGISTRY_URL }}
       FORGE_PACKAGE_BUCKET: ${{ vars.FORGE_PACKAGE_BUCKET }}
       AWS_REGION: ${{ vars.AWS_REGION }}
+      # Per-tenant artifact-store binding the CI workflow uses to push the
+      # bundle into the Tenant's configured backend (nexus, artifactory,
+      # github-packages-private, codeartifact). The actual backend is
+      # selected by FORGE_ARTIFACT_BACKEND; the credential lives in the
+      # FORGE_ARTIFACT_CREDENTIAL env var (resolved by the adapter CLI via
+      # env://FORGE_ARTIFACT_CREDENTIAL).
+      FORGE_TENANT_ID: ${{ vars.FORGE_TENANT_ID }}
+      FORGE_ARTIFACT_BACKEND: ${{ vars.FORGE_ARTIFACT_BACKEND }}
+      FORGE_ARTIFACT_SETTINGS: ${{ vars.FORGE_ARTIFACT_SETTINGS }}
+      FORGE_ARTIFACT_CREDENTIAL: ${{ secrets.forge_artifact_credential }}
     steps:
       - uses: actions/checkout@v4
 
@@ -75,13 +85,27 @@ jobs:
           subject-path: out/${{ inputs.asset_id }}@${{ inputs.asset_version }}.tar.zst
         id: attest
 
-      - name: Upload bundle to object store
+      - name: Upload bundle through the artifact-store adapter
+        # Routes the signed bundle through the per-Tenant binding (nexus,
+        # artifactory, github-packages-private, codeartifact). The output
+        # JSON carries `artifact_pointer`, which we forward to the
+        # registry's gateway-publish hook as the canonical bytes_uri.
         run: |
           set -euo pipefail
           BUNDLE="out/${{ inputs.asset_id }}@${{ inputs.asset_version }}.tar.zst"
-          aws s3 cp "$BUNDLE" \
-            "s3://${FORGE_PACKAGE_BUCKET}/${{ inputs.asset_id }}/${{ inputs.asset_version }}.tar.zst"
-          echo "BYTES_URI=s3://${FORGE_PACKAGE_BUCKET}/${{ inputs.asset_id }}/${{ inputs.asset_version }}.tar.zst" >> "$GITHUB_ENV"
+          go run ./pkg/artifact-store-adapter/cmd/forge-artifact-store put \
+            --backend "${FORGE_ARTIFACT_BACKEND}" \
+            --tenant "${FORGE_TENANT_ID}" \
+            --credential-ref "env://FORGE_ARTIFACT_CREDENTIAL" \
+            --asset-id "${{ inputs.asset_id }}" \
+            --version "${{ inputs.asset_version }}" \
+            --signature-id "${SIGNATURE_ID}" \
+            --attestation-id "${{ steps.attest.outputs.attestation-id }}" \
+            --settings "${FORGE_ARTIFACT_SETTINGS}" \
+            --in "$BUNDLE" \
+            | tee out/adapter-result.json
+          ARTIFACT_POINTER=$(jq -r .artifact_pointer < out/adapter-result.json)
+          echo "BYTES_URI=${ARTIFACT_POINTER}" >> "$GITHUB_ENV"
 
       - name: Call gateway-publish hook
         env:

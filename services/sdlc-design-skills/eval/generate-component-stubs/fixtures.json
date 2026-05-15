@@ -1,0 +1,786 @@
+[
+  {
+    "id": "design-stubs-001",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-frontend",
+      "app_id": "app-ecommerce",
+      "blueprint_path": "blueprints/app-ecommerce/product-catalog/ui-blueprint.md",
+      "framework": "react",
+      "design_system_ref": "acme-ds@2.1.0"
+    },
+    "expected": {
+      "status": "success",
+      "stubs_dir": "src/components/app-ecommerce/product-catalog",
+      "files_created": [
+        "src/components/app-ecommerce/product-catalog/ProductGrid.tsx",
+        "src/components/app-ecommerce/product-catalog/ProductCard.tsx",
+        "src/components/app-ecommerce/product-catalog/FilterSidebar.tsx",
+        "src/components/app-ecommerce/product-catalog/SearchBar.tsx"
+      ],
+      "event_type": "sdlc.component_stubs.committed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-stubs-002",
+    "input": {
+      "tenant_id": "tenant-globex",
+      "workspace_id": "ws-mobile",
+      "app_id": "app-banking",
+      "blueprint_path": "blueprints/app-banking/account-dashboard/ui-blueprint.md",
+      "framework": "vue",
+      "design_system_ref": "globex-design@1.0.0"
+    },
+    "expected": {
+      "status": "success",
+      "stubs_dir": "src/components/app-banking/account-dashboard",
+      "files_created": [
+        "src/components/app-banking/account-dashboard/AccountSummary.vue",
+        "src/components/app-banking/account-dashboard/BalanceCard.vue",
+        "src/components/app-banking/account-dashboard/TransactionList.vue",
+        "src/components/app-banking/account-dashboard/QuickActions.vue"
+      ],
+      "event_type": "sdlc.component_stubs.committed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-stubs-003",
+    "input": {
+      "tenant_id": "tenant-initech",
+      "workspace_id": "ws-saas",
+      "app_id": "app-crm",
+      "blueprint_path": "blueprints/app-crm/contact-management/ui-blueprint.md",
+      "framework": "react",
+      "design_system_ref": null
+    },
+    "expected": {
+      "status": "success",
+      "stubs_dir": "src/components/app-crm/contact-management",
+      "files_created": [
+        "src/components/app-crm/contact-management/ContactTable.tsx",
+        "src/components/app-crm/contact-management/ContactForm.tsx",
+        "src/components/app-crm/contact-management/MergeDialog.tsx"
+      ],
+      "event_type": "sdlc.component_stubs.committed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-stubs-004",
+    "input": {
+      "tenant_id": "tenant-umbrella",
+      "workspace_id": "ws-internal-tools",
+      "app_id": "app-hr-portal",
+      "blueprint_path": "blueprints/app-hr-portal/onboarding-wizard/ui-blueprint.md",
+      "framework": "react",
+      "design_system_ref": "umbrella-ds@3.0.1"
+    },
+    "expected": {
+      "status": "success",
+      "stubs_dir": "src/components/app-hr-portal/onboarding-wizard",
+      "files_created": [
+        "src/components/app-hr-portal/onboarding-wizard/WizardShell.tsx",
+        "src/components/app-hr-portal/onboarding-wizard/PersonalInfoStep.tsx",
+        "src/components/app-hr-portal/onboarding-wizard/DocumentUploadStep.tsx",
+        "src/components/app-hr-portal/onboarding-wizard/BenefitsStep.tsx",
+        "src/components/app-hr-portal/onboarding-wizard/SignAgreementsStep.tsx"
+      ],
+      "event_type": "sdlc.component_stubs.committed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-stubs-005",
+    "input": {
+      "tenant_id": "tenant-stark",
+      "workspace_id": "ws-saas",
+      "app_id": "app-project-mgmt",
+      "blueprint_path": "blueprints/app-project-mgmt/kanban-board/ui-blueprint.md",
+      "framework": "vue",
+      "design_system_ref": "stark-ds@4.0.0"
+    },
+    "expected": {
+      "status": "success",
+      "stubs_dir": "src/components/app-project-mgmt/kanban-board",
+      "files_created": [
+        "src/components/app-project-mgmt/kanban-board/KanbanBoard.vue",
+        "src/components/app-project-mgmt/kanban-board/KanbanColumn.vue",
+        "src/components/app-project-mgmt/kanban-board/TaskCard.vue",
+        "src/components/app-project-mgmt/kanban-board/TaskDetailDrawer.vue"
+      ],
+      "event_type": "sdlc.component_stubs.committed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-stubs-006",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-analytics",
+      "app_id": "app-reporting",
+      "blueprint_path": "blueprints/app-reporting/dashboard-builder/ui-blueprint.md",
+      "framework": "react",
+      "design_system_ref": "acme-ds@2.1.0"
+    },
+    "expected": {
+      "status": "success",
+      "stubs_dir": "src/components/app-reporting/dashboard-builder",
+      "files_created": [
+        "src/components/app-reporting/dashboard-builder/DashboardCanvas.tsx",
+        "src/components/app-reporting/dashboard-builder/WidgetPicker.tsx",
+        "src/components/app-reporting/dashboard-builder/DataSourceSelector.tsx",
+        "src/components/app-reporting/dashboard-builder/ShareModal.tsx"
+      ],
+      "event_type": "sdlc.component_stubs.committed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-stubs-007",
+    "input": {
+      "tenant_id": "tenant-wayne",
+      "workspace_id": "ws-iot",
+      "app_id": "app-device-monitor",
+      "blueprint_path": "blueprints/app-device-monitor/alert-console/ui-blueprint.md",
+      "framework": "react",
+      "design_system_ref": "wayne-enterprise-ds@1.2.0"
+    },
+    "expected": {
+      "status": "success",
+      "stubs_dir": "src/components/app-device-monitor/alert-console",
+      "files_created": [
+        "src/components/app-device-monitor/alert-console/AlertTable.tsx",
+        "src/components/app-device-monitor/alert-console/AlertBadge.tsx",
+        "src/components/app-device-monitor/alert-console/ThresholdConfigPanel.tsx"
+      ],
+      "event_type": "sdlc.component_stubs.committed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-stubs-008",
+    "input": {
+      "tenant_id": "tenant-globex",
+      "workspace_id": "ws-customer",
+      "app_id": "app-support",
+      "blueprint_path": "blueprints/app-support/ticket-portal/ui-blueprint.md",
+      "framework": "vue",
+      "design_system_ref": "globex-design@1.0.0"
+    },
+    "expected": {
+      "status": "success",
+      "stubs_dir": "src/components/app-support/ticket-portal",
+      "files_created": [
+        "src/components/app-support/ticket-portal/TicketForm.vue",
+        "src/components/app-support/ticket-portal/TicketStatusTracker.vue",
+        "src/components/app-support/ticket-portal/ChatWidget.vue",
+        "src/components/app-support/ticket-portal/RatingStars.vue"
+      ],
+      "event_type": "sdlc.component_stubs.committed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-stubs-009",
+    "input": {
+      "tenant_id": "tenant-initech",
+      "workspace_id": "ws-compliance",
+      "app_id": "app-audit-trail",
+      "blueprint_path": "blueprints/app-audit-trail/audit-log-viewer/ui-blueprint.md",
+      "framework": "react",
+      "design_system_ref": "initech-gov-ds@1.0.0"
+    },
+    "expected": {
+      "status": "success",
+      "stubs_dir": "src/components/app-audit-trail/audit-log-viewer",
+      "files_created": [
+        "src/components/app-audit-trail/audit-log-viewer/AuditLogTable.tsx",
+        "src/components/app-audit-trail/audit-log-viewer/DateRangeFilter.tsx",
+        "src/components/app-audit-trail/audit-log-viewer/ExportButton.tsx",
+        "src/components/app-audit-trail/audit-log-viewer/EventDetailModal.tsx"
+      ],
+      "event_type": "sdlc.component_stubs.committed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-stubs-010",
+    "input": {
+      "tenant_id": "tenant-umbrella",
+      "workspace_id": "ws-ops",
+      "app_id": "app-incident-mgmt",
+      "blueprint_path": "blueprints/app-incident-mgmt/incident-timeline/ui-blueprint.md",
+      "framework": "react",
+      "design_system_ref": "umbrella-ds@3.0.1"
+    },
+    "expected": {
+      "status": "success",
+      "stubs_dir": "src/components/app-incident-mgmt/incident-timeline",
+      "files_created": [
+        "src/components/app-incident-mgmt/incident-timeline/IncidentHeader.tsx",
+        "src/components/app-incident-mgmt/incident-timeline/TimelineEventList.tsx",
+        "src/components/app-incident-mgmt/incident-timeline/ResponderAssignPanel.tsx",
+        "src/components/app-incident-mgmt/incident-timeline/UpdatePostForm.tsx"
+      ],
+      "event_type": "sdlc.component_stubs.committed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-stubs-011",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-content",
+      "app_id": "app-cms",
+      "blueprint_path": "blueprints/app-cms/article-editor/ui-blueprint.md",
+      "framework": "react",
+      "design_system_ref": "acme-ds@2.1.0"
+    },
+    "expected": {
+      "status": "success",
+      "stubs_dir": "src/components/app-cms/article-editor",
+      "files_created": [
+        "src/components/app-cms/article-editor/RichTextEditor.tsx",
+        "src/components/app-cms/article-editor/MediaUploader.tsx",
+        "src/components/app-cms/article-editor/PreviewPane.tsx",
+        "src/components/app-cms/article-editor/PublishPanel.tsx"
+      ],
+      "event_type": "sdlc.component_stubs.committed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-stubs-012",
+    "input": {
+      "tenant_id": "tenant-stark",
+      "workspace_id": "ws-ai",
+      "app_id": "app-llm-studio",
+      "blueprint_path": "blueprints/app-llm-studio/prompt-playground/ui-blueprint.md",
+      "framework": "react",
+      "design_system_ref": "stark-ds@4.0.0"
+    },
+    "expected": {
+      "status": "success",
+      "stubs_dir": "src/components/app-llm-studio/prompt-playground",
+      "files_created": [
+        "src/components/app-llm-studio/prompt-playground/PromptEditor.tsx",
+        "src/components/app-llm-studio/prompt-playground/ModelSelector.tsx",
+        "src/components/app-llm-studio/prompt-playground/ResponseViewer.tsx",
+        "src/components/app-llm-studio/prompt-playground/OutputComparator.tsx"
+      ],
+      "event_type": "sdlc.component_stubs.committed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-stubs-013",
+    "input": {
+      "tenant_id": "tenant-globex",
+      "workspace_id": "ws-devex",
+      "app_id": "app-ci-dashboard",
+      "blueprint_path": "blueprints/app-ci-dashboard/pipeline-viewer/ui-blueprint.md",
+      "framework": "vue",
+      "design_system_ref": "globex-design@1.0.0"
+    },
+    "expected": {
+      "status": "success",
+      "stubs_dir": "src/components/app-ci-dashboard/pipeline-viewer",
+      "files_created": [
+        "src/components/app-ci-dashboard/pipeline-viewer/PipelineList.vue",
+        "src/components/app-ci-dashboard/pipeline-viewer/StageDetails.vue",
+        "src/components/app-ci-dashboard/pipeline-viewer/LogViewer.vue",
+        "src/components/app-ci-dashboard/pipeline-viewer/RerunButton.vue"
+      ],
+      "event_type": "sdlc.component_stubs.committed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-stubs-014",
+    "input": {
+      "tenant_id": "tenant-initech",
+      "workspace_id": "ws-education",
+      "app_id": "app-lms",
+      "blueprint_path": "blueprints/app-lms/course-catalog/ui-blueprint.md",
+      "framework": "react",
+      "design_system_ref": "initech-edu-ds@1.5.0"
+    },
+    "expected": {
+      "status": "success",
+      "stubs_dir": "src/components/app-lms/course-catalog",
+      "files_created": [
+        "src/components/app-lms/course-catalog/CourseCatalogGrid.tsx",
+        "src/components/app-lms/course-catalog/CourseCard.tsx",
+        "src/components/app-lms/course-catalog/ProgressBar.tsx",
+        "src/components/app-lms/course-catalog/CertificateDownload.tsx"
+      ],
+      "event_type": "sdlc.component_stubs.committed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-stubs-015",
+    "input": {
+      "tenant_id": "tenant-umbrella",
+      "workspace_id": "ws-retail",
+      "app_id": "app-pos",
+      "blueprint_path": "blueprints/app-pos/checkout-terminal/ui-blueprint.md",
+      "framework": "vue",
+      "design_system_ref": null
+    },
+    "expected": {
+      "status": "success",
+      "stubs_dir": "src/components/app-pos/checkout-terminal",
+      "files_created": [
+        "src/components/app-pos/checkout-terminal/ItemScanner.vue",
+        "src/components/app-pos/checkout-terminal/CartSummary.vue",
+        "src/components/app-pos/checkout-terminal/DiscountApplier.vue",
+        "src/components/app-pos/checkout-terminal/PaymentTerminal.vue",
+        "src/components/app-pos/checkout-terminal/ReceiptPrinter.vue"
+      ],
+      "event_type": "sdlc.component_stubs.committed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-stubs-016",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-data",
+      "app_id": "app-data-catalog",
+      "blueprint_path": "blueprints/app-data-catalog/dataset-browser/ui-blueprint.md",
+      "framework": "react",
+      "design_system_ref": "acme-ds@2.1.0"
+    },
+    "expected": {
+      "status": "success",
+      "stubs_dir": "src/components/app-data-catalog/dataset-browser",
+      "files_created": [
+        "src/components/app-data-catalog/dataset-browser/DatasetSearchBar.tsx",
+        "src/components/app-data-catalog/dataset-browser/DatasetCard.tsx",
+        "src/components/app-data-catalog/dataset-browser/DataPreviewTable.tsx",
+        "src/components/app-data-catalog/dataset-browser/AccessRequestDialog.tsx"
+      ],
+      "event_type": "sdlc.component_stubs.committed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-stubs-017",
+    "input": {
+      "tenant_id": "tenant-stark",
+      "workspace_id": "ws-fintech",
+      "app_id": "app-portfolio",
+      "blueprint_path": "blueprints/app-portfolio/trade-history/ui-blueprint.md",
+      "framework": "react",
+      "design_system_ref": "stark-ds@4.0.0"
+    },
+    "expected": {
+      "status": "success",
+      "stubs_dir": "src/components/app-portfolio/trade-history",
+      "files_created": [
+        "src/components/app-portfolio/trade-history/TradeHistoryTable.tsx",
+        "src/components/app-portfolio/trade-history/AssetClassFilter.tsx",
+        "src/components/app-portfolio/trade-history/ExportCSVButton.tsx",
+        "src/components/app-portfolio/trade-history/PnLChart.tsx"
+      ],
+      "event_type": "sdlc.component_stubs.committed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-stubs-018",
+    "input": {
+      "tenant_id": "tenant-globex",
+      "workspace_id": "ws-admin",
+      "app_id": "app-user-mgmt",
+      "blueprint_path": "blueprints/app-user-mgmt/role-assignment/ui-blueprint.md",
+      "framework": "vue",
+      "design_system_ref": "globex-design@1.0.0"
+    },
+    "expected": {
+      "status": "success",
+      "stubs_dir": "src/components/app-user-mgmt/role-assignment",
+      "files_created": [
+        "src/components/app-user-mgmt/role-assignment/UserSearchInput.vue",
+        "src/components/app-user-mgmt/role-assignment/RoleCheckboxList.vue",
+        "src/components/app-user-mgmt/role-assignment/BulkImportUploader.vue",
+        "src/components/app-user-mgmt/role-assignment/AccessRevokeConfirm.vue"
+      ],
+      "event_type": "sdlc.component_stubs.committed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-stubs-019",
+    "input": {
+      "tenant_id": "tenant-wayne",
+      "workspace_id": "ws-manufacturing",
+      "app_id": "app-quality-control",
+      "blueprint_path": "blueprints/app-quality-control/defect-reporter/ui-blueprint.md",
+      "framework": "react",
+      "design_system_ref": "wayne-enterprise-ds@1.2.0"
+    },
+    "expected": {
+      "status": "success",
+      "stubs_dir": "src/components/app-quality-control/defect-reporter",
+      "files_created": [
+        "src/components/app-quality-control/defect-reporter/DefectLogForm.tsx",
+        "src/components/app-quality-control/defect-reporter/PhotoCapture.tsx",
+        "src/components/app-quality-control/defect-reporter/SeveritySelector.tsx",
+        "src/components/app-quality-control/defect-reporter/QARouteButton.tsx"
+      ],
+      "event_type": "sdlc.component_stubs.committed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-stubs-020",
+    "input": {
+      "tenant_id": "tenant-initech",
+      "workspace_id": "ws-healthcare",
+      "app_id": "app-patient-portal",
+      "blueprint_path": "blueprints/app-patient-portal/appointment-booking/ui-blueprint.md",
+      "framework": "react",
+      "design_system_ref": "initech-health-ds@2.0.0"
+    },
+    "expected": {
+      "status": "success",
+      "stubs_dir": "src/components/app-patient-portal/appointment-booking",
+      "files_created": [
+        "src/components/app-patient-portal/appointment-booking/ProviderSearch.tsx",
+        "src/components/app-patient-portal/appointment-booking/TimeSlotPicker.tsx",
+        "src/components/app-patient-portal/appointment-booking/AppointmentConfirm.tsx",
+        "src/components/app-patient-portal/appointment-booking/ReminderPreference.tsx"
+      ],
+      "event_type": "sdlc.component_stubs.committed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-stubs-021",
+    "input": {
+      "tenant_id": "tenant-umbrella",
+      "workspace_id": "ws-supply-chain",
+      "app_id": "app-procurement",
+      "blueprint_path": "blueprints/app-procurement/purchase-order/ui-blueprint.md",
+      "framework": "vue",
+      "design_system_ref": "umbrella-ds@3.0.1"
+    },
+    "expected": {
+      "status": "success",
+      "stubs_dir": "src/components/app-procurement/purchase-order",
+      "files_created": [
+        "src/components/app-procurement/purchase-order/POForm.vue",
+        "src/components/app-procurement/purchase-order/ApprovalWorkflow.vue",
+        "src/components/app-procurement/purchase-order/GoodsReceiptPanel.vue",
+        "src/components/app-procurement/purchase-order/InvoiceMatchView.vue"
+      ],
+      "event_type": "sdlc.component_stubs.committed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-stubs-022",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-gamification",
+      "app_id": "app-loyalty",
+      "blueprint_path": "blueprints/app-loyalty/rewards-hub/ui-blueprint.md",
+      "framework": "react",
+      "design_system_ref": "acme-ds@2.1.0"
+    },
+    "expected": {
+      "status": "success",
+      "stubs_dir": "src/components/app-loyalty/rewards-hub",
+      "files_created": [
+        "src/components/app-loyalty/rewards-hub/PointsBalance.tsx",
+        "src/components/app-loyalty/rewards-hub/RewardsCatalog.tsx",
+        "src/components/app-loyalty/rewards-hub/OffersBanner.tsx",
+        "src/components/app-loyalty/rewards-hub/TierStatusBadge.tsx"
+      ],
+      "event_type": "sdlc.component_stubs.committed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-stubs-023",
+    "input": {
+      "tenant_id": "tenant-wayne",
+      "workspace_id": "ws-energy",
+      "app_id": "app-grid-monitor",
+      "blueprint_path": "blueprints/app-grid-monitor/energy-dashboard/ui-blueprint.md",
+      "framework": "vue",
+      "design_system_ref": null
+    },
+    "expected": {
+      "status": "success",
+      "stubs_dir": "src/components/app-grid-monitor/energy-dashboard",
+      "files_created": [
+        "src/components/app-grid-monitor/energy-dashboard/ConsumptionChart.vue",
+        "src/components/app-grid-monitor/energy-dashboard/BillingPeriodSelector.vue",
+        "src/components/app-grid-monitor/energy-dashboard/AlertThresholdConfig.vue",
+        "src/components/app-grid-monitor/energy-dashboard/ReportDownloader.vue"
+      ],
+      "event_type": "sdlc.component_stubs.committed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-stubs-024",
+    "input": {
+      "tenant_id": "tenant-stark",
+      "workspace_id": "ws-marketplace",
+      "app_id": "app-vendor-portal",
+      "blueprint_path": "blueprints/app-vendor-portal/product-listing/ui-blueprint.md",
+      "framework": "react",
+      "design_system_ref": null
+    },
+    "expected": {
+      "status": "success",
+      "stubs_dir": "src/components/app-vendor-portal/product-listing",
+      "files_created": [
+        "src/components/app-vendor-portal/product-listing/ProductUploadForm.tsx",
+        "src/components/app-vendor-portal/product-listing/PricingEditor.tsx",
+        "src/components/app-vendor-portal/product-listing/InventoryManager.tsx",
+        "src/components/app-vendor-portal/product-listing/SalesAnalyticsChart.tsx"
+      ],
+      "event_type": "sdlc.component_stubs.committed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-stubs-025",
+    "input": {
+      "tenant_id": "tenant-globex",
+      "workspace_id": "ws-bi",
+      "app_id": "app-bi-suite",
+      "blueprint_path": "blueprints/app-bi-suite/chart-builder/ui-blueprint.md",
+      "framework": "vue",
+      "design_system_ref": "globex-design@1.0.0"
+    },
+    "expected": {
+      "status": "success",
+      "stubs_dir": "src/components/app-bi-suite/chart-builder",
+      "files_created": [
+        "src/components/app-bi-suite/chart-builder/ChartTypeSelector.vue",
+        "src/components/app-bi-suite/chart-builder/DataFieldBinder.vue",
+        "src/components/app-bi-suite/chart-builder/AxisConfigurator.vue",
+        "src/components/app-bi-suite/chart-builder/PublishChartButton.vue"
+      ],
+      "event_type": "sdlc.component_stubs.committed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-stubs-026",
+    "input": {
+      "tenant_id": "tenant-initech",
+      "workspace_id": "ws-realestate",
+      "app_id": "app-property-mgmt",
+      "blueprint_path": "blueprints/app-property-mgmt/lease-manager/ui-blueprint.md",
+      "framework": "react",
+      "design_system_ref": null
+    },
+    "expected": {
+      "status": "success",
+      "stubs_dir": "src/components/app-property-mgmt/lease-manager",
+      "files_created": [
+        "src/components/app-property-mgmt/lease-manager/LeaseForm.tsx",
+        "src/components/app-property-mgmt/lease-manager/PaymentTracker.tsx",
+        "src/components/app-property-mgmt/lease-manager/RenewalNoticeButton.tsx",
+        "src/components/app-property-mgmt/lease-manager/LeaseTerminationDialog.tsx"
+      ],
+      "event_type": "sdlc.component_stubs.committed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-stubs-027",
+    "input": {
+      "tenant_id": "tenant-umbrella",
+      "workspace_id": "ws-logistics",
+      "app_id": "app-shipment-tracker",
+      "blueprint_path": "blueprints/app-shipment-tracker/tracking-map/ui-blueprint.md",
+      "framework": "react",
+      "design_system_ref": null
+    },
+    "expected": {
+      "status": "success",
+      "stubs_dir": "src/components/app-shipment-tracker/tracking-map",
+      "files_created": [
+        "src/components/app-shipment-tracker/tracking-map/TrackingInput.tsx",
+        "src/components/app-shipment-tracker/tracking-map/ShipmentMap.tsx",
+        "src/components/app-shipment-tracker/tracking-map/DeliveryEstimate.tsx",
+        "src/components/app-shipment-tracker/tracking-map/SignatureCapture.tsx"
+      ],
+      "event_type": "sdlc.component_stubs.committed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-stubs-028",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-frontend",
+      "app_id": "app-ecommerce",
+      "blueprint_path": "blueprints/app-ecommerce/user-profile/ui-blueprint.md",
+      "framework": "react",
+      "design_system_ref": "acme-ds@2.1.0"
+    },
+    "expected": {
+      "status": "success",
+      "stubs_dir": "src/components/app-ecommerce/user-profile",
+      "files_created": [
+        "src/components/app-ecommerce/user-profile/ProfileEditForm.tsx",
+        "src/components/app-ecommerce/user-profile/AddressBook.tsx",
+        "src/components/app-ecommerce/user-profile/PaymentMethodList.tsx",
+        "src/components/app-ecommerce/user-profile/OrderHistoryTable.tsx"
+      ],
+      "event_type": "sdlc.component_stubs.committed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-stubs-029",
+    "input": {
+      "tenant_id": "tenant-wayne",
+      "workspace_id": "ws-security",
+      "app_id": "app-access-control",
+      "blueprint_path": "blueprints/app-access-control/door-controller/ui-blueprint.md",
+      "framework": "vue",
+      "design_system_ref": "wayne-enterprise-ds@1.2.0"
+    },
+    "expected": {
+      "status": "success",
+      "stubs_dir": "src/components/app-access-control/door-controller",
+      "files_created": [
+        "src/components/app-access-control/door-controller/DoorStatusPanel.vue",
+        "src/components/app-access-control/door-controller/AccessGrantForm.vue",
+        "src/components/app-access-control/door-controller/EntryLogTable.vue"
+      ],
+      "event_type": "sdlc.component_stubs.committed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-stubs-030",
+    "input": {
+      "tenant_id": "tenant-globex",
+      "workspace_id": "ws-mobile",
+      "app_id": "app-banking",
+      "blueprint_path": "blueprints/app-banking/account-dashboard/ui-blueprint.md",
+      "framework": "react",
+      "design_system_ref": "globex-design@1.0.0"
+    },
+    "expected": {
+      "status": "success",
+      "stubs_dir": "src/components/app-banking/account-dashboard",
+      "files_created": [
+        "src/components/app-banking/account-dashboard/AccountSummary.tsx",
+        "src/components/app-banking/account-dashboard/BalanceCard.tsx",
+        "src/components/app-banking/account-dashboard/TransactionList.tsx",
+        "src/components/app-banking/account-dashboard/QuickActions.tsx"
+      ],
+      "event_type": "sdlc.component_stubs.committed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-stubs-adv-001",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-frontend",
+      "app_id": "app-ecommerce",
+      "blueprint_path": "blueprints/nonexistent/service/ui-blueprint.md",
+      "framework": "react",
+      "design_system_ref": null
+    },
+    "expected": {
+      "status": "error",
+      "error_code": "BLUEPRINT_NOT_FOUND",
+      "error_detail": "Blueprint file does not exist at the specified path",
+      "event_type": "sdlc.component_stubs.committed.v1"
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "design-stubs-adv-002",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-frontend",
+      "app_id": "app-ecommerce",
+      "blueprint_path": "blueprints/app-ecommerce/product-catalog/ui-blueprint.md",
+      "framework": "angular",
+      "design_system_ref": null
+    },
+    "expected": {
+      "status": "error",
+      "error_code": "INVALID_FRAMEWORK",
+      "error_detail": "framework must be one of: react, vue",
+      "event_type": "sdlc.component_stubs.committed.v1"
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "design-stubs-adv-003",
+    "input": {
+      "tenant_id": "",
+      "workspace_id": "",
+      "app_id": "",
+      "blueprint_path": "blueprints/app-ecommerce/product-catalog/ui-blueprint.md",
+      "framework": "react",
+      "design_system_ref": null
+    },
+    "expected": {
+      "status": "error",
+      "error_code": "INVALID_INPUT",
+      "error_detail": "tenant_id, workspace_id, and app_id are required",
+      "event_type": "sdlc.component_stubs.committed.v1"
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "design-stubs-adv-004",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-frontend",
+      "app_id": "app-ecommerce",
+      "blueprint_path": "blueprints/app-ecommerce/product-catalog/ui-blueprint.md",
+      "framework": "react",
+      "design_system_ref": "totally-fake-ds@999.0.0"
+    },
+    "expected": {
+      "status": "error",
+      "error_code": "DESIGN_SYSTEM_NOT_FOUND",
+      "error_detail": "Design system ref totally-fake-ds@999.0.0 could not be resolved",
+      "event_type": "sdlc.component_stubs.committed.v1"
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "design-stubs-adv-005",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-frontend",
+      "app_id": "app-ecommerce",
+      "blueprint_path": "blueprints/app-ecommerce/product-catalog/ui-blueprint.md",
+      "framework": "vue",
+      "design_system_ref": null
+    },
+    "expected": {
+      "status": "success",
+      "stubs_dir": "src/components/app-ecommerce/product-catalog",
+      "files_created": [
+        "src/components/app-ecommerce/product-catalog/ProductGrid.vue",
+        "src/components/app-ecommerce/product-catalog/ProductCard.vue",
+        "src/components/app-ecommerce/product-catalog/FilterSidebar.vue",
+        "src/components/app-ecommerce/product-catalog/SearchBar.vue"
+      ],
+      "event_type": "sdlc.component_stubs.committed.v1"
+    },
+    "weight": 2.0
+  }
+]

@@ -1,0 +1,10 @@
+# Forge service manifest. Owned by Platform Architecture; consumed by build, helm-lint
+# and the chart-presence check (`scripts/check-chart-presence.py`).
+apiVersion: forge.platform/v1
+kind: ServiceManifest
+metadata:
+  name: sdlc-architecture-skills
+spec:
+  flavor: service-worker
+  kubernetesBound: true
+  helmChart: infra/helm/sdlc-architecture-skills

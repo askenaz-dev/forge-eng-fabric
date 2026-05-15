@@ -95,6 +95,43 @@
       }
     },
     {
+      "type": "app",
+      "relations": {
+        "parent": { "this": {} },
+        "owner": { "this": {} },
+        "editor": {
+          "union": {
+            "child": [
+              { "this": {} },
+              { "computedUserset": { "object": "", "relation": "owner" } },
+              { "tupleToUserset": { "tupleset": { "object": "", "relation": "parent" }, "computedUserset": { "object": "", "relation": "editor" } } }
+            ]
+          }
+        },
+        "viewer": {
+          "union": {
+            "child": [
+              { "this": {} },
+              { "computedUserset": { "object": "", "relation": "editor" } },
+              { "computedUserset": { "object": "", "relation": "owner" } },
+              { "tupleToUserset": { "tupleset": { "object": "", "relation": "parent" }, "computedUserset": { "object": "", "relation": "viewer" } } }
+            ]
+          }
+        },
+        "can_view": { "computedUserset": { "object": "", "relation": "viewer" } },
+        "can_edit": { "computedUserset": { "object": "", "relation": "editor" } },
+        "can_admin": { "computedUserset": { "object": "", "relation": "owner" } }
+      },
+      "metadata": {
+        "relations": {
+          "parent": { "directly_related_user_types": [{ "type": "workspace" }] },
+          "owner": { "directly_related_user_types": [{ "type": "user" }] },
+          "editor": { "directly_related_user_types": [{ "type": "user" }] },
+          "viewer": { "directly_related_user_types": [{ "type": "user" }] }
+        }
+      }
+    },
+    {
       "type": "asset",
       "relations": {
         "workspace": { "this": {} },
@@ -216,6 +253,28 @@
           "environment": { "directly_related_user_types": [{ "type": "environment" }] },
           "owner": { "directly_related_user_types": [{ "type": "user" }] },
           "viewer": { "directly_related_user_types": [{ "type": "user" }] }
+        }
+      }
+    },
+    {
+      "type": "gateway_caller",
+      "relations": {
+        "tenant": { "this": {} }
+      },
+      "metadata": {
+        "relations": {
+          "tenant": { "directly_related_user_types": [{ "type": "tenant" }] }
+        }
+      }
+    },
+    {
+      "type": "external_partner",
+      "relations": {
+        "tenant": { "this": {} }
+      },
+      "metadata": {
+        "relations": {
+          "tenant": { "directly_related_user_types": [{ "type": "tenant" }] }
         }
       }
     }

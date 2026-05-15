@@ -1,0 +1,5 @@
+asset_id: sdlc.architecture.propose-adr.eval
+version: "1.0.0"
+description: "Graded fixtures for propose-adr skill: MADR template generation, citation enforcement, decision-log append."
+trust_level: T1
+fixtures: fixtures.json

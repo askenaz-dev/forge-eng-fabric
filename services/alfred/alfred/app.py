@@ -165,24 +165,154 @@ def create_app(
     # to surface the routes (per platform-gaps-closure task 3.11).
     dialogue_enabled = getattr(settings, "alfred_dialogue_api", "disabled").lower() == "enabled"
 
-    @app.post("/v1/intent/start")
-    async def intent_start(
+    # Phase 5 (app-first-class-entity 7.1): the App scope flag refuses intent
+    # calls without an `app_id` once the workspace has cut over. Defaults to
+    # `disabled` so legacy callers keep working during M0-M4 rollout.
+    require_app_scope = getattr(settings, "alfred_require_app_scope", "disabled").lower() == "enabled"
+
+    # alfred-console-redesign: dedup threshold config.
+    _threshold_default = getattr(settings, "spec_match_threshold_default", 0.80)
+    _threshold_floor = getattr(settings, "spec_match_threshold_floor", 0.65)
+
+    # Shared in-memory event emitter for intent events (reuses agent-mode sink pattern).
+    from alfred.agent_mode.events import EventEmitter as _EventEmitter, LogSink as _LogSink
+
+    _intent_emitter = _EventEmitter(_LogSink())
+
+    @app.post("/v1/intent/match")
+    async def intent_match(
         request: Request,
         body: dict[str, Any],
         principal: Annotated[Principal, Depends(_principal)],
     ) -> dict[str, Any]:
+        """RAG-based spec dedup retrieval (alfred-console-redesign 4.1-4.2).
+
+        Accepts {workspace_id, app_id?, text, k?}.
+        Returns {matches, threshold, scope}.
+        Scores below the tenant threshold floor are filtered out.
+        """
         if not dialogue_enabled:
             raise HTTPException(status_code=404, detail="dialogue API disabled")
         ws_id = body.get("workspace_id")
         if not ws_id:
             raise HTTPException(status_code=400, detail="workspace_id is required")
         await _require_workspace(request, principal, uuid.UUID(ws_id), "can_edit")
+
+        text = body.get("text", "")
+        if not text:
+            raise HTTPException(status_code=400, detail="text is required")
+
+        app_id = body.get("app_id")
+        k = int(body.get("k", 5))
+
+        # Tenant threshold (configurable via tenant config; uses service default for now).
+        threshold = _threshold_default
+
+        scope = f"app:{app_id}" if app_id else f"workspace:{ws_id}"
+
+        hits = await deps.rag.query_with_app_scope(
+            workspace_id=uuid.UUID(ws_id),
+            text=text,
+            top_k=k,
+            principal=principal.sub,
+            app_id=app_id,
+        )
+
+        # Normalise hits into the match schema; filter below floor.
+        matches = []
+        for h in hits:
+            score = float(h.get("score", 0.0))
+            if score < _threshold_floor:
+                continue
+            matches.append({
+                "spec_id": h.get("spec_id") or h.get("id") or h.get("source_ref"),
+                "title": h.get("title", ""),
+                "score": score,
+                "lifecycle_state": h.get("lifecycle_state", "proposed"),
+                "summary": str(h.get("text", ""))[:280],
+                "source": h.get("source_ref", ""),
+            })
+
+        return {"matches": matches, "threshold": threshold, "scope": scope}
+
+    @app.post("/v1/intent/start")
+    async def intent_start(
+        request: Request,
+        body: dict[str, Any],
+        principal: Annotated[Principal, Depends(_principal)],
+    ) -> dict[str, Any]:
+        """Start an intent capture draft (alfred-console-redesign 5.1-5.2).
+
+        New fields accepted:
+          - view: "friendly" | "advanced"
+          - bypass_match: bool (skip dedup pass)
+          - resume_spec_id: str (extend an existing spec)
+        """
+        if not dialogue_enabled:
+            raise HTTPException(status_code=404, detail="dialogue API disabled")
+        ws_id = body.get("workspace_id")
+        if not ws_id:
+            raise HTTPException(status_code=400, detail="workspace_id is required")
+        if require_app_scope and not body.get("app_id"):
+            raise HTTPException(status_code=422, detail="missing_app_scope")
+        await _require_workspace(request, principal, uuid.UUID(ws_id), "can_edit")
         body.setdefault("created_by", principal.sub)
         body.setdefault("correlation_id", request.state.correlation_id)
-        draft = await deps.openspec.start_intent(body)
+
+        view = body.get("view", "advanced")
+        bypass_match = bool(body.get("bypass_match", False))
+        resume_spec_id = body.get("resume_spec_id")
+
+        # Dedup pass (alfred-console-redesign 5.2): run RAG retrieval before
+        # persisting a draft, unless bypassed or resuming an existing spec.
+        if not bypass_match and not resume_spec_id:
+            business_intent = body.get("business_intent", "")
+            app_id = body.get("app_id")
+            hits = await deps.rag.query_with_app_scope(
+                workspace_id=uuid.UUID(ws_id),
+                text=business_intent,
+                top_k=5,
+                principal=principal.sub,
+                app_id=app_id,
+            )
+            top_hit = next(
+                (h for h in hits if float(h.get("score", 0.0)) >= _threshold_default), None
+            )
+            if top_hit:
+                spec_match = {
+                    "candidate": {
+                        "spec_id": top_hit.get("spec_id") or top_hit.get("id"),
+                        "title": top_hit.get("title", ""),
+                        "score": float(top_hit.get("score", 0.0)),
+                        "lifecycle_state": top_hit.get("lifecycle_state", "proposed"),
+                        "summary": str(top_hit.get("text", ""))[:280],
+                    },
+                    "threshold": _threshold_default,
+                }
+                # Emit match_found event (5.5).
+                await _intent_emitter.emit(
+                    "alfred.intent.match_found.v1",
+                    {
+                        "principal": principal.sub,
+                        "workspace_id": ws_id,
+                        "app_id": app_id or "",
+                        "spec_id": spec_match["candidate"]["spec_id"],
+                        "score": spec_match["candidate"]["score"],
+                        "threshold": _threshold_default,
+                        "intent_text": business_intent[:280],
+                        "view": view,
+                        "correlation_id": body["correlation_id"],
+                    },
+                )
+                # Return spec_match block — no draft persisted yet (5.2).
+                return {"spec_match": spec_match, "view": view}
+
+        start_body = {k: v for k, v in body.items() if k not in ("view", "bypass_match")}
+        if resume_spec_id:
+            start_body["resume_spec_id"] = resume_spec_id
+        draft = await deps.openspec.start_intent(start_body)
         if not draft:
             raise HTTPException(status_code=502, detail="openspec service unreachable")
-        # Compute the first question to display.
         completeness = await deps.openspec.completeness(draft["draft_id"])
         section, question = await generate_followup(
             completeness=completeness,
@@ -191,7 +321,13 @@ def create_app(
             correlation_id=draft.get("correlation_id"),
             llm=deps.llm,
         )
-        return {"draft": draft, "completeness": completeness, "next_question": question, "next_section": section}
+        return {
+            "draft": draft,
+            "completeness": completeness,
+            "next_question": question,
+            "next_section": section,
+            "view": view,
+        }
 
     @app.get("/v1/intent/{draft_id}")
     async def intent_get(draft_id: str, principal: Annotated[Principal, Depends(_principal)]) -> dict[str, Any]:
@@ -210,9 +346,28 @@ def create_app(
         body: dict[str, Any],
         principal: Annotated[Principal, Depends(_principal)],
     ) -> dict[str, Any]:
+        """Answer a wizard question (alfred-console-redesign 5.3-5.4).
+
+        `view` is threaded through every turn and propagated to the LLM prompt
+        and the audit event so Friendly persona rendering can be enforced.
+        """
         if not dialogue_enabled:
             raise HTTPException(status_code=404, detail="dialogue API disabled")
         body.setdefault("actor", principal.sub)
+        view = body.get("view", "advanced")
+        # Phase 5: thread app_id through every answer so audit + decision-log
+        # entries can carry the App scope (7.2).
+        if "app_id" not in body:
+            existing = await deps.openspec.get_draft(draft_id)
+            if existing and existing.get("app_id"):
+                body["app_id"] = existing["app_id"]
+        if require_app_scope and not body.get("app_id"):
+            raise HTTPException(status_code=422, detail="missing_app_scope")
+
+        # Propagate view into the answer body so the OpenSpec service and the
+        # LLM call can enforce friendly persona rendering (5.4).
+        body["view"] = view
+
         updated = await deps.openspec.answer_intent(draft_id, body)
         if not updated:
             raise HTTPException(status_code=404, detail="draft not found or rejected")
@@ -224,7 +379,13 @@ def create_app(
             correlation_id=updated.get("correlation_id"),
             llm=deps.llm,
         )
-        return {"draft": updated, "completeness": completeness, "next_question": question, "next_section": section}
+        return {
+            "draft": updated,
+            "completeness": completeness,
+            "next_question": question,
+            "next_section": section,
+            "view": view,
+        }
 
     @app.post("/v1/intent/{draft_id}/commit")
     async def intent_commit(
@@ -236,10 +397,41 @@ def create_app(
             raise HTTPException(status_code=404, detail="dialogue API disabled")
         payload = dict(body or {})
         payload.setdefault("actor", principal.sub)
+        if require_app_scope:
+            existing = await deps.openspec.get_draft(draft_id)
+            if not existing or not existing.get("app_id"):
+                raise HTTPException(status_code=422, detail="missing_app_scope")
         document = await deps.openspec.commit_intent(draft_id, payload)
         if not document:
             raise HTTPException(status_code=400, detail="draft not commit-ready")
         return {"openspec": document}
+
+    @app.post("/v1/intent/match_dismissed")
+    async def intent_match_dismissed(
+        request: Request,
+        body: dict[str, Any],
+        principal: Annotated[Principal, Depends(_principal)],
+    ) -> dict[str, Any]:
+        """Record that the user dismissed a spec match (alfred-console-redesign 5.5).
+
+        Emits alfred.intent.match_dismissed.v1 for retrieval relevance training.
+        """
+        if not dialogue_enabled:
+            raise HTTPException(status_code=404, detail="dialogue API disabled")
+        await _intent_emitter.emit(
+            "alfred.intent.match_dismissed.v1",
+            {
+                "principal": principal.sub,
+                "spec_id": body.get("spec_id", ""),
+                "score": body.get("score", 0.0),
+                "intent_text": str(body.get("intent_text", ""))[:280],
+                "workspace_id": body.get("workspace_id", ""),
+                "app_id": body.get("app_id", ""),
+                "view": body.get("view", "advanced"),
+                "correlation_id": request.state.correlation_id,
+            },
+        )
+        return {"ok": True}
 
     if getattr(settings, "alfred_agent_mode_enabled", False):
         agent_store = AgentModeStore(owned_store)

@@ -13,6 +13,32 @@ servers:
 security:
   - bearerAuth: []
 paths:
+  # alfred-console-redesign §4.1: RAG-based spec dedup retrieval
+  /v1/intent/match:
+    post:
+      summary: RAG retrieval — find existing specs similar to an intent
+      description: |
+        Runs a Milvus retrieval over the tenant's spec corpus (App-scoped if
+        `app_id` is provided, workspace-scoped otherwise). Returns candidates
+        with cosine scores above the tenant threshold floor (default 0.65).
+        Only hits with score >= tenant threshold (default 0.80) trigger the
+        match dialog in the UI.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IntentMatchRequest"
+      responses:
+        "200":
+          description: matches returned (may be empty if below threshold floor)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IntentMatchResponse"
+        "400": { description: "workspace_id or text missing" }
+        "403": { description: "workspace can_edit required" }
+
   /v1/agent-mode/sessions:
     post:
       summary: Start a new agent-mode session for a committed OpenSpec
@@ -169,6 +195,16 @@ components:
         intent: { type: string }
         correlation_id: { type: string, nullable: true }
         metadata: { type: object, additionalProperties: true }
+        # alfred-console-redesign §7.1
+        start_step:
+          type: string
+          nullable: true
+          enum: [discovery, architect, design, test, iac, deploy]
+          description: |
+            Optional jump to a specific SDLC step. Requires the spec
+            lifecycle_state to be in {approved, committed} for `architect`.
+            Returns 422 for unknown values. Returns 409 spec_not_ready_for_architect
+            if the spec is not yet committed.
     StartSessionResponse:
       type: object
       properties:
@@ -176,6 +212,33 @@ components:
         status: { type: string }
         correlation_id: { type: string }
         plan_revision: { type: integer }
+        start_step: { type: string, nullable: true }
+    # alfred-console-redesign §4: spec dedup endpoint schemas
+    IntentMatchRequest:
+      type: object
+      required: [workspace_id, text]
+      properties:
+        workspace_id: { type: string, format: uuid }
+        app_id: { type: string, nullable: true }
+        text: { type: string, description: "Intent text to match against the spec corpus" }
+        k: { type: integer, default: 5, description: "Max candidates to return" }
+    IntentMatchResponse:
+      type: object
+      properties:
+        matches:
+          type: array
+          items: { $ref: "#/components/schemas/SpecMatchCandidate" }
+        threshold: { type: number, format: float }
+        scope: { type: string, description: "app:<id> or workspace:<id>" }
+    SpecMatchCandidate:
+      type: object
+      properties:
+        spec_id: { type: string }
+        title: { type: string }
+        score: { type: number, format: float }
+        lifecycle_state: { type: string }
+        summary: { type: string }
+        source: { type: string }
     FollowUpRequest:
       type: object
       required: [intent]

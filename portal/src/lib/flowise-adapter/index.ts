@@ -40,6 +40,29 @@ export interface CanonicalStep {
   approver_role?: string;
   on_timeout?: "fail" | "escalate";
   escalation_role?: string;
+  /**
+   * Active surface pinned at design time. When set, the visual editor
+   * persists the gateway endpoint chosen for this node so the runtime
+   * does not need to re-resolve it from the registry on every dispatch.
+   * The active-registry-gateways spec calls this "active_surface" and
+   * keeps the wire shape parallel with the Asset Registry field of the
+   * same name.
+   */
+  active_surface?: NodeActiveSurface;
+}
+
+/**
+ * NodeActiveSurface is the per-node projection of the asset's active
+ * surface. The endpoint field is required for `family ∈ {mcp, a2a}`;
+ * skills carry the artifact pointer instead. The shape matches the
+ * canonical block on the Asset Registry row.
+ */
+export interface NodeActiveSurface {
+  family: "mcp" | "a2a" | "skill";
+  endpoint?: string;
+  artifact_pointer?: string;
+  digest?: string;
+  signature_id?: string;
 }
 
 export interface CanonicalWorkflow {

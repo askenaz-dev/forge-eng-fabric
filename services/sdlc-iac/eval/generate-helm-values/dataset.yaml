@@ -1,0 +1,5 @@
+asset_id: sdlc.iac.generate-helm-values.eval
+version: "1.0.0"
+description: "Graded fixtures for generate-helm-values skill: criticality-tier sizing, per-environment values files."
+trust_level: T1
+fixtures: fixtures.json

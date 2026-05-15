@@ -1,0 +1,5 @@
+asset_id: healing.propose-fix.eval
+version: "1.0.0"
+description: "Graded fixtures for propose-fix L2 pipeline: code and config diffs, safety eval, red-team adversarial patches."
+trust_level: T1
+fixtures: fixtures.json

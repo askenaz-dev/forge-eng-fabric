@@ -1,0 +1,587 @@
+[
+  {
+    "id": "iac-helm-001",
+    "input": {
+      "app_id": "app-payments-api",
+      "slug": "payments-api",
+      "criticality": "large",
+      "correlation_id": "corr-helm-001"
+    },
+    "expected": {
+      "values_files": [
+        "helm/payments-api/values.yaml",
+        "helm/payments-api/values-staging.yaml",
+        "helm/payments-api/values-prod.yaml"
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-helm-002",
+    "input": {
+      "app_id": "app-search-svc",
+      "slug": "search-svc",
+      "criticality": "medium",
+      "correlation_id": "corr-helm-002"
+    },
+    "expected": {
+      "values_files": [
+        "helm/search-svc/values.yaml",
+        "helm/search-svc/values-staging.yaml",
+        "helm/search-svc/values-prod.yaml"
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-helm-003",
+    "input": {
+      "app_id": "app-notification-svc",
+      "slug": "notification-svc",
+      "criticality": "small",
+      "correlation_id": "corr-helm-003"
+    },
+    "expected": {
+      "values_files": [
+        "helm/notification-svc/values.yaml",
+        "helm/notification-svc/values-prod.yaml"
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-helm-004",
+    "input": {
+      "app_id": "app-user-profile",
+      "slug": "user-profile",
+      "criticality": "medium",
+      "correlation_id": "corr-helm-004"
+    },
+    "expected": {
+      "values_files": [
+        "helm/user-profile/values.yaml",
+        "helm/user-profile/values-staging.yaml",
+        "helm/user-profile/values-prod.yaml"
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-helm-005",
+    "input": {
+      "app_id": "app-inventory-svc",
+      "slug": "inventory-svc",
+      "criticality": "large",
+      "correlation_id": "corr-helm-005"
+    },
+    "expected": {
+      "values_files": [
+        "helm/inventory-svc/values.yaml",
+        "helm/inventory-svc/values-staging.yaml",
+        "helm/inventory-svc/values-prod.yaml"
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-helm-006",
+    "input": {
+      "app_id": "app-billing-svc",
+      "slug": "billing-svc",
+      "criticality": "large",
+      "correlation_id": "corr-helm-006"
+    },
+    "expected": {
+      "values_files": [
+        "helm/billing-svc/values.yaml",
+        "helm/billing-svc/values-staging.yaml",
+        "helm/billing-svc/values-prod.yaml"
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-helm-007",
+    "input": {
+      "app_id": "app-analytics-svc",
+      "slug": "analytics-svc",
+      "criticality": "medium",
+      "correlation_id": "corr-helm-007"
+    },
+    "expected": {
+      "values_files": [
+        "helm/analytics-svc/values.yaml",
+        "helm/analytics-svc/values-staging.yaml",
+        "helm/analytics-svc/values-prod.yaml"
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-helm-008",
+    "input": {
+      "app_id": "app-auth-gateway",
+      "slug": "auth-gateway",
+      "criticality": "large",
+      "correlation_id": "corr-helm-008"
+    },
+    "expected": {
+      "values_files": [
+        "helm/auth-gateway/values.yaml",
+        "helm/auth-gateway/values-staging.yaml",
+        "helm/auth-gateway/values-prod.yaml"
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-helm-009",
+    "input": {
+      "app_id": "app-file-processor",
+      "slug": "file-processor",
+      "criticality": "small",
+      "correlation_id": "corr-helm-009"
+    },
+    "expected": {
+      "values_files": [
+        "helm/file-processor/values.yaml",
+        "helm/file-processor/values-prod.yaml"
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-helm-010",
+    "input": {
+      "app_id": "app-event-consumer",
+      "slug": "event-consumer",
+      "criticality": "medium",
+      "correlation_id": "corr-helm-010"
+    },
+    "expected": {
+      "values_files": [
+        "helm/event-consumer/values.yaml",
+        "helm/event-consumer/values-staging.yaml",
+        "helm/event-consumer/values-prod.yaml"
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-helm-011",
+    "input": {
+      "app_id": "app-stream-processor",
+      "slug": "stream-processor",
+      "criticality": "large",
+      "correlation_id": "corr-helm-011"
+    },
+    "expected": {
+      "values_files": [
+        "helm/stream-processor/values.yaml",
+        "helm/stream-processor/values-staging.yaml",
+        "helm/stream-processor/values-prod.yaml"
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-helm-012",
+    "input": {
+      "app_id": "app-cdn-purge",
+      "slug": "cdn-purge",
+      "criticality": "small",
+      "correlation_id": "corr-helm-012"
+    },
+    "expected": {
+      "values_files": [
+        "helm/cdn-purge/values.yaml",
+        "helm/cdn-purge/values-prod.yaml"
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-helm-013",
+    "input": {
+      "app_id": "app-report-gen",
+      "slug": "report-gen",
+      "criticality": "medium",
+      "correlation_id": "corr-helm-013"
+    },
+    "expected": {
+      "values_files": [
+        "helm/report-gen/values.yaml",
+        "helm/report-gen/values-staging.yaml",
+        "helm/report-gen/values-prod.yaml"
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-helm-014",
+    "input": {
+      "app_id": "app-config-server",
+      "slug": "config-server",
+      "criticality": "large",
+      "correlation_id": "corr-helm-014"
+    },
+    "expected": {
+      "values_files": [
+        "helm/config-server/values.yaml",
+        "helm/config-server/values-staging.yaml",
+        "helm/config-server/values-prod.yaml"
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-helm-015",
+    "input": {
+      "app_id": "app-job-scheduler",
+      "slug": "job-scheduler",
+      "criticality": "medium",
+      "correlation_id": "corr-helm-015"
+    },
+    "expected": {
+      "values_files": [
+        "helm/job-scheduler/values.yaml",
+        "helm/job-scheduler/values-staging.yaml",
+        "helm/job-scheduler/values-prod.yaml"
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-helm-016",
+    "input": {
+      "app_id": "app-cache-proxy",
+      "slug": "cache-proxy",
+      "criticality": "small",
+      "correlation_id": "corr-helm-016"
+    },
+    "expected": {
+      "values_files": [
+        "helm/cache-proxy/values.yaml",
+        "helm/cache-proxy/values-prod.yaml"
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-helm-017",
+    "input": {
+      "app_id": "app-grpc-server",
+      "slug": "grpc-server",
+      "criticality": "large",
+      "correlation_id": "corr-helm-017"
+    },
+    "expected": {
+      "values_files": [
+        "helm/grpc-server/values.yaml",
+        "helm/grpc-server/values-staging.yaml",
+        "helm/grpc-server/values-prod.yaml"
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-helm-018",
+    "input": {
+      "app_id": "app-upload-svc",
+      "slug": "upload-svc",
+      "criticality": "medium",
+      "correlation_id": "corr-helm-018"
+    },
+    "expected": {
+      "values_files": [
+        "helm/upload-svc/values.yaml",
+        "helm/upload-svc/values-staging.yaml",
+        "helm/upload-svc/values-prod.yaml"
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-helm-019",
+    "input": {
+      "app_id": "app-audit-trail",
+      "slug": "audit-trail",
+      "criticality": "large",
+      "correlation_id": "corr-helm-019"
+    },
+    "expected": {
+      "values_files": [
+        "helm/audit-trail/values.yaml",
+        "helm/audit-trail/values-staging.yaml",
+        "helm/audit-trail/values-prod.yaml"
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-helm-020",
+    "input": {
+      "app_id": "app-rbac-svc",
+      "slug": "rbac-svc",
+      "criticality": "large",
+      "correlation_id": "corr-helm-020"
+    },
+    "expected": {
+      "values_files": [
+        "helm/rbac-svc/values.yaml",
+        "helm/rbac-svc/values-staging.yaml",
+        "helm/rbac-svc/values-prod.yaml"
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-helm-021",
+    "input": {
+      "app_id": "app-metrics-collector",
+      "slug": "metrics-collector",
+      "criticality": "small",
+      "correlation_id": "corr-helm-021"
+    },
+    "expected": {
+      "values_files": [
+        "helm/metrics-collector/values.yaml",
+        "helm/metrics-collector/values-prod.yaml"
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-helm-022",
+    "input": {
+      "app_id": "app-session-mgr",
+      "slug": "session-mgr",
+      "criticality": "medium",
+      "correlation_id": "corr-helm-022"
+    },
+    "expected": {
+      "values_files": [
+        "helm/session-mgr/values.yaml",
+        "helm/session-mgr/values-staging.yaml",
+        "helm/session-mgr/values-prod.yaml"
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-helm-023",
+    "input": {
+      "app_id": "app-proxy-svc",
+      "slug": "proxy-svc",
+      "criticality": "large",
+      "correlation_id": "corr-helm-023"
+    },
+    "expected": {
+      "values_files": [
+        "helm/proxy-svc/values.yaml",
+        "helm/proxy-svc/values-staging.yaml",
+        "helm/proxy-svc/values-prod.yaml"
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-helm-024",
+    "input": {
+      "app_id": "app-feature-flags",
+      "slug": "feature-flags",
+      "criticality": "medium",
+      "correlation_id": "corr-helm-024"
+    },
+    "expected": {
+      "values_files": [
+        "helm/feature-flags/values.yaml",
+        "helm/feature-flags/values-staging.yaml",
+        "helm/feature-flags/values-prod.yaml"
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-helm-025",
+    "input": {
+      "app_id": "app-email-renderer",
+      "slug": "email-renderer",
+      "criticality": "small",
+      "correlation_id": "corr-helm-025"
+    },
+    "expected": {
+      "values_files": [
+        "helm/email-renderer/values.yaml",
+        "helm/email-renderer/values-prod.yaml"
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-helm-026",
+    "input": {
+      "app_id": "app-log-aggregator",
+      "slug": "log-aggregator",
+      "criticality": "medium",
+      "correlation_id": "corr-helm-026"
+    },
+    "expected": {
+      "values_files": [
+        "helm/log-aggregator/values.yaml",
+        "helm/log-aggregator/values-staging.yaml",
+        "helm/log-aggregator/values-prod.yaml"
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-helm-027",
+    "input": {
+      "app_id": "app-data-pipeline",
+      "slug": "data-pipeline",
+      "criticality": "large",
+      "correlation_id": "corr-helm-027"
+    },
+    "expected": {
+      "values_files": [
+        "helm/data-pipeline/values.yaml",
+        "helm/data-pipeline/values-staging.yaml",
+        "helm/data-pipeline/values-prod.yaml"
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-helm-028",
+    "input": {
+      "app_id": "app-db-migrator",
+      "slug": "db-migrator",
+      "criticality": "medium",
+      "correlation_id": "corr-helm-028"
+    },
+    "expected": {
+      "values_files": [
+        "helm/db-migrator/values.yaml",
+        "helm/db-migrator/values-staging.yaml",
+        "helm/db-migrator/values-prod.yaml"
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-helm-029",
+    "input": {
+      "app_id": "app-order-svc",
+      "slug": "order-svc",
+      "criticality": "large",
+      "correlation_id": "corr-helm-029"
+    },
+    "expected": {
+      "values_files": [
+        "helm/order-svc/values.yaml",
+        "helm/order-svc/values-staging.yaml",
+        "helm/order-svc/values-prod.yaml"
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-helm-030",
+    "input": {
+      "app_id": "app-vault-proxy",
+      "slug": "vault-proxy",
+      "criticality": "large",
+      "correlation_id": "corr-helm-030"
+    },
+    "expected": {
+      "values_files": [
+        "helm/vault-proxy/values.yaml",
+        "helm/vault-proxy/values-staging.yaml",
+        "helm/vault-proxy/values-prod.yaml"
+      ]
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-helm-adv-001",
+    "input": {
+      "app_id": "app-bad-criticality",
+      "slug": "bad-crit-svc",
+      "criticality": "enterprise",
+      "correlation_id": "corr-helm-adv-001"
+    },
+    "expected": {
+      "status": "failed",
+      "error": "invalid_criticality",
+      "detail": "criticality 'enterprise' is not valid; must be one of: small, medium, large"
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "iac-helm-adv-002",
+    "input": {
+      "app_id": "app-lint-fail",
+      "slug": "FAIL_HELM_LINT",
+      "criticality": "medium",
+      "correlation_id": "corr-helm-adv-002"
+    },
+    "expected": {
+      "values_files": [
+        "helm/FAIL_HELM_LINT/values.yaml",
+        "helm/FAIL_HELM_LINT/values-staging.yaml",
+        "helm/FAIL_HELM_LINT/values-prod.yaml"
+      ],
+      "validation_hint": "FAIL_HELM_LINT sentinel in slug; downstream validate-iac will report helm_lint_passed=false"
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "iac-helm-adv-003",
+    "input": {
+      "app_id": "app-conftest-fail",
+      "slug": "FAIL_CONFTEST",
+      "criticality": "large",
+      "correlation_id": "corr-helm-adv-003"
+    },
+    "expected": {
+      "values_files": [
+        "helm/FAIL_CONFTEST/values.yaml",
+        "helm/FAIL_CONFTEST/values-staging.yaml",
+        "helm/FAIL_CONFTEST/values-prod.yaml"
+      ],
+      "validation_hint": "FAIL_CONFTEST sentinel in slug; downstream validate-iac will report conftest_passed=false with policy violations"
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "iac-helm-adv-004",
+    "input": {
+      "app_id": "app-empty-slug",
+      "slug": "",
+      "criticality": "small",
+      "correlation_id": "corr-helm-adv-004"
+    },
+    "expected": {
+      "status": "failed",
+      "error": "invalid_slug",
+      "detail": "slug must be a non-empty DNS-compatible string"
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "iac-helm-adv-005",
+    "input": {
+      "app_id": "app-missing-criticality",
+      "slug": "missing-crit-svc",
+      "criticality": "",
+      "correlation_id": "corr-helm-adv-005"
+    },
+    "expected": {
+      "status": "failed",
+      "error": "invalid_criticality",
+      "detail": "criticality '' is not valid; must be one of: small, medium, large"
+    },
+    "weight": 2.0
+  }
+]

@@ -1,0 +1,147 @@
+{
+  "title": "Forge · Active Registry Gateways",
+  "uid": "forge-active-registry-gateways",
+  "tags": ["forge", "mcp-gateway", "a2a-gateway", "active-registry-gateways"],
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-6h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "tenant",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "query": "label_values(mcp_gateway_requests_total, tenant)",
+        "includeAll": true,
+        "multi": true
+      }
+    ]
+  },
+  "panels": [
+    {
+      "title": "MCP gateway · latency p50 / p95 per asset",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(mcp_gateway_latency_seconds_bucket{tenant=~\"$tenant\"}[5m])) by (le, asset))",
+          "legendFormat": "p50 · {{asset}}"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(mcp_gateway_latency_seconds_bucket{tenant=~\"$tenant\"}[5m])) by (le, asset))",
+          "legendFormat": "p95 · {{asset}}"
+        }
+      ]
+    },
+    {
+      "title": "A2A gateway · latency p50 / p95 per asset",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(a2a_gateway_latency_seconds_bucket{tenant=~\"$tenant\"}[5m])) by (le, asset))",
+          "legendFormat": "p50 · {{asset}}"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(a2a_gateway_latency_seconds_bucket{tenant=~\"$tenant\"}[5m])) by (le, asset))",
+          "legendFormat": "p95 · {{asset}}"
+        }
+      ]
+    },
+    {
+      "title": "MCP gateway · errors per minute (by reason)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(mcp_gateway_errors_total{tenant=~\"$tenant\"}[5m])) by (reason)",
+          "legendFormat": "{{reason}}"
+        }
+      ]
+    },
+    {
+      "title": "A2A gateway · failures per minute (by reason)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(a2a_gateway_tasks_failed_total{tenant=~\"$tenant\"}[5m])) by (reason)",
+          "legendFormat": "{{reason}}"
+        }
+      ]
+    },
+    {
+      "title": "Budget blocks (gateways)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "targets": [
+        {
+          "expr": "sum(rate(mcp_gateway_budget_blocks_total{tenant=~\"$tenant\"}[5m])) by (tenant)",
+          "legendFormat": "mcp · {{tenant}}"
+        },
+        {
+          "expr": "sum(rate(a2a_gateway_budget_blocks_total{tenant=~\"$tenant\"}[5m])) by (tenant)",
+          "legendFormat": "a2a · {{tenant}}"
+        }
+      ]
+    },
+    {
+      "title": "External-asset drift events (24h window)",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 16 },
+      "targets": [
+        {
+          "expr": "increase(forge_asset_external_drift_total[24h])",
+          "legendFormat": "drift detected"
+        },
+        {
+          "expr": "increase(forge_asset_external_drift_deprecated_total[24h])",
+          "legendFormat": "auto-deprecated"
+        }
+      ]
+    },
+    {
+      "title": "Compatibility shim usage (should be 0 under enforcement)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 16 },
+      "targets": [
+        {
+          "expr": "sum(rate(forge_runtime_gateway_bypass_deprecated_total{tenant=~\"$tenant\"}[5m])) by (gateway_enforced)",
+          "legendFormat": "enforced={{gateway_enforced}}"
+        }
+      ]
+    },
+    {
+      "title": "MCP requests by source (internal vs external_proxy)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "targets": [
+        {
+          "expr": "sum(rate(mcp_gateway_requests_total{tenant=~\"$tenant\"}[5m])) by (source)",
+          "legendFormat": "{{source}}"
+        }
+      ]
+    },
+    {
+      "title": "A2A tasks by source (internal / external_proxy / inbound_external)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+      "targets": [
+        {
+          "expr": "sum(rate(a2a_gateway_tasks_started_total{tenant=~\"$tenant\"}[5m])) by (source)",
+          "legendFormat": "{{source}}"
+        }
+      ]
+    }
+  ]
+}

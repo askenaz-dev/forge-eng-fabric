@@ -1,0 +1,603 @@
+[
+  {
+    "id": "design-blueprint-001",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-frontend",
+      "app_id": "app-ecommerce",
+      "service_name": "product-catalog",
+      "user_flows": ["browse products", "add to cart", "checkout"],
+      "design_system_ref": "acme-ds@2.1.0"
+    },
+    "expected": {
+      "status": "success",
+      "blueprint_path": "blueprints/app-ecommerce/product-catalog/ui-blueprint.md",
+      "event_type": "sdlc.ui_blueprint.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-blueprint-002",
+    "input": {
+      "tenant_id": "tenant-globex",
+      "workspace_id": "ws-mobile",
+      "app_id": "app-banking",
+      "service_name": "account-dashboard",
+      "user_flows": ["view balance", "transfer funds", "pay bills", "view statements"],
+      "design_system_ref": "globex-design@1.0.0"
+    },
+    "expected": {
+      "status": "success",
+      "blueprint_path": "blueprints/app-banking/account-dashboard/ui-blueprint.md",
+      "event_type": "sdlc.ui_blueprint.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-blueprint-003",
+    "input": {
+      "tenant_id": "tenant-initech",
+      "workspace_id": "ws-saas",
+      "app_id": "app-crm",
+      "service_name": "contact-management",
+      "user_flows": ["search contacts", "create contact", "edit contact", "merge duplicates"],
+      "design_system_ref": null
+    },
+    "expected": {
+      "status": "success",
+      "blueprint_path": "blueprints/app-crm/contact-management/ui-blueprint.md",
+      "event_type": "sdlc.ui_blueprint.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-blueprint-004",
+    "input": {
+      "tenant_id": "tenant-umbrella",
+      "workspace_id": "ws-internal-tools",
+      "app_id": "app-hr-portal",
+      "service_name": "onboarding-wizard",
+      "user_flows": ["fill personal info", "upload documents", "select benefits", "sign agreements"],
+      "design_system_ref": "umbrella-ds@3.0.1"
+    },
+    "expected": {
+      "status": "success",
+      "blueprint_path": "blueprints/app-hr-portal/onboarding-wizard/ui-blueprint.md",
+      "figma_export_path": "figma-exports/app-hr-portal/onboarding-wizard/blueprint.fig",
+      "event_type": "sdlc.ui_blueprint.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-blueprint-005",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-analytics",
+      "app_id": "app-reporting",
+      "service_name": "dashboard-builder",
+      "user_flows": ["create dashboard", "add widgets", "configure data sources", "share dashboard", "schedule report"],
+      "design_system_ref": "acme-ds@2.1.0"
+    },
+    "expected": {
+      "status": "success",
+      "blueprint_path": "blueprints/app-reporting/dashboard-builder/ui-blueprint.md",
+      "event_type": "sdlc.ui_blueprint.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-blueprint-006",
+    "input": {
+      "tenant_id": "tenant-wayne",
+      "workspace_id": "ws-iot",
+      "app_id": "app-device-monitor",
+      "service_name": "alert-console",
+      "user_flows": ["view active alerts", "acknowledge alert", "escalate alert", "configure thresholds"],
+      "design_system_ref": "wayne-enterprise-ds@1.2.0"
+    },
+    "expected": {
+      "status": "success",
+      "blueprint_path": "blueprints/app-device-monitor/alert-console/ui-blueprint.md",
+      "event_type": "sdlc.ui_blueprint.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-blueprint-007",
+    "input": {
+      "tenant_id": "tenant-stark",
+      "workspace_id": "ws-marketplace",
+      "app_id": "app-vendor-portal",
+      "service_name": "product-listing",
+      "user_flows": ["upload product", "set pricing", "manage inventory", "view sales analytics"],
+      "design_system_ref": null
+    },
+    "expected": {
+      "status": "success",
+      "blueprint_path": "blueprints/app-vendor-portal/product-listing/ui-blueprint.md",
+      "event_type": "sdlc.ui_blueprint.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-blueprint-008",
+    "input": {
+      "tenant_id": "tenant-globex",
+      "workspace_id": "ws-customer",
+      "app_id": "app-support",
+      "service_name": "ticket-portal",
+      "user_flows": ["submit ticket", "track ticket status", "chat with agent", "rate resolution"],
+      "design_system_ref": "globex-design@1.0.0"
+    },
+    "expected": {
+      "status": "success",
+      "blueprint_path": "blueprints/app-support/ticket-portal/ui-blueprint.md",
+      "event_type": "sdlc.ui_blueprint.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-blueprint-009",
+    "input": {
+      "tenant_id": "tenant-initech",
+      "workspace_id": "ws-compliance",
+      "app_id": "app-audit-trail",
+      "service_name": "audit-log-viewer",
+      "user_flows": ["search audit logs", "filter by date range", "export logs", "view event details"],
+      "design_system_ref": "initech-gov-ds@1.0.0"
+    },
+    "expected": {
+      "status": "success",
+      "blueprint_path": "blueprints/app-audit-trail/audit-log-viewer/ui-blueprint.md",
+      "event_type": "sdlc.ui_blueprint.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-blueprint-010",
+    "input": {
+      "tenant_id": "tenant-umbrella",
+      "workspace_id": "ws-ops",
+      "app_id": "app-incident-mgmt",
+      "service_name": "incident-timeline",
+      "user_flows": ["create incident", "assign responders", "post updates", "close incident", "generate report"],
+      "design_system_ref": "umbrella-ds@3.0.1"
+    },
+    "expected": {
+      "status": "success",
+      "blueprint_path": "blueprints/app-incident-mgmt/incident-timeline/ui-blueprint.md",
+      "figma_export_path": "figma-exports/app-incident-mgmt/incident-timeline/blueprint.fig",
+      "event_type": "sdlc.ui_blueprint.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-blueprint-011",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-frontend",
+      "app_id": "app-ecommerce",
+      "service_name": "user-profile",
+      "user_flows": ["edit profile", "manage addresses", "update payment methods", "view order history"],
+      "design_system_ref": "acme-ds@2.1.0"
+    },
+    "expected": {
+      "status": "success",
+      "blueprint_path": "blueprints/app-ecommerce/user-profile/ui-blueprint.md",
+      "event_type": "sdlc.ui_blueprint.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-blueprint-012",
+    "input": {
+      "tenant_id": "tenant-wayne",
+      "workspace_id": "ws-finance",
+      "app_id": "app-budget-tracker",
+      "service_name": "expense-entry",
+      "user_flows": ["log expense", "attach receipt", "categorize expense", "submit for approval"],
+      "design_system_ref": null
+    },
+    "expected": {
+      "status": "success",
+      "blueprint_path": "blueprints/app-budget-tracker/expense-entry/ui-blueprint.md",
+      "event_type": "sdlc.ui_blueprint.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-blueprint-013",
+    "input": {
+      "tenant_id": "tenant-stark",
+      "workspace_id": "ws-saas",
+      "app_id": "app-project-mgmt",
+      "service_name": "kanban-board",
+      "user_flows": ["create task", "drag and drop", "assign task", "add comments", "set due date"],
+      "design_system_ref": "stark-ds@4.0.0"
+    },
+    "expected": {
+      "status": "success",
+      "blueprint_path": "blueprints/app-project-mgmt/kanban-board/ui-blueprint.md",
+      "event_type": "sdlc.ui_blueprint.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-blueprint-014",
+    "input": {
+      "tenant_id": "tenant-globex",
+      "workspace_id": "ws-admin",
+      "app_id": "app-user-mgmt",
+      "service_name": "role-assignment",
+      "user_flows": ["search users", "assign roles", "bulk import users", "revoke access"],
+      "design_system_ref": "globex-design@1.0.0"
+    },
+    "expected": {
+      "status": "success",
+      "blueprint_path": "blueprints/app-user-mgmt/role-assignment/ui-blueprint.md",
+      "event_type": "sdlc.ui_blueprint.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-blueprint-015",
+    "input": {
+      "tenant_id": "tenant-initech",
+      "workspace_id": "ws-healthcare",
+      "app_id": "app-patient-portal",
+      "service_name": "appointment-booking",
+      "user_flows": ["search providers", "select time slot", "confirm appointment", "receive reminder"],
+      "design_system_ref": "initech-health-ds@2.0.0"
+    },
+    "expected": {
+      "status": "success",
+      "blueprint_path": "blueprints/app-patient-portal/appointment-booking/ui-blueprint.md",
+      "figma_export_path": "figma-exports/app-patient-portal/appointment-booking/blueprint.fig",
+      "event_type": "sdlc.ui_blueprint.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-blueprint-016",
+    "input": {
+      "tenant_id": "tenant-umbrella",
+      "workspace_id": "ws-logistics",
+      "app_id": "app-shipment-tracker",
+      "service_name": "tracking-map",
+      "user_flows": ["enter tracking number", "view shipment on map", "get delivery estimate", "sign for delivery"],
+      "design_system_ref": null
+    },
+    "expected": {
+      "status": "success",
+      "blueprint_path": "blueprints/app-shipment-tracker/tracking-map/ui-blueprint.md",
+      "event_type": "sdlc.ui_blueprint.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-blueprint-017",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-content",
+      "app_id": "app-cms",
+      "service_name": "article-editor",
+      "user_flows": ["create article", "add media", "preview article", "publish article", "schedule publish"],
+      "design_system_ref": "acme-ds@2.1.0"
+    },
+    "expected": {
+      "status": "success",
+      "blueprint_path": "blueprints/app-cms/article-editor/ui-blueprint.md",
+      "event_type": "sdlc.ui_blueprint.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-blueprint-018",
+    "input": {
+      "tenant_id": "tenant-wayne",
+      "workspace_id": "ws-security",
+      "app_id": "app-access-control",
+      "service_name": "door-controller",
+      "user_flows": ["view door status", "grant access", "revoke access", "view entry log"],
+      "design_system_ref": "wayne-enterprise-ds@1.2.0"
+    },
+    "expected": {
+      "status": "success",
+      "blueprint_path": "blueprints/app-access-control/door-controller/ui-blueprint.md",
+      "event_type": "sdlc.ui_blueprint.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-blueprint-019",
+    "input": {
+      "tenant_id": "tenant-stark",
+      "workspace_id": "ws-ai",
+      "app_id": "app-llm-studio",
+      "service_name": "prompt-playground",
+      "user_flows": ["write prompt", "select model", "run inference", "save prompt", "compare outputs"],
+      "design_system_ref": "stark-ds@4.0.0"
+    },
+    "expected": {
+      "status": "success",
+      "blueprint_path": "blueprints/app-llm-studio/prompt-playground/ui-blueprint.md",
+      "event_type": "sdlc.ui_blueprint.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-blueprint-020",
+    "input": {
+      "tenant_id": "tenant-globex",
+      "workspace_id": "ws-devex",
+      "app_id": "app-ci-dashboard",
+      "service_name": "pipeline-viewer",
+      "user_flows": ["view pipeline runs", "drill into stage", "rerun failed job", "view logs"],
+      "design_system_ref": "globex-design@1.0.0"
+    },
+    "expected": {
+      "status": "success",
+      "blueprint_path": "blueprints/app-ci-dashboard/pipeline-viewer/ui-blueprint.md",
+      "event_type": "sdlc.ui_blueprint.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-blueprint-021",
+    "input": {
+      "tenant_id": "tenant-initech",
+      "workspace_id": "ws-education",
+      "app_id": "app-lms",
+      "service_name": "course-catalog",
+      "user_flows": ["browse courses", "enroll in course", "track progress", "download certificate"],
+      "design_system_ref": "initech-edu-ds@1.5.0"
+    },
+    "expected": {
+      "status": "success",
+      "blueprint_path": "blueprints/app-lms/course-catalog/ui-blueprint.md",
+      "event_type": "sdlc.ui_blueprint.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-blueprint-022",
+    "input": {
+      "tenant_id": "tenant-umbrella",
+      "workspace_id": "ws-retail",
+      "app_id": "app-pos",
+      "service_name": "checkout-terminal",
+      "user_flows": ["scan items", "apply discounts", "accept payment", "print receipt"],
+      "design_system_ref": null
+    },
+    "expected": {
+      "status": "success",
+      "blueprint_path": "blueprints/app-pos/checkout-terminal/ui-blueprint.md",
+      "event_type": "sdlc.ui_blueprint.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-blueprint-023",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-data",
+      "app_id": "app-data-catalog",
+      "service_name": "dataset-browser",
+      "user_flows": ["search datasets", "preview data", "request access", "bookmark dataset"],
+      "design_system_ref": "acme-ds@2.1.0"
+    },
+    "expected": {
+      "status": "success",
+      "blueprint_path": "blueprints/app-data-catalog/dataset-browser/ui-blueprint.md",
+      "event_type": "sdlc.ui_blueprint.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-blueprint-024",
+    "input": {
+      "tenant_id": "tenant-wayne",
+      "workspace_id": "ws-manufacturing",
+      "app_id": "app-quality-control",
+      "service_name": "defect-reporter",
+      "user_flows": ["log defect", "capture photo", "assign severity", "route to QA team"],
+      "design_system_ref": "wayne-enterprise-ds@1.2.0"
+    },
+    "expected": {
+      "status": "success",
+      "blueprint_path": "blueprints/app-quality-control/defect-reporter/ui-blueprint.md",
+      "event_type": "sdlc.ui_blueprint.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-blueprint-025",
+    "input": {
+      "tenant_id": "tenant-stark",
+      "workspace_id": "ws-fintech",
+      "app_id": "app-portfolio",
+      "service_name": "trade-history",
+      "user_flows": ["view trades", "filter by asset class", "export to CSV", "view P&L chart"],
+      "design_system_ref": "stark-ds@4.0.0"
+    },
+    "expected": {
+      "status": "success",
+      "blueprint_path": "blueprints/app-portfolio/trade-history/ui-blueprint.md",
+      "figma_export_path": "figma-exports/app-portfolio/trade-history/blueprint.fig",
+      "event_type": "sdlc.ui_blueprint.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-blueprint-026",
+    "input": {
+      "tenant_id": "tenant-globex",
+      "workspace_id": "ws-bi",
+      "app_id": "app-bi-suite",
+      "service_name": "chart-builder",
+      "user_flows": ["select chart type", "bind data fields", "configure axes", "publish chart"],
+      "design_system_ref": "globex-design@1.0.0"
+    },
+    "expected": {
+      "status": "success",
+      "blueprint_path": "blueprints/app-bi-suite/chart-builder/ui-blueprint.md",
+      "event_type": "sdlc.ui_blueprint.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-blueprint-027",
+    "input": {
+      "tenant_id": "tenant-initech",
+      "workspace_id": "ws-realestate",
+      "app_id": "app-property-mgmt",
+      "service_name": "lease-manager",
+      "user_flows": ["create lease", "track payments", "send renewal notice", "terminate lease"],
+      "design_system_ref": null
+    },
+    "expected": {
+      "status": "success",
+      "blueprint_path": "blueprints/app-property-mgmt/lease-manager/ui-blueprint.md",
+      "event_type": "sdlc.ui_blueprint.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-blueprint-028",
+    "input": {
+      "tenant_id": "tenant-umbrella",
+      "workspace_id": "ws-supply-chain",
+      "app_id": "app-procurement",
+      "service_name": "purchase-order",
+      "user_flows": ["create PO", "get approvals", "receive goods", "match invoice"],
+      "design_system_ref": "umbrella-ds@3.0.1"
+    },
+    "expected": {
+      "status": "success",
+      "blueprint_path": "blueprints/app-procurement/purchase-order/ui-blueprint.md",
+      "event_type": "sdlc.ui_blueprint.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-blueprint-029",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-gamification",
+      "app_id": "app-loyalty",
+      "service_name": "rewards-hub",
+      "user_flows": ["view points balance", "redeem rewards", "browse offers", "view tier status"],
+      "design_system_ref": "acme-ds@2.1.0"
+    },
+    "expected": {
+      "status": "success",
+      "blueprint_path": "blueprints/app-loyalty/rewards-hub/ui-blueprint.md",
+      "event_type": "sdlc.ui_blueprint.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-blueprint-030",
+    "input": {
+      "tenant_id": "tenant-wayne",
+      "workspace_id": "ws-energy",
+      "app_id": "app-grid-monitor",
+      "service_name": "energy-dashboard",
+      "user_flows": ["view consumption", "compare billing periods", "set alerts", "download report"],
+      "design_system_ref": null
+    },
+    "expected": {
+      "status": "success",
+      "blueprint_path": "blueprints/app-grid-monitor/energy-dashboard/ui-blueprint.md",
+      "event_type": "sdlc.ui_blueprint.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-blueprint-adv-001",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-frontend",
+      "app_id": "app-ecommerce",
+      "service_name": "checkout",
+      "user_flows": [],
+      "design_system_ref": null
+    },
+    "expected": {
+      "status": "error",
+      "error_code": "INVALID_INPUT",
+      "error_detail": "user_flows must contain at least one flow",
+      "event_type": "sdlc.ui_blueprint.proposed.v1"
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "design-blueprint-adv-002",
+    "input": {
+      "tenant_id": "",
+      "workspace_id": "ws-frontend",
+      "app_id": "app-ecommerce",
+      "service_name": "checkout",
+      "user_flows": ["complete purchase"],
+      "design_system_ref": null
+    },
+    "expected": {
+      "status": "error",
+      "error_code": "INVALID_INPUT",
+      "error_detail": "tenant_id is required",
+      "event_type": "sdlc.ui_blueprint.proposed.v1"
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "design-blueprint-adv-003",
+    "input": {
+      "tenant_id": "tenant-unknown-9999",
+      "workspace_id": "ws-does-not-exist",
+      "app_id": "app-ghost",
+      "service_name": "phantom-service",
+      "user_flows": ["do something"],
+      "design_system_ref": "nonexistent-ds@0.0.0"
+    },
+    "expected": {
+      "status": "error",
+      "error_code": "TENANT_NOT_FOUND",
+      "event_type": "sdlc.ui_blueprint.proposed.v1"
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "design-blueprint-adv-004",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-frontend",
+      "app_id": "app-ecommerce",
+      "service_name": "a",
+      "user_flows": ["x"],
+      "design_system_ref": null
+    },
+    "expected": {
+      "status": "success",
+      "blueprint_path": "blueprints/app-ecommerce/a/ui-blueprint.md",
+      "event_type": "sdlc.ui_blueprint.proposed.v1"
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "design-blueprint-adv-005",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-frontend",
+      "app_id": "app-ecommerce",
+      "service_name": "mega-service",
+      "user_flows": ["flow1", "flow2", "flow3", "flow4", "flow5", "flow6", "flow7", "flow8", "flow9", "flow10", "flow11", "flow12", "flow13", "flow14", "flow15", "flow16", "flow17", "flow18", "flow19", "flow20"],
+      "design_system_ref": "acme-ds@2.1.0"
+    },
+    "expected": {
+      "status": "success",
+      "blueprint_path": "blueprints/app-ecommerce/mega-service/ui-blueprint.md",
+      "event_type": "sdlc.ui_blueprint.proposed.v1"
+    },
+    "weight": 2.0
+  }
+]

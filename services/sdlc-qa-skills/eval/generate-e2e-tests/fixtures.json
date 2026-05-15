@@ -1,0 +1,737 @@
+[
+  {
+    "id": "qa-e2e-001",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-frontend",
+      "app_id": "app-ecommerce",
+      "test_plan_path": "test-plans/app-ecommerce/test-plan.md",
+      "framework": "playwright",
+      "output_dir": "e2e/app-ecommerce"
+    },
+    "expected": {
+      "status": "success",
+      "spec_files": [
+        "e2e/app-ecommerce/product-catalog.spec.ts",
+        "e2e/app-ecommerce/cart.spec.ts",
+        "e2e/app-ecommerce/checkout.spec.ts"
+      ],
+      "event_type": "sdlc.e2e_tests.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-e2e-002",
+    "input": {
+      "tenant_id": "tenant-globex",
+      "workspace_id": "ws-mobile",
+      "app_id": "app-banking",
+      "test_plan_path": "test-plans/app-banking/test-plan.md",
+      "framework": "playwright",
+      "output_dir": "e2e/app-banking"
+    },
+    "expected": {
+      "status": "success",
+      "spec_files": [
+        "e2e/app-banking/account-dashboard.spec.ts",
+        "e2e/app-banking/fund-transfer.spec.ts",
+        "e2e/app-banking/bill-pay.spec.ts",
+        "e2e/app-banking/statements.spec.ts"
+      ],
+      "event_type": "sdlc.e2e_tests.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-e2e-003",
+    "input": {
+      "tenant_id": "tenant-initech",
+      "workspace_id": "ws-saas",
+      "app_id": "app-crm",
+      "test_plan_path": "test-plans/app-crm/test-plan.md",
+      "framework": "playwright",
+      "output_dir": "e2e/app-crm"
+    },
+    "expected": {
+      "status": "success",
+      "spec_files": [
+        "e2e/app-crm/contact-search.spec.ts",
+        "e2e/app-crm/contact-create.spec.ts",
+        "e2e/app-crm/contact-merge.spec.ts"
+      ],
+      "event_type": "sdlc.e2e_tests.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-e2e-004",
+    "input": {
+      "tenant_id": "tenant-umbrella",
+      "workspace_id": "ws-internal-tools",
+      "app_id": "app-hr-portal",
+      "test_plan_path": "test-plans/app-hr-portal/test-plan.md",
+      "framework": "playwright",
+      "output_dir": "e2e/app-hr-portal"
+    },
+    "expected": {
+      "status": "success",
+      "spec_files": [
+        "e2e/app-hr-portal/onboarding-wizard.spec.ts",
+        "e2e/app-hr-portal/document-upload.spec.ts",
+        "e2e/app-hr-portal/benefits-selection.spec.ts",
+        "e2e/app-hr-portal/agreement-signing.spec.ts"
+      ],
+      "event_type": "sdlc.e2e_tests.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-e2e-005",
+    "input": {
+      "tenant_id": "tenant-stark",
+      "workspace_id": "ws-saas",
+      "app_id": "app-project-mgmt",
+      "test_plan_path": "test-plans/app-project-mgmt/test-plan.md",
+      "framework": "playwright",
+      "output_dir": "e2e/app-project-mgmt"
+    },
+    "expected": {
+      "status": "success",
+      "spec_files": [
+        "e2e/app-project-mgmt/kanban-board.spec.ts",
+        "e2e/app-project-mgmt/task-create.spec.ts",
+        "e2e/app-project-mgmt/task-assignment.spec.ts"
+      ],
+      "event_type": "sdlc.e2e_tests.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-e2e-006",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-analytics",
+      "app_id": "app-reporting",
+      "test_plan_path": "test-plans/app-reporting/test-plan.md",
+      "framework": "playwright",
+      "output_dir": "e2e/app-reporting"
+    },
+    "expected": {
+      "status": "success",
+      "spec_files": [
+        "e2e/app-reporting/dashboard-create.spec.ts",
+        "e2e/app-reporting/widget-add.spec.ts",
+        "e2e/app-reporting/report-share.spec.ts",
+        "e2e/app-reporting/report-schedule.spec.ts"
+      ],
+      "event_type": "sdlc.e2e_tests.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-e2e-007",
+    "input": {
+      "tenant_id": "tenant-wayne",
+      "workspace_id": "ws-iot",
+      "app_id": "app-device-monitor",
+      "test_plan_path": "test-plans/app-device-monitor/test-plan.md",
+      "framework": "playwright",
+      "output_dir": "e2e/app-device-monitor"
+    },
+    "expected": {
+      "status": "success",
+      "spec_files": [
+        "e2e/app-device-monitor/alert-view.spec.ts",
+        "e2e/app-device-monitor/alert-acknowledge.spec.ts",
+        "e2e/app-device-monitor/threshold-config.spec.ts"
+      ],
+      "event_type": "sdlc.e2e_tests.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-e2e-008",
+    "input": {
+      "tenant_id": "tenant-globex",
+      "workspace_id": "ws-customer",
+      "app_id": "app-support",
+      "test_plan_path": "test-plans/app-support/test-plan.md",
+      "framework": "playwright",
+      "output_dir": "e2e/app-support"
+    },
+    "expected": {
+      "status": "success",
+      "spec_files": [
+        "e2e/app-support/ticket-submit.spec.ts",
+        "e2e/app-support/ticket-track.spec.ts",
+        "e2e/app-support/chat-support.spec.ts"
+      ],
+      "event_type": "sdlc.e2e_tests.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-e2e-009",
+    "input": {
+      "tenant_id": "tenant-initech",
+      "workspace_id": "ws-compliance",
+      "app_id": "app-audit-trail",
+      "test_plan_path": "test-plans/app-audit-trail/test-plan.md",
+      "framework": "playwright",
+      "output_dir": "e2e/app-audit-trail"
+    },
+    "expected": {
+      "status": "success",
+      "spec_files": [
+        "e2e/app-audit-trail/log-search.spec.ts",
+        "e2e/app-audit-trail/log-filter.spec.ts",
+        "e2e/app-audit-trail/log-export.spec.ts",
+        "e2e/app-audit-trail/event-detail.spec.ts"
+      ],
+      "event_type": "sdlc.e2e_tests.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-e2e-010",
+    "input": {
+      "tenant_id": "tenant-umbrella",
+      "workspace_id": "ws-ops",
+      "app_id": "app-incident-mgmt",
+      "test_plan_path": "test-plans/app-incident-mgmt/test-plan.md",
+      "framework": "playwright",
+      "output_dir": "e2e/app-incident-mgmt"
+    },
+    "expected": {
+      "status": "success",
+      "spec_files": [
+        "e2e/app-incident-mgmt/incident-create.spec.ts",
+        "e2e/app-incident-mgmt/responder-assign.spec.ts",
+        "e2e/app-incident-mgmt/incident-update.spec.ts",
+        "e2e/app-incident-mgmt/incident-close.spec.ts"
+      ],
+      "event_type": "sdlc.e2e_tests.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-e2e-011",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-content",
+      "app_id": "app-cms",
+      "test_plan_path": "test-plans/app-cms/test-plan.md",
+      "framework": "playwright",
+      "output_dir": "e2e/app-cms"
+    },
+    "expected": {
+      "status": "success",
+      "spec_files": [
+        "e2e/app-cms/article-create.spec.ts",
+        "e2e/app-cms/article-preview.spec.ts",
+        "e2e/app-cms/article-publish.spec.ts"
+      ],
+      "event_type": "sdlc.e2e_tests.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-e2e-012",
+    "input": {
+      "tenant_id": "tenant-stark",
+      "workspace_id": "ws-ai",
+      "app_id": "app-llm-studio",
+      "test_plan_path": "test-plans/app-llm-studio/test-plan.md",
+      "framework": "playwright",
+      "output_dir": "e2e/app-llm-studio"
+    },
+    "expected": {
+      "status": "success",
+      "spec_files": [
+        "e2e/app-llm-studio/prompt-run.spec.ts",
+        "e2e/app-llm-studio/model-select.spec.ts",
+        "e2e/app-llm-studio/output-compare.spec.ts",
+        "e2e/app-llm-studio/prompt-save.spec.ts"
+      ],
+      "event_type": "sdlc.e2e_tests.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-e2e-013",
+    "input": {
+      "tenant_id": "tenant-globex",
+      "workspace_id": "ws-devex",
+      "app_id": "app-ci-dashboard",
+      "test_plan_path": "test-plans/app-ci-dashboard/test-plan.md",
+      "framework": "playwright",
+      "output_dir": "e2e/app-ci-dashboard"
+    },
+    "expected": {
+      "status": "success",
+      "spec_files": [
+        "e2e/app-ci-dashboard/pipeline-list.spec.ts",
+        "e2e/app-ci-dashboard/stage-drill.spec.ts",
+        "e2e/app-ci-dashboard/job-rerun.spec.ts"
+      ],
+      "event_type": "sdlc.e2e_tests.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-e2e-014",
+    "input": {
+      "tenant_id": "tenant-initech",
+      "workspace_id": "ws-education",
+      "app_id": "app-lms",
+      "test_plan_path": "test-plans/app-lms/test-plan.md",
+      "framework": "playwright",
+      "output_dir": "e2e/app-lms"
+    },
+    "expected": {
+      "status": "success",
+      "spec_files": [
+        "e2e/app-lms/course-browse.spec.ts",
+        "e2e/app-lms/course-enroll.spec.ts",
+        "e2e/app-lms/progress-track.spec.ts",
+        "e2e/app-lms/certificate-download.spec.ts"
+      ],
+      "event_type": "sdlc.e2e_tests.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-e2e-015",
+    "input": {
+      "tenant_id": "tenant-umbrella",
+      "workspace_id": "ws-retail",
+      "app_id": "app-pos",
+      "test_plan_path": "test-plans/app-pos/test-plan.md",
+      "framework": "playwright",
+      "output_dir": "e2e/app-pos"
+    },
+    "expected": {
+      "status": "success",
+      "spec_files": [
+        "e2e/app-pos/item-scan.spec.ts",
+        "e2e/app-pos/discount-apply.spec.ts",
+        "e2e/app-pos/payment-process.spec.ts",
+        "e2e/app-pos/receipt-print.spec.ts"
+      ],
+      "event_type": "sdlc.e2e_tests.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-e2e-016",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-data",
+      "app_id": "app-data-catalog",
+      "test_plan_path": "test-plans/app-data-catalog/test-plan.md",
+      "framework": "playwright",
+      "output_dir": "e2e/app-data-catalog"
+    },
+    "expected": {
+      "status": "success",
+      "spec_files": [
+        "e2e/app-data-catalog/dataset-search.spec.ts",
+        "e2e/app-data-catalog/data-preview.spec.ts",
+        "e2e/app-data-catalog/access-request.spec.ts"
+      ],
+      "event_type": "sdlc.e2e_tests.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-e2e-017",
+    "input": {
+      "tenant_id": "tenant-stark",
+      "workspace_id": "ws-fintech",
+      "app_id": "app-portfolio",
+      "test_plan_path": "test-plans/app-portfolio/test-plan.md",
+      "framework": "playwright",
+      "output_dir": "e2e/app-portfolio"
+    },
+    "expected": {
+      "status": "success",
+      "spec_files": [
+        "e2e/app-portfolio/trade-history-view.spec.ts",
+        "e2e/app-portfolio/asset-filter.spec.ts",
+        "e2e/app-portfolio/csv-export.spec.ts",
+        "e2e/app-portfolio/pnl-chart.spec.ts"
+      ],
+      "event_type": "sdlc.e2e_tests.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-e2e-018",
+    "input": {
+      "tenant_id": "tenant-globex",
+      "workspace_id": "ws-admin",
+      "app_id": "app-user-mgmt",
+      "test_plan_path": "test-plans/app-user-mgmt/test-plan.md",
+      "framework": "playwright",
+      "output_dir": "e2e/app-user-mgmt"
+    },
+    "expected": {
+      "status": "success",
+      "spec_files": [
+        "e2e/app-user-mgmt/user-search.spec.ts",
+        "e2e/app-user-mgmt/role-assign.spec.ts",
+        "e2e/app-user-mgmt/bulk-import.spec.ts",
+        "e2e/app-user-mgmt/access-revoke.spec.ts"
+      ],
+      "event_type": "sdlc.e2e_tests.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-e2e-019",
+    "input": {
+      "tenant_id": "tenant-wayne",
+      "workspace_id": "ws-manufacturing",
+      "app_id": "app-quality-control",
+      "test_plan_path": "test-plans/app-quality-control/test-plan.md",
+      "framework": "playwright",
+      "output_dir": "e2e/app-quality-control"
+    },
+    "expected": {
+      "status": "success",
+      "spec_files": [
+        "e2e/app-quality-control/defect-log.spec.ts",
+        "e2e/app-quality-control/photo-capture.spec.ts",
+        "e2e/app-quality-control/qa-route.spec.ts"
+      ],
+      "event_type": "sdlc.e2e_tests.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-e2e-020",
+    "input": {
+      "tenant_id": "tenant-initech",
+      "workspace_id": "ws-healthcare",
+      "app_id": "app-patient-portal",
+      "test_plan_path": "test-plans/app-patient-portal/test-plan.md",
+      "framework": "playwright",
+      "output_dir": "e2e/app-patient-portal"
+    },
+    "expected": {
+      "status": "success",
+      "spec_files": [
+        "e2e/app-patient-portal/provider-search.spec.ts",
+        "e2e/app-patient-portal/appointment-book.spec.ts",
+        "e2e/app-patient-portal/appointment-confirm.spec.ts",
+        "e2e/app-patient-portal/reminder-setup.spec.ts"
+      ],
+      "event_type": "sdlc.e2e_tests.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-e2e-021",
+    "input": {
+      "tenant_id": "tenant-umbrella",
+      "workspace_id": "ws-supply-chain",
+      "app_id": "app-procurement",
+      "test_plan_path": "test-plans/app-procurement/test-plan.md",
+      "framework": "playwright",
+      "output_dir": "e2e/app-procurement"
+    },
+    "expected": {
+      "status": "success",
+      "spec_files": [
+        "e2e/app-procurement/po-create.spec.ts",
+        "e2e/app-procurement/approval-flow.spec.ts",
+        "e2e/app-procurement/goods-receive.spec.ts",
+        "e2e/app-procurement/invoice-match.spec.ts"
+      ],
+      "event_type": "sdlc.e2e_tests.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-e2e-022",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-gamification",
+      "app_id": "app-loyalty",
+      "test_plan_path": "test-plans/app-loyalty/test-plan.md",
+      "framework": "playwright",
+      "output_dir": "e2e/app-loyalty"
+    },
+    "expected": {
+      "status": "success",
+      "spec_files": [
+        "e2e/app-loyalty/points-view.spec.ts",
+        "e2e/app-loyalty/reward-redeem.spec.ts",
+        "e2e/app-loyalty/offers-browse.spec.ts"
+      ],
+      "event_type": "sdlc.e2e_tests.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-e2e-023",
+    "input": {
+      "tenant_id": "tenant-wayne",
+      "workspace_id": "ws-energy",
+      "app_id": "app-grid-monitor",
+      "test_plan_path": "test-plans/app-grid-monitor/test-plan.md",
+      "framework": "playwright",
+      "output_dir": "e2e/app-grid-monitor"
+    },
+    "expected": {
+      "status": "success",
+      "spec_files": [
+        "e2e/app-grid-monitor/consumption-view.spec.ts",
+        "e2e/app-grid-monitor/billing-compare.spec.ts",
+        "e2e/app-grid-monitor/alert-set.spec.ts",
+        "e2e/app-grid-monitor/report-download.spec.ts"
+      ],
+      "event_type": "sdlc.e2e_tests.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-e2e-024",
+    "input": {
+      "tenant_id": "tenant-stark",
+      "workspace_id": "ws-marketplace",
+      "app_id": "app-vendor-portal",
+      "test_plan_path": "test-plans/app-vendor-portal/test-plan.md",
+      "framework": "playwright",
+      "output_dir": "e2e/app-vendor-portal"
+    },
+    "expected": {
+      "status": "success",
+      "spec_files": [
+        "e2e/app-vendor-portal/product-upload.spec.ts",
+        "e2e/app-vendor-portal/pricing-set.spec.ts",
+        "e2e/app-vendor-portal/inventory-manage.spec.ts",
+        "e2e/app-vendor-portal/sales-analytics.spec.ts"
+      ],
+      "event_type": "sdlc.e2e_tests.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-e2e-025",
+    "input": {
+      "tenant_id": "tenant-globex",
+      "workspace_id": "ws-bi",
+      "app_id": "app-bi-suite",
+      "test_plan_path": "test-plans/app-bi-suite/test-plan.md",
+      "framework": "playwright",
+      "output_dir": "e2e/app-bi-suite"
+    },
+    "expected": {
+      "status": "success",
+      "spec_files": [
+        "e2e/app-bi-suite/chart-create.spec.ts",
+        "e2e/app-bi-suite/data-bind.spec.ts",
+        "e2e/app-bi-suite/chart-publish.spec.ts"
+      ],
+      "event_type": "sdlc.e2e_tests.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-e2e-026",
+    "input": {
+      "tenant_id": "tenant-initech",
+      "workspace_id": "ws-realestate",
+      "app_id": "app-property-mgmt",
+      "test_plan_path": "test-plans/app-property-mgmt/test-plan.md",
+      "framework": "playwright",
+      "output_dir": "e2e/app-property-mgmt"
+    },
+    "expected": {
+      "status": "success",
+      "spec_files": [
+        "e2e/app-property-mgmt/lease-create.spec.ts",
+        "e2e/app-property-mgmt/payment-track.spec.ts",
+        "e2e/app-property-mgmt/lease-renew.spec.ts",
+        "e2e/app-property-mgmt/lease-terminate.spec.ts"
+      ],
+      "event_type": "sdlc.e2e_tests.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-e2e-027",
+    "input": {
+      "tenant_id": "tenant-umbrella",
+      "workspace_id": "ws-logistics",
+      "app_id": "app-shipment-tracker",
+      "test_plan_path": "test-plans/app-shipment-tracker/test-plan.md",
+      "framework": "playwright",
+      "output_dir": "e2e/app-shipment-tracker"
+    },
+    "expected": {
+      "status": "success",
+      "spec_files": [
+        "e2e/app-shipment-tracker/tracking-lookup.spec.ts",
+        "e2e/app-shipment-tracker/map-view.spec.ts",
+        "e2e/app-shipment-tracker/delivery-sign.spec.ts"
+      ],
+      "event_type": "sdlc.e2e_tests.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-e2e-028",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-frontend",
+      "app_id": "app-ecommerce",
+      "test_plan_path": "test-plans/app-ecommerce/test-plan.md",
+      "framework": "playwright",
+      "output_dir": "e2e/app-ecommerce-v2"
+    },
+    "expected": {
+      "status": "success",
+      "spec_files": [
+        "e2e/app-ecommerce-v2/product-catalog.spec.ts",
+        "e2e/app-ecommerce-v2/cart.spec.ts",
+        "e2e/app-ecommerce-v2/checkout.spec.ts"
+      ],
+      "event_type": "sdlc.e2e_tests.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-e2e-029",
+    "input": {
+      "tenant_id": "tenant-wayne",
+      "workspace_id": "ws-security",
+      "app_id": "app-access-control",
+      "test_plan_path": "test-plans/app-access-control/test-plan.md",
+      "framework": "playwright",
+      "output_dir": "e2e/app-access-control"
+    },
+    "expected": {
+      "status": "success",
+      "spec_files": [
+        "e2e/app-access-control/door-status.spec.ts",
+        "e2e/app-access-control/access-grant.spec.ts",
+        "e2e/app-access-control/entry-log.spec.ts"
+      ],
+      "event_type": "sdlc.e2e_tests.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-e2e-030",
+    "input": {
+      "tenant_id": "tenant-globex",
+      "workspace_id": "ws-mobile",
+      "app_id": "app-banking",
+      "test_plan_path": "test-plans/app-banking/test-plan.md",
+      "framework": "playwright",
+      "output_dir": "e2e/app-banking-mobile"
+    },
+    "expected": {
+      "status": "success",
+      "spec_files": [
+        "e2e/app-banking-mobile/account-dashboard.spec.ts",
+        "e2e/app-banking-mobile/fund-transfer.spec.ts",
+        "e2e/app-banking-mobile/bill-pay.spec.ts",
+        "e2e/app-banking-mobile/statements.spec.ts"
+      ],
+      "event_type": "sdlc.e2e_tests.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-e2e-adv-001",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-frontend",
+      "app_id": "app-ecommerce",
+      "test_plan_path": "test-plans/nonexistent/test-plan.md",
+      "framework": "playwright",
+      "output_dir": "e2e/app-ecommerce"
+    },
+    "expected": {
+      "status": "error",
+      "error_code": "PLAN_NOT_FOUND",
+      "error_detail": "Test plan file does not exist at the specified path",
+      "event_type": "sdlc.e2e_tests.generated.v1"
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "qa-e2e-adv-002",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-frontend",
+      "app_id": "app-ecommerce",
+      "test_plan_path": "test-plans/app-ecommerce/empty-plan.md",
+      "framework": "playwright",
+      "output_dir": "e2e/app-ecommerce"
+    },
+    "expected": {
+      "status": "success",
+      "spec_files": [],
+      "event_type": "sdlc.e2e_tests.generated.v1"
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "qa-e2e-adv-003",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-frontend",
+      "app_id": "app-ecommerce",
+      "test_plan_path": "test-plans/app-ecommerce/test-plan.md",
+      "framework": "cypress",
+      "output_dir": "e2e/app-ecommerce"
+    },
+    "expected": {
+      "status": "error",
+      "error_code": "INVALID_FRAMEWORK",
+      "error_detail": "framework must be one of: playwright",
+      "event_type": "sdlc.e2e_tests.generated.v1"
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "qa-e2e-adv-004",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-frontend",
+      "app_id": "app-ecommerce",
+      "test_plan_path": "test-plans/app-ecommerce/test-plan.md",
+      "framework": "playwright",
+      "output_dir": ""
+    },
+    "expected": {
+      "status": "error",
+      "error_code": "INVALID_INPUT",
+      "error_detail": "output_dir is required",
+      "event_type": "sdlc.e2e_tests.generated.v1"
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "qa-e2e-adv-005",
+    "input": {
+      "tenant_id": "",
+      "workspace_id": "",
+      "app_id": "",
+      "test_plan_path": "test-plans/app-ecommerce/test-plan.md",
+      "framework": "playwright",
+      "output_dir": "e2e/app-ecommerce"
+    },
+    "expected": {
+      "status": "error",
+      "error_code": "INVALID_INPUT",
+      "error_detail": "tenant_id, workspace_id, and app_id are required",
+      "event_type": "sdlc.e2e_tests.generated.v1"
+    },
+    "weight": 2.0
+  }
+]

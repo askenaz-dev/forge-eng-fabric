@@ -4,6 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3000",
+    "design-system:merge": "node scripts/design-system-merger.mjs",
+    "design-system:test": "node scripts/design-system-merger.test.mjs",
+    "prebuild": "node scripts/design-system-merger.mjs",
     "build": "next build",
     "start": "next start -p 3000",
     "lint": "next lint --rulesdir ./.eslintrc-rules",

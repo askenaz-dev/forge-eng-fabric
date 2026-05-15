@@ -1,0 +1,215 @@
+# NetworkPolicy manifests for active-registry-gateways §6.5.
+#
+# Apply this manifest to a Tenant's namespace once the operator flips
+# `gateway.enforced=true` (active-registry-gateways tasks.md 10.3). The
+# policies establish a default-deny posture and explicitly allow only:
+#
+#   - egress to the cluster-internal mcp-gateway service
+#   - egress to the cluster-internal a2a-gateway service
+#   - egress to the cluster-internal model-gateway service
+#   - egress to the cluster DNS (CoreDNS) so service-name resolution works
+#   - egress to the cluster control plane for k8s API calls (operator pods only)
+#
+# Direct dial to a vendor MCP IP from a runner is dropped at the SDN.
+# When dropped, the runner emits guardrail.trip.v1 with reason
+# `gateway_bypass_blocked` (see active-registry-gateways/specs/agentic-execution-platform/spec.md).
+#
+# The selectors below target the canonical labels emitted by the Forge
+# Helm charts:
+#   forge.platform/role=runner          — workflow-runtime, alfred worker pods
+#   forge.platform/role=mcp-gateway     — mcp-gateway pods
+#   forge.platform/role=a2a-gateway     — a2a-gateway pods
+#   forge.platform/role=model-gateway   — model-gateway (LiteLLM) pods
+#   forge.platform/role=dns             — kube-system CoreDNS
+#
+# Tenants opt in by labelling the namespace forge.platform/gateway-enforced=true
+# and applying this manifest.
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: forge-runner-deny-egress
+  namespace: forge-tenant  # operator replaces with the Tenant's namespace
+  labels:
+    forge.platform/component: gateway-enforcement
+    forge.platform/issued-by: active-registry-gateways
+spec:
+  podSelector:
+    matchLabels:
+      forge.platform/role: runner
+  policyTypes:
+    - Egress
+  egress: []  # default-deny — explicit allows live below
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: forge-runner-allow-gateways
+  namespace: forge-tenant
+  labels:
+    forge.platform/component: gateway-enforcement
+    forge.platform/issued-by: active-registry-gateways
+spec:
+  podSelector:
+    matchLabels:
+      forge.platform/role: runner
+  policyTypes:
+    - Egress
+  egress:
+    # mcp-gateway
+    - to:
+        - podSelector:
+            matchLabels:
+              forge.platform/role: mcp-gateway
+      ports:
+        - protocol: TCP
+          port: 8092
+    # a2a-gateway
+    - to:
+        - podSelector:
+            matchLabels:
+              forge.platform/role: a2a-gateway
+      ports:
+        - protocol: TCP
+          port: 8093
+    # model-gateway (LiteLLM)
+    - to:
+        - podSelector:
+            matchLabels:
+              forge.platform/role: model-gateway
+      ports:
+        - protocol: TCP
+          port: 4000
+    # registry — runners read assets to resolve refs before invoking
+    - to:
+        - podSelector:
+            matchLabels:
+              forge.platform/role: registry
+      ports:
+        - protocol: TCP
+          port: 8082
+    # CoreDNS so the service names above resolve
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+---
+# alfred is treated as a runner for egress purposes — the same gateway
+# seam applies. We keep a separate NetworkPolicy so operators can
+# graduate alfred independently if they wish.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: forge-alfred-deny-direct-mcp-a2a
+  namespace: forge-tenant
+  labels:
+    forge.platform/component: gateway-enforcement
+    forge.platform/issued-by: active-registry-gateways
+spec:
+  podSelector:
+    matchLabels:
+      forge.platform/role: alfred
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              forge.platform/role: mcp-gateway
+      ports:
+        - { protocol: TCP, port: 8092 }
+    - to:
+        - podSelector:
+            matchLabels:
+              forge.platform/role: a2a-gateway
+      ports:
+        - { protocol: TCP, port: 8093 }
+    - to:
+        - podSelector:
+            matchLabels:
+              forge.platform/role: model-gateway
+      ports:
+        - { protocol: TCP, port: 4000 }
+    - to:
+        - podSelector:
+            matchLabels:
+              forge.platform/role: registry
+      ports:
+        - { protocol: TCP, port: 8082 }
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - { protocol: UDP, port: 53 }
+        - { protocol: TCP, port: 53 }
+---
+# Ingress side: gateways accept traffic only from internal callers.
+# (External traffic enters through services/skill-gateway, which is
+# subject to its own ingress policy in infra/helm/skill-gateway.)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: forge-mcp-gateway-ingress
+  namespace: forge-tenant
+  labels:
+    forge.platform/component: gateway-enforcement
+    forge.platform/issued-by: active-registry-gateways
+spec:
+  podSelector:
+    matchLabels:
+      forge.platform/role: mcp-gateway
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              forge.platform/role: runner
+        - podSelector:
+            matchLabels:
+              forge.platform/role: alfred
+        - podSelector:
+            matchLabels:
+              forge.platform/role: skill-gateway
+      ports:
+        - { protocol: TCP, port: 8092 }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: forge-a2a-gateway-ingress
+  namespace: forge-tenant
+  labels:
+    forge.platform/component: gateway-enforcement
+    forge.platform/issued-by: active-registry-gateways
+spec:
+  podSelector:
+    matchLabels:
+      forge.platform/role: a2a-gateway
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              forge.platform/role: runner
+        - podSelector:
+            matchLabels:
+              forge.platform/role: alfred
+        - podSelector:
+            matchLabels:
+              forge.platform/role: skill-gateway
+      ports:
+        - { protocol: TCP, port: 8093 }

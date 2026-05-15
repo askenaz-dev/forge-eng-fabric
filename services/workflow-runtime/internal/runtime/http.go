@@ -49,13 +49,14 @@ func (h *Handler) metrics(w http.ResponseWriter, _ *http.Request) {
 }
 
 type startRequest struct {
-	TenantID      string          `json:"tenant_id"`
-	WorkspaceID   string          `json:"workspace_id"`
-	WorkflowYAML  string          `json:"workflow_yaml,omitempty"`
-	Workflow      json.RawMessage `json:"workflow,omitempty"`
-	Inputs        map[string]any  `json:"inputs,omitempty"`
-	CorrelationID string          `json:"correlation_id,omitempty"`
-	DryRun        bool            `json:"dry_run,omitempty"`
+	TenantID       string          `json:"tenant_id"`
+	WorkspaceID    string          `json:"workspace_id"`
+	WorkflowYAML   string          `json:"workflow_yaml,omitempty"`
+	Workflow       json.RawMessage `json:"workflow,omitempty"`
+	Inputs         map[string]any  `json:"inputs,omitempty"`
+	CorrelationID  string          `json:"correlation_id,omitempty"`
+	DryRun         bool            `json:"dry_run,omitempty"`
+	SelectedAssets *SelectedAssets `json:"selected_assets,omitempty"`
 }
 
 func (h *Handler) start(w http.ResponseWriter, r *http.Request) {
@@ -75,12 +76,13 @@ func (h *Handler) start(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	exec, err := h.Service.Engine.StartWorkflow(context.WithoutCancel(r.Context()), StartRequest{
-		TenantID:      req.TenantID,
-		WorkspaceID:   req.WorkspaceID,
-		Workflow:      wf,
-		Inputs:        req.Inputs,
-		CorrelationID: req.CorrelationID,
-		DryRun:        req.DryRun,
+		TenantID:       req.TenantID,
+		WorkspaceID:    req.WorkspaceID,
+		Workflow:       wf,
+		Inputs:         req.Inputs,
+		CorrelationID:  req.CorrelationID,
+		DryRun:         req.DryRun,
+		SelectedAssets: req.SelectedAssets,
 	})
 	if err != nil {
 		writeError(w, err)

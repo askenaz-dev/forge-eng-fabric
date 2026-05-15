@@ -1,0 +1,109 @@
+groups:
+  - name: active-registry-gateways-slos
+    # Alerts for active-registry-gateways §8.5. Every rule keys off
+    # metric series the mcp-gateway and a2a-gateway expose on /metrics.
+    rules:
+      - alert: MCPGatewayP95AboveOneSecond
+        # SLO: p95 of MCP invocations under 1s end-to-end excluding the
+        # upstream tool latency we cannot control. The histogram includes
+        # the upstream call, so the threshold is a coarse signal — drill
+        # into the upstream by `source` label (internal vs external_proxy)
+        # to triage.
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(mcp_gateway_latency_seconds_bucket[5m])) by (le, asset)
+          ) > 1
+        for: 10m
+        labels:
+          severity: warning
+          component: mcp-gateway
+        annotations:
+          summary: mcp-gateway p95 above 1s for an asset
+          description: |
+            p95 latency for `{{ $labels.asset }}` is above the 1s SLO over a
+            10-minute window. Drill into source=internal vs external_proxy
+            and into the OpenTelemetry trace via correlation_id.
+
+      - alert: A2AGatewayP95AboveOneSecond
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(a2a_gateway_latency_seconds_bucket[5m])) by (le, asset)
+          ) > 1
+        for: 10m
+        labels:
+          severity: warning
+          component: a2a-gateway
+        annotations:
+          summary: a2a-gateway p95 above 1s for an asset
+          description: |
+            p95 latency for `{{ $labels.asset }}` exceeds 1s over 10 minutes.
+            tasks/sendSubscribe streams are excluded by `method` label.
+
+      - alert: ExternalDriftUnresolved24h
+        # Drift events accumulate as a counter; an unresolved drift is one
+        # where the drift event count outpaces the auto-deprecate count.
+        expr: |
+          (
+            increase(forge_asset_external_drift_total[24h])
+            -
+            increase(forge_asset_external_drift_deprecated_total[24h])
+          ) > 0
+        for: 24h
+        labels:
+          severity: warning
+          component: registry
+        annotations:
+          summary: External-asset drift detected for >24h without resolution
+          description: |
+            An external MCP or A2A agent's manifest/agent-card has drifted
+            from the registered hash and has neither been re-acknowledged
+            nor auto-deprecated. Operator action: inspect the asset in the
+            Platform · External integrations view and re-verify.
+
+      - alert: CompatibilityShimUsedUnderEnforcement
+        # When `gateway.enforced=true` is set for a Tenant, the runtime
+        # MUST NOT emit `gateway_bypass_deprecated.v1`. Any rate > 0 is a
+        # mis-configuration that lets calls slip past the NetworkPolicy.
+        expr: |
+          sum(rate(forge_runtime_gateway_bypass_deprecated_total{gateway_enforced="true"}[5m])) > 0
+        for: 5m
+        labels:
+          severity: critical
+          component: workflow-runtime
+        annotations:
+          summary: Compatibility shim used while gateway.enforced=true
+          description: |
+            A runtime emitted gateway_bypass_deprecated.v1 even though
+            `gateway.enforced=true` is set. This indicates either a
+            mis-deployed shim (still in the binary) or NetworkPolicy
+            misconfiguration. Investigate the offending caller via the
+            `tenant_id` label.
+
+      - alert: MCPGatewayBudgetBlocksSpike
+        expr: |
+          sum(rate(mcp_gateway_budget_blocks_total[5m])) by (tenant) > 0.1
+        for: 15m
+        labels:
+          severity: info
+          component: mcp-gateway
+        annotations:
+          summary: Tenant {{ $labels.tenant }} budget exhausted for MCP
+          description: |
+            Tenant has hit its monthly MCP budget. Either bump the limit
+            in tenant-budget or the workflows need cost-shaping. This is
+            informational; the gateway is correctly refusing the calls.
+
+      - alert: A2AGatewayBudgetBlocksSpike
+        expr: |
+          sum(rate(a2a_gateway_budget_blocks_total[5m])) by (tenant) > 0.1
+        for: 15m
+        labels:
+          severity: info
+          component: a2a-gateway
+        annotations:
+          summary: Tenant {{ $labels.tenant }} budget exhausted for A2A
+          description: |
+            Tenant has hit its monthly A2A budget. Same posture as the
+            MCP variant above.

@@ -1,0 +1,87 @@
+---
+# SLO definitions for SDLC skills (sdlc-end-to-end task 11.3)
+# Applied per-service via the Forge SLO manager.
+
+slos:
+  - name: sdlc-architecture-skills-latency
+    service: sdlc-architecture-skills
+    description: "Architecture skill p95 response time"
+    indicator:
+      type: latency
+      metric: forge_skill_duration_seconds_bucket
+      labels: { phase: architecture }
+    target:
+      p95: 30s
+    window: 30d
+    alerting:
+      burn_rate_5m: 14.4
+      burn_rate_1h: 6.0
+
+  - name: sdlc-design-skills-latency
+    service: sdlc-design-skills
+    description: "Design skill p95 response time"
+    indicator:
+      type: latency
+      metric: forge_skill_duration_seconds_bucket
+      labels: { phase: design }
+    target:
+      p95: 30s
+    window: 30d
+    alerting:
+      burn_rate_5m: 14.4
+      burn_rate_1h: 6.0
+
+  - name: sdlc-qa-skills-latency
+    service: sdlc-qa-skills
+    description: "QA skill p95 response time"
+    indicator:
+      type: latency
+      metric: forge_skill_duration_seconds_bucket
+      labels: { phase: qa }
+    target:
+      p95: 30s
+    window: 30d
+    alerting:
+      burn_rate_5m: 14.4
+      burn_rate_1h: 6.0
+
+  - name: sdlc-iac-validate-latency
+    service: sdlc-iac
+    description: "IaC validator p95 response time"
+    indicator:
+      type: latency
+      metric: forge_skill_duration_seconds_bucket
+      labels: { phase: iac, skill: validate-iac }
+    target:
+      p95: 60s
+    window: 30d
+    alerting:
+      burn_rate_5m: 14.4
+      burn_rate_1h: 6.0
+
+  - name: healing-reactive-triage-latency
+    service: healing-engine
+    description: "Reactive triage (ci.failed.v1 → report posted) within 90s"
+    indicator:
+      type: latency
+      metric: forge_healing_triage_duration_seconds_bucket
+      labels: { trigger: ci_failed }
+    target:
+      p95: 90s
+    window: 30d
+    alerting:
+      burn_rate_5m: 14.4
+      burn_rate_1h: 6.0
+
+  - name: registry-sync-duration
+    service: registry
+    description: "Registry sync worker cycle p95 duration"
+    indicator:
+      type: latency
+      metric: forge_registry_sync_duration_seconds_bucket
+    target:
+      p95: 300s
+    window: 30d
+    alerting:
+      burn_rate_5m: 6.0
+      burn_rate_1h: 3.0

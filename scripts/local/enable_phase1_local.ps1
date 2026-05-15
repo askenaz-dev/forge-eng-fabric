@@ -199,6 +199,7 @@ foreach ($db in @("forge_control_plane", "forge_registry", "forge_audit", "forge
 }
 
 Apply-Migration "forge_control_plane" "control-plane/0001_init.sql" (Join-Path $Root "db\migrations\control-plane\0001_init.sql")
+Apply-Migration "forge_control_plane" "control-plane/0002_platform_user.sql" (Join-Path $Root "db\migrations\control-plane\0002_platform_user.sql")
 Apply-Migration "forge_registry" "registry/0001_init.sql" (Join-Path $Root "db\migrations\registry\0001_init.sql")
 Apply-Migration "forge_registry" "registry/0002_phase1_lifecycle.sql" (Join-Path $Root "db\migrations\registry\0002_phase1_lifecycle.sql")
 Apply-Migration "forge_audit" "audit/0001_init.sql" (Join-Path $Root "db\migrations\audit\0001_init.sql")

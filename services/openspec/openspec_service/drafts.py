@@ -213,6 +213,17 @@ def compute_completeness(draft: IntentDraft) -> CompletenessReport:
             return "partial"
         return "empty"
 
+    # Phase 5 (app-first-class-entity 6.6): the wizard's completeness map
+    # surfaces the App scope as the first required field. Drafts parked
+    # against the `_unassigned` bucket are treated as `partial`, not
+    # `complete`, so the commit button stays disabled until a real App is
+    # picked. The handler enforces the same invariant.
+    def app_scope_status() -> str:
+        if draft.app_id is None:
+            return "empty"
+        return "complete"
+
+    scope_fields = {"app_id": app_scope_status()}
     intent_fields = {
         "title": status_for(draft.title),
         "business_intent": status_for(draft.business_intent),
@@ -233,6 +244,7 @@ def compute_completeness(draft: IntentDraft) -> CompletenessReport:
     }
 
     sections = [
+        CompletenessSection(name="app_scope", status=aggregate(scope_fields), fields=scope_fields),
         CompletenessSection(name="intent", status=aggregate(intent_fields), fields=intent_fields),
         CompletenessSection(name="stakeholders", status=aggregate(stakeholder_fields), fields=stakeholder_fields),
         CompletenessSection(name="requirements", status=aggregate(req_fields), fields=req_fields),
@@ -251,6 +263,9 @@ def to_create_request(draft: IntentDraft) -> OpenSpecCreate:
     commit step reuses the validated `create()` path."""
     return OpenSpecCreate(
         workspace_id=draft.workspace_id,
+        # Phase 5: app-first-class-entity propagates the App scope captured
+        # by the wizard's first step into the persisted OpenSpec.
+        app_id=draft.app_id,
         title=draft.title or "(untitled intent)",
         business_intent=draft.business_intent,
         problem_statement=draft.problem_statement,
@@ -265,9 +280,16 @@ def to_create_request(draft: IntentDraft) -> OpenSpecCreate:
     )
 
 
-def can_commit(draft: IntentDraft) -> tuple[bool, str | None]:
+def can_commit(draft: IntentDraft, *, require_app_scope: bool = False) -> tuple[bool, str | None]:
     """Return (ok, reason) — drafts must have title + business intent + at least
     one functional requirement to commit, matching `OpenSpecCreate.validate_minimum_model`.
+
+    When `require_app_scope=True` (set by handlers running with the
+    `forge.app_entity.enabled` flag on for this workspace), the draft MUST
+    also carry an `app_id` that does not point at the system-managed
+    `_unassigned` bucket. The handler resolves the `_unassigned` App id and
+    passes the check through this function — drafts.py does not call the
+    application service directly.
     """
     if not draft.business_intent.strip():
         return False, "business_intent is required"
@@ -275,4 +297,6 @@ def can_commit(draft: IntentDraft) -> tuple[bool, str | None]:
         return False, "at least one functional requirement is required"
     if draft.turn_count > MAX_DIALOGUE_TURNS:
         return False, f"draft exceeded {MAX_DIALOGUE_TURNS} turns"
+    if require_app_scope and draft.app_id is None:
+        return False, "missing_app_scope"
     return True, None

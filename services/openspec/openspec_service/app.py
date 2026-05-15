@@ -25,6 +25,7 @@ from openspec_service.models import (
     OpenSpecDocument,
     OpenSpecListResponse,
     OpenSpecPatch,
+    OpenSpecReparentRequest,
     OpenSpecReviewRequest,
 )
 from openspec_service.store import FilesystemOpenSpecStore
@@ -53,6 +54,11 @@ class LinkRequest(BaseModel):
 
 class IntentStartRequest(BaseModel):
     workspace_id: uuid.UUID
+    # Phase 5 (app-first-class-entity 6.1 / 7.1): callers SHOULD include the
+    # App scope chosen by the wizard's first step. The field stays optional on
+    # the model so the legacy Alfred slash-command path keeps working during
+    # the rollout; the commit handler is what refuses commits without it.
+    app_id: uuid.UUID | None = None
     created_by: str
     title: str = ""
     business_intent: str = ""
@@ -276,12 +282,16 @@ def create_app(
             business_intent=request.business_intent,
             correlation_id=request.correlation_id,
         )
+        if request.app_id is not None:
+            draft.app_id = request.app_id
+            drafts.update(draft)
         publisher.publish(
             "intent.dialogue.started.v1",
             draft.draft_id,
             {
                 "draft_id": draft.draft_id,
                 "workspace_id": str(draft.workspace_id),
+                "app_id": str(draft.app_id) if draft.app_id else None,
                 "actor": request.created_by,
                 "correlation_id": request.correlation_id,
             },
@@ -329,9 +339,15 @@ def create_app(
         draft = drafts.get(draft_id)
         if not draft:
             raise HTTPException(status_code=404, detail="draft not found")
-        ok, reason = can_commit(draft)
+        # Phase 5 (app-first-class-entity 5.1, 6.5): refuse commits when the
+        # workspace has the App invariant enabled and the draft has no
+        # `app_id`. The flag is plumbed through Settings.require_app_scope
+        # so tests can flip it without touching the handler.
+        require_app_scope = getattr(app.state, "require_app_scope", False)
+        ok, reason = can_commit(draft, require_app_scope=require_app_scope)
         if not ok:
-            raise HTTPException(status_code=400, detail=f"draft not commit-ready: {reason}")
+            raise HTTPException(status_code=422 if reason == "missing_app_scope" else 400,
+                                detail=f"draft not commit-ready: {reason}")
         try:
             document = store.create(to_create_request(draft))
         except ValueError as exc:
@@ -348,11 +364,54 @@ def create_app(
                 "openspec_id": document.openspec_id,
                 "draft_id": draft.draft_id,
                 "workspace_id": str(document.workspace_id),
+                # Phase 5: include app_id so SDLC orchestrator, observability
+                # and audit subscribers do not need to issue an extra lookup.
+                "app_id": str(document.app_id) if document.app_id else None,
                 "actor": request.actor,
                 "correlation_id": draft.correlation_id,
             },
         )
         return document
+
+    @app.post("/v1/specs/{openspec_id}:reparent", response_model=OpenSpecDocument)
+    async def reparent_spec(openspec_id: str, request: OpenSpecReparentRequest) -> OpenSpecDocument:
+        """Re-anchor an OpenSpec under a different App (app-first-class-entity 5.4).
+
+        The handler enforces `app#editor` on both the source and target App.
+        Authorization is delegated to `app.state.app_authorizer` so the test
+        harness can inject a fake; production wires it to the OpenFGA client.
+        """
+        document = store.get(openspec_id)
+        if not document:
+            raise HTTPException(status_code=404, detail="openspec not found")
+        source_app_id = document.app_id
+        authorizer = getattr(app.state, "app_authorizer", None)
+        if authorizer is not None:
+            if source_app_id is not None and not authorizer.can_edit_app(request.actor, str(source_app_id)):
+                raise HTTPException(status_code=403, detail="missing_app_editor_on_source")
+            if not authorizer.can_edit_app(request.actor, str(request.target_app_id)):
+                raise HTTPException(status_code=403, detail="missing_app_editor_on_target")
+        updated = store.reparent(
+            openspec_id,
+            target_app_id=request.target_app_id,
+            actor=request.actor,
+            reason=request.reason,
+        )
+        if not updated:
+            raise HTTPException(status_code=404, detail="openspec not found")
+        publisher.publish(
+            "spec.reparented.v1",
+            updated.openspec_id,
+            {
+                "spec_id": updated.openspec_id,
+                "from_app_id": str(source_app_id) if source_app_id else None,
+                "to_app_id": str(request.target_app_id),
+                "principal": request.actor,
+                "reason": request.reason,
+                "correlation_id": request.correlation_id,
+            },
+        )
+        return updated
 
     @app.post("/v1/intent/{draft_id}/abandon", response_model=IntentDraft)
     async def intent_abandon(draft_id: str) -> IntentDraft:

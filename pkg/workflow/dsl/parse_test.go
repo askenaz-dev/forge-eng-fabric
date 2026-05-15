@@ -84,6 +84,51 @@ func TestParseRejectsBadAPIVersion(t *testing.T) {
 	}
 }
 
+// TestTargetsFieldRoundTrip verifies that a step-level `targets:` map survives
+// a Parse → Marshal → Parse round-trip unchanged (task 8.3 from sdlc-end-to-end).
+func TestTargetsFieldRoundTrip(t *testing.T) {
+	yaml := `apiVersion: forge.workflows/v1
+kind: Workflow
+metadata:
+  id: targets-test
+  name: Targets Test
+  version: 1.0.0
+spec:
+  steps:
+    - id: iac-step
+      type: skill
+      ref: registry:skill/sdlc-iac/generate-terraform@1.0.0
+      targets:
+        iac: required
+        sre: optional
+`
+	wf, err := Parse([]byte(yaml))
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	if len(wf.Spec.Steps) == 0 {
+		t.Fatal("no steps parsed")
+	}
+	step := wf.Spec.Steps[0]
+	if step.Targets["iac"] != "required" {
+		t.Fatalf("targets.iac: got %q want required", step.Targets["iac"])
+	}
+	if step.Targets["sre"] != "optional" {
+		t.Fatalf("targets.sre: got %q want optional", step.Targets["sre"])
+	}
+	out, err := Marshal(wf)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	wf2, err := Parse(out)
+	if err != nil {
+		t.Fatalf("re-parse: %v", err)
+	}
+	if !reflect.DeepEqual(wf.Spec.Steps[0].Targets, wf2.Spec.Steps[0].Targets) {
+		t.Fatalf("targets round-trip mismatch: %v vs %v", wf.Spec.Steps[0].Targets, wf2.Spec.Steps[0].Targets)
+	}
+}
+
 func TestParseDefaultsAPIVersion(t *testing.T) {
 	yaml := `metadata:
   id: x

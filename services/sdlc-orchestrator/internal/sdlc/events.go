@@ -11,6 +11,8 @@ const (
 	EventGateEvaluated    = "sdlc.phase.gate_evaluated.v1"
 	EventPhaseProgressed  = "sdlc.phase.progressed.v1"
 	EventPhaseBlocked     = "sdlc.phase.blocked.v1"
+	EventPhaseSkipped     = "sdlc.phase.skipped.v1"
+	EventPhaseWarning     = "sdlc.phase.warning.v1"
 	EventPhaseRegressed   = "sdlc.phase.regressed.v1"
 	EventOverrideConsumed = "policy.override.consumed.v1"
 )

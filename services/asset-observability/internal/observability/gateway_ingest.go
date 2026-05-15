@@ -75,7 +75,94 @@ func (s *Service) IngestGatewayCloudEvent(eventType string, body []byte) error {
 		"alfred.agent_mode.aborted.v1",
 		"alfred.agent_mode.failed.v1":
 		return s.ingestAgentModeEvent(eventType, body)
+	case "com.forge.mcp.invocation.v1":
+		return s.ingestMCPInvocation(body)
+	case "com.forge.a2a.invocation.v1":
+		return s.ingestA2AInvocation(body)
 	}
+	return nil
+}
+
+// ingestMCPInvocation translates a mcp-gateway invocation event into a
+// per-asset observability row. The `source` discriminator
+// (`internal`/`external_proxy`) lives in event.data.source and gets
+// joined into the Invocation row's Source field so the rollup can split
+// out direct vs proxied traffic.
+func (s *Service) ingestMCPInvocation(body []byte) error {
+	var ev struct {
+		ForgeTenantID    string `json:"forgetenantid"`
+		ForgeWorkspaceID string `json:"forgeworkspaceid"`
+		Data             struct {
+			AssetID       string  `json:"asset_id"`
+			AssetVersion  string  `json:"asset_version"`
+			ToolName      string  `json:"tool_name"`
+			Source        string  `json:"source"` // "internal" | "external_proxy"
+			Outcome       string  `json:"outcome"`
+			UpstreamStatus int    `json:"upstream_status"`
+			Streaming     bool    `json:"streaming"`
+			BytesOut      int64   `json:"bytes_out"`
+			LatencyMS     float64 `json:"latency_ms"`
+			CostUSDCents  int64   `json:"cost_usd_cents"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(body, &ev); err != nil {
+		return err
+	}
+	src := "mcp-gateway"
+	if ev.Data.Source != "" {
+		src = "mcp-gateway:" + ev.Data.Source
+	}
+	s.Store.Ingest(Invocation{
+		AssetID:      ev.Data.AssetID,
+		AssetVersion: ev.Data.AssetVersion,
+		TenantID:     ev.ForgeTenantID,
+		WorkspaceID:  ev.ForgeWorkspaceID,
+		StartedAt:    time.Now().UTC(),
+		DurationMS:   ev.Data.LatencyMS,
+		Success:      ev.Data.Outcome == "ok" || (ev.Data.UpstreamStatus > 0 && ev.Data.UpstreamStatus/100 == 2),
+		LLMCostUSD:   float64(ev.Data.CostUSDCents) / 100.0,
+		Source:       src,
+	})
+	return nil
+}
+
+// ingestA2AInvocation translates a a2a-gateway invocation event. The
+// `source` discriminator covers internal / external_proxy /
+// inbound_external so the rollup also reports inbound partner traffic.
+func (s *Service) ingestA2AInvocation(body []byte) error {
+	var ev struct {
+		ForgeTenantID    string `json:"forgetenantid"`
+		ForgeWorkspaceID string `json:"forgeworkspaceid"`
+		Data             struct {
+			AssetID      string  `json:"asset_id"`
+			AssetVersion string  `json:"asset_version"`
+			Method       string  `json:"method"`
+			Source       string  `json:"source"` // "internal" | "external_proxy" | "inbound_external"
+			Outcome      string  `json:"outcome"`
+			Streaming    bool    `json:"streaming"`
+			Partner      string  `json:"partner"`
+			LatencyMS    float64 `json:"latency_ms"`
+			CostUSDCents int64   `json:"cost_usd_cents"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(body, &ev); err != nil {
+		return err
+	}
+	src := "a2a-gateway"
+	if ev.Data.Source != "" {
+		src = "a2a-gateway:" + ev.Data.Source
+	}
+	s.Store.Ingest(Invocation{
+		AssetID:      ev.Data.AssetID,
+		AssetVersion: ev.Data.AssetVersion,
+		TenantID:     ev.ForgeTenantID,
+		WorkspaceID:  ev.ForgeWorkspaceID,
+		StartedAt:    time.Now().UTC(),
+		DurationMS:   ev.Data.LatencyMS,
+		Success:      ev.Data.Outcome == "ok",
+		LLMCostUSD:   float64(ev.Data.CostUSDCents) / 100.0,
+		Source:       src,
+	})
 	return nil
 }
 

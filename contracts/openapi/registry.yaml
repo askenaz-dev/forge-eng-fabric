@@ -102,13 +102,267 @@ paths:
         "404": { description: asset not found }
         "409": { description: distribution invariant violated or remote_transport required }
 
+  /v1/workspaces/{workspaceId}/apps:
+    parameters:
+      - { name: workspaceId, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: List Apps in a workspace
+      description: |
+        Returns every App in `lifecycle_state in {active, archived}` visible to the caller.
+        The system-managed `_unassigned` App is included with `system_managed=true`.
+      parameters:
+        - { name: include_archived, in: query, schema: { type: boolean, default: false } }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [apps]
+                properties:
+                  apps:
+                    type: array
+                    items: { $ref: "#/components/schemas/App" }
+        "403": { description: forbidden }
+    post:
+      summary: Create a new App in a workspace
+      description: |
+        Creates a new App scoped to the workspace. Caller must have
+        `workspace#editor`. Slugs starting with `_` are reserved and refused
+        with `app_slug_reserved` (the `_unassigned` App is created by the
+        workspace-bootstrap pipeline only).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AppCreate" }
+      responses:
+        "201":
+          description: created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/App" }
+        "403": { description: forbidden | app_slug_reserved | system_managed_app }
+        "409": { description: app_slug_conflict }
+        "422": { description: app_slug_invalid | missing_owners | missing_name }
+
+  /v1/apps/{appId}:
+    parameters:
+      - { name: appId, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: Get an App by id
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/App" }
+        "403": { description: forbidden }
+        "404": { description: app_not_found }
+    patch:
+      summary: Patch a mutable App field set
+      description: |
+        Caller must have `app#editor`. `slug`, `workspace_id` and `tenant_id`
+        are immutable. Patching a system-managed App returns `403 system_managed_app`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AppPatch" }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/App" }
+        "403": { description: forbidden | system_managed_app }
+        "404": { description: app_not_found }
+        "422": { description: missing_owners | missing_name | invalid_target_phase | invalid_target_value }
+    delete:
+      summary: Delete an App
+      description: |
+        Hard-deletes the App. Refused with `409 app_has_live_artefacts` if
+        the App still has specs, deployments, runtime registrations or
+        in-flight onboarding requests. The deletion is recorded in
+        application_audit and emits `app.deleted.v1`.
+      responses:
+        "200":
+          description: deleted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/App" }
+        "403": { description: forbidden | system_managed_app }
+        "404": { description: app_not_found }
+        "409":
+          description: app_has_live_artefacts
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AppDeleteBlockedError" }
+
+  /v1/apps/{appId}:archive:
+    parameters:
+      - { name: appId, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      summary: Archive an App
+      description: |
+        Moves `lifecycle_state` to `archived`. Subsequent OpenSpec creation
+        targeting this App returns `409 app_archived`. Existing specs remain
+        readable. Emits `app.archived.v1`.
+      responses:
+        "200":
+          description: archived
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/App" }
+        "403": { description: forbidden | system_managed_app }
+        "404": { description: app_not_found }
+
+  /v1/apps/{appId}:restore:
+    parameters:
+      - { name: appId, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      summary: Restore an archived App
+      description: |
+        Moves `lifecycle_state` back to `active`. Emits `app.restored.v1`.
+      responses:
+        "200":
+          description: restored
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/App" }
+        "403": { description: forbidden | system_managed_app }
+        "404": { description: app_not_found }
+
+  /v1/registry/mcps/external:
+    post:
+      summary: Register an external MCP server as a registry asset
+      description: |
+        Onboards a third-party MCP server into the Asset Registry with
+        `provenance=external` and `lifecycle_state=proposed`. The registry
+        fetches the live tool manifest from `endpoint_url`, stores its
+        sha256 digest, persists the per-Tenant `credential_ref` (vault path
+        only — the secret itself is dereferenced by `mcp-gateway` at
+        invocation time), and emits `com.forge.asset.external_registered.v1`.
+        Promotion to `approved` re-verifies the manifest digest; drift
+        rejects the promotion unless `acknowledge_drift=true` is passed.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ExternalAssetRegistration" }
+      responses:
+        "201":
+          description: registered
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Asset" }
+        "400": { description: invalid input (invalid_credential_ref, invalid_how_to, invalid_active_surface) }
+        "403": { description: forbidden }
+        "502": { description: manifest_fetch_failed (upstream endpoint unreachable) }
+
+  /v1/registry/agents/external:
+    post:
+      summary: Register an external A2A agent as a registry asset
+      description: |
+        Onboards a third-party A2A agent into the Asset Registry with
+        `provenance=external` and `lifecycle_state=proposed`. The registry
+        fetches the live agent-card from `endpoint_url + /.well-known/agent.json`,
+        stores its sha256 digest, persists the per-Tenant `credential_ref`,
+        and emits `com.forge.asset.external_registered.v1`. Drift behavior
+        mirrors the external-MCP flow.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ExternalAssetRegistration" }
+      responses:
+        "201":
+          description: registered
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Asset" }
+        "400": { description: invalid input }
+        "403": { description: forbidden }
+        "502": { description: manifest_fetch_failed }
+
+  /v1/design-systems:
+    get:
+      summary: List approved Design System assets visible to the caller
+      description: |
+        Returns the Design System catalog. Built-in templates
+        (`built_in_template=true`, `visibility=tenant_global`) are included for
+        every tenant; tenant-published Design Systems follow normal Registry
+        visibility rules.
+      responses:
+        "200":
+          description: catalog
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/DesignSystemRecord" }
+
+  /v1/design-systems/{ref}:
+    get:
+      summary: Resolve a Design System by id, by `id@version` or by alias
+      parameters:
+        - { in: path, name: ref, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: design system record
+          headers:
+            X-Resolved-From-Alias:
+              schema: { type: string }
+              description: |
+                Present when the caller queried by alias (e.g. `ds-forge-default`);
+                value is the alias name. Absent on direct id or id@version lookups.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DesignSystemRecord" }
+        "404": { description: design_system_not_found }
+
+  /v1/design-systems/aliases/{alias}:
+    post:
+      summary: Retarget a Design System alias (platform principal only)
+      parameters:
+        - { in: path, name: alias, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [target]
+              properties:
+                target:
+                  type: string
+                  description: New target (`asset_id` or `asset_id@version`)
+      responses:
+        "200":
+          description: retargeted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  alias: { type: string }
+                  before: { type: string }
+                  after: { type: string }
+        "403": { description: forbidden }
+
 components:
   securitySchemes:
     bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
   schemas:
     AssetType:
       type: string
-      enum: [mcp, skill, agent, workflow, prompt_template]
+      enum: [mcp, skill, agent, workflow, prompt_template, design_system]
+      description: |
+        The Registry supports six canonical asset types. `design_system` was
+        added by the `design-system-catalog` capability and carries a
+        structural `manifest` block describing the token sheet, component
+        pack, fonts, screenshots and use-case copy.
     Visibility:
       type: string
       enum: [workspace, tenant]
@@ -118,7 +372,7 @@ components:
       description: Phase 0 only supports `proposed`. Phase 1 introduces T0–T5 transitions.
     Asset:
       type: object
-      required: [id, version, type, name, owner_team, inputs_schema, outputs_schema, workspace_id, tenant_id, visibility, lifecycle_state, created_at]
+      required: [id, version, type, name, owner_team, inputs_schema, outputs_schema, workspace_id, tenant_id, visibility, lifecycle_state, created_at, provenance]
       properties:
         id: { type: string }
         version: { type: string, pattern: "^[0-9]+\\.[0-9]+\\.[0-9]+$" }
@@ -145,6 +399,21 @@ components:
         created_at: { type: string, format: date-time }
         created_by: { type: string }
         distribution: { $ref: "#/components/schemas/Distribution" }
+        how_to:
+          $ref: "#/components/schemas/HowTo"
+          nullable: true
+        active_surface:
+          $ref: "#/components/schemas/ActiveSurface"
+          nullable: true
+        provenance:
+          type: string
+          enum: [internal, external]
+          default: internal
+          description: |
+            Indicates whether the asset is a Forge-owned internal asset or a
+            proxy onto a third-party MCP / A2A endpoint. External assets
+            carry the per-Tenant credential ref on a side-table and are
+            re-verified on promotion + by the daily drift cron.
     Distribution:
       type: object
       required: [gateway_published, gateway_channel]
@@ -205,6 +474,78 @@ components:
         metadata:
           type: object
           additionalProperties: true
+        manifest:
+          $ref: "#/components/schemas/DesignSystemManifest"
+        built_in_template:
+          type: boolean
+          default: false
+          description: |
+            Reserved for the four platform-owned templates. Only the platform
+            principal may set this; non-built-in submissions are subject to the
+            sanity validator before approval.
+    DesignSystemRecord:
+      type: object
+      description: |
+        Projection of a `design_system` Asset used by the wizard catalog and
+        the CLI. The full Asset shape is reachable via /v1/assets/{id} for
+        deeper introspection.
+      properties:
+        asset_id: { type: string }
+        version: { type: string }
+        name: { type: string }
+        description: { type: string }
+        owner_team: { type: string }
+        workspace_id: { type: string, format: uuid }
+        tenant_id: { type: string, format: uuid }
+        visibility:
+          type: string
+          enum: [workspace, tenant, tenant_global]
+        lifecycle_state: { type: string }
+        trust_level: { type: string }
+        eval_scores:
+          type: object
+          additionalProperties: true
+        manifest: { $ref: "#/components/schemas/DesignSystemManifest" }
+        built_in_template: { type: boolean }
+        created_at: { type: string, format: date-time }
+    DesignSystemManifest:
+      type: object
+      description: |
+        Required for `type=design_system`. Carries the token sheet, component
+        pack, font preload list, light/dark screenshots and a short use-case
+        description. Every URL MUST be HTTPS and accompanied by a sha256
+        digest the build-time merger verifies.
+      required: [tokens, tokens_sha256, components, components_sha256, fonts, screenshots, use_case]
+      properties:
+        tokens: { type: string, format: uri }
+        tokens_sha256: { type: string, pattern: "^[0-9a-f]{64}$" }
+        components: { type: string, format: uri }
+        components_sha256: { type: string, pattern: "^[0-9a-f]{64}$" }
+        fonts:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [family, source]
+            properties:
+              family: { type: string, minLength: 1 }
+              weights:
+                type: array
+                items: { type: integer }
+              italic: { type: boolean, default: false }
+              source: { type: string, format: uri }
+        screenshots:
+          type: object
+          required: [light, light_sha256, dark, dark_sha256]
+          properties:
+            light: { type: string, format: uri }
+            light_sha256: { type: string, pattern: "^[0-9a-f]{64}$" }
+            dark: { type: string, format: uri }
+            dark_sha256: { type: string, pattern: "^[0-9a-f]{64}$" }
+        use_case:
+          type: string
+          maxLength: 240
+          description: One-line description of the intended look-and-feel.
     Error:
       type: object
       required: [code, message]
@@ -212,3 +553,231 @@ components:
         code: { type: string }
         message: { type: string }
         correlation_id: { type: string }
+    HowTo:
+      type: object
+      required: [install, usage]
+      description: |
+        How a human or client installs and uses this asset. The block is
+        validated by the registry; promotion to `approved` is refused if
+        either sub-block is missing or empty.
+      properties:
+        install:
+          type: object
+          description: |
+            Install command per client name (e.g. `claude-code`, `cursor`,
+            `cli`). Values are shell-ready commands.
+          additionalProperties: { type: string, minLength: 1 }
+          minProperties: 1
+        usage:
+          type: object
+          description: Usage snippet per programming language.
+          additionalProperties: { type: string, minLength: 1 }
+          minProperties: 1
+        env:
+          type: array
+          description: Names of environment variables this asset expects.
+          items: { type: string, minLength: 1 }
+    ActiveSurface:
+      type: object
+      required: [family]
+      description: |
+        Where the asset is reachable at runtime. For `family=mcp` or
+        `family=a2a` the gateway endpoint URL is required. For
+        `family=skill` the artifact pointer (URI + digest + signature) is
+        required, since skills travel through the artifact-store adapter.
+      properties:
+        family:
+          type: string
+          enum: [mcp, a2a, skill]
+        endpoint:
+          type: string
+          description: Required for family=mcp or family=a2a.
+        artifact_pointer:
+          type: string
+          description: Required for family=skill (e.g. nexus://forge-skills/foo@1.2.3).
+        digest:
+          type: string
+          description: sha256 of the skill artifact. Required for family=skill.
+          pattern: "^sha256:[0-9a-f]{64}$"
+        signature_id:
+          type: string
+          description: cosign signature reference. Required for family=skill.
+    ExternalAssetRegistration:
+      type: object
+      required: [workspace_id, name, version, owner_team, endpoint_url, credential_ref]
+      properties:
+        workspace_id: { type: string, format: uuid }
+        name: { type: string, minLength: 1, maxLength: 200 }
+        version: { type: string, pattern: "^[0-9]+\\.[0-9]+\\.[0-9]+$" }
+        owner_team: { type: string, minLength: 1 }
+        description: { type: string }
+        endpoint_url:
+          type: string
+          format: uri
+          description: HTTP(S) URL of the external MCP / A2A endpoint.
+        credential_ref:
+          type: string
+          description: |
+            Vault-style pointer to the per-Tenant credential. Must match
+            `^(vault|aws-sm|gcp-sm|azure-kv)://`. The raw secret is never
+            persisted by the registry.
+          pattern: "^(vault|aws-sm|gcp-sm|azure-kv)://"
+        allowlist:
+          type: array
+          description: |
+            For MCP: tool names this Tenant has approved. For A2A: task
+            types this Tenant has approved. Empty means deny-all at
+            invocation; populate explicitly to permit traffic.
+          items: { type: string }
+        how_to:
+          $ref: "#/components/schemas/HowTo"
+        active_surface:
+          $ref: "#/components/schemas/ActiveSurface"
+        metadata:
+          type: object
+          additionalProperties: true
+    AppLifecycle:
+      type: string
+      enum: [active, archived, deleted]
+    AppTargetValue:
+      type: string
+      enum: [required, optional, opt-in, skipped]
+      description: |
+        Per-phase SDLC delivery policy:
+        - `required` — phase runs; workflow fails if any required gate fails.
+        - `optional` — phase runs; gate failure emits a warning but does not fail.
+        - `opt-in`   — phase only runs when explicitly requested at workflow start.
+        - `skipped`  — phase removed from the plan entirely.
+    AppTargets:
+      type: object
+      description: |
+        Per-phase SDLC delivery policy for the App. All ten canonical phase keys
+        are present in every response; omitted keys in a PATCH are left untouched.
+      properties:
+        architect:    { $ref: "#/components/schemas/AppTargetValue" }
+        design:       { $ref: "#/components/schemas/AppTargetValue" }
+        development:  { $ref: "#/components/schemas/AppTargetValue" }
+        qa:           { $ref: "#/components/schemas/AppTargetValue" }
+        security:     { $ref: "#/components/schemas/AppTargetValue" }
+        devops:       { $ref: "#/components/schemas/AppTargetValue" }
+        iac:          { $ref: "#/components/schemas/AppTargetValue" }
+        sre:          { $ref: "#/components/schemas/AppTargetValue" }
+        finops:       { $ref: "#/components/schemas/AppTargetValue" }
+        observability: { $ref: "#/components/schemas/AppTargetValue" }
+    App:
+      type: object
+      required: [id, slug, name, workspace_id, tenant_id, lifecycle_state, owners, created_at, system_managed, targets]
+      properties:
+        id: { type: string, format: uuid }
+        slug:
+          type: string
+          pattern: "^[a-z0-9][a-z0-9_-]{0,62}$"
+        name: { type: string, minLength: 1 }
+        description: { type: string }
+        workspace_id: { type: string, format: uuid }
+        tenant_id: { type: string, format: uuid }
+        lifecycle_state: { $ref: "#/components/schemas/AppLifecycle" }
+        design_system_ref:
+          type: string
+          description: Pointer to a Design System Catalog entry. Phase 6.
+        default_environments:
+          type: array
+          items: { type: string }
+        repo_links:
+          type: array
+          items: { type: string }
+        runtime_links:
+          type: array
+          items: { type: string }
+        owners:
+          type: array
+          items: { type: string }
+          minItems: 1
+        targets:
+          $ref: "#/components/schemas/AppTargets"
+          description: |
+            Per-phase SDLC delivery policy. Initialised with platform defaults on
+            App creation. Patch individual keys via PATCH /v1/apps/{id}.
+        system_managed:
+          type: boolean
+          description: |
+            True when the App is the per-workspace `_unassigned` bucket.
+            Cannot be patched, archived or deleted via the public API.
+        created_at: { type: string, format: date-time }
+        created_by: { type: string }
+        updated_at: { type: string, format: date-time }
+        updated_by: { type: string }
+        archived_at: { type: string, format: date-time, nullable: true }
+    AppCreate:
+      type: object
+      required: [slug, name, owners]
+      properties:
+        slug:
+          type: string
+          pattern: "^[a-z0-9][a-z0-9_-]{0,62}$"
+        name: { type: string, minLength: 1 }
+        description: { type: string }
+        owners:
+          type: array
+          items: { type: string }
+          minItems: 1
+        design_system_ref: { type: string }
+        default_environments:
+          type: array
+          items: { type: string }
+        repo_links:
+          type: array
+          items: { type: string }
+        runtime_links:
+          type: array
+          items: { type: string }
+    AppPatch:
+      type: object
+      description: |
+        All fields are optional; omitted fields are left untouched. `slug`,
+        `workspace_id` and `tenant_id` are not patchable.
+      properties:
+        name: { type: string, minLength: 1 }
+        description: { type: string }
+        owners:
+          type: array
+          items: { type: string }
+          minItems: 1
+        design_system_ref: { type: string }
+        default_environments:
+          type: array
+          items: { type: string }
+        repo_links:
+          type: array
+          items: { type: string }
+        runtime_links:
+          type: array
+          items: { type: string }
+        targets:
+          $ref: "#/components/schemas/AppTargets"
+          description: |
+            Partial targets patch — only specified keys are updated. Unknown phase
+            keys or disallowed values return `422 invalid_target_phase /
+            invalid_target_value`.
+    AppDeleteBlockedError:
+      type: object
+      required: [error, blocked]
+      properties:
+        error:
+          type: string
+          enum: [app_has_live_artefacts]
+        blocked:
+          type: object
+          properties:
+            specs:
+              type: array
+              items: { type: string }
+            deployments:
+              type: array
+              items: { type: string }
+            onboarding:
+              type: array
+              items: { type: string }
+            runtimes:
+              type: array
+              items: { type: string }

@@ -1,0 +1,632 @@
+[
+  {
+    "id": "qa-plan-001",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-frontend",
+      "app_id": "app-ecommerce",
+      "api_contract_path": "contracts/openapi/app-ecommerce.yaml",
+      "criticality": "high",
+      "coverage_targets": {"line": 80, "branch": 70}
+    },
+    "expected": {
+      "status": "success",
+      "plan_path": "test-plans/app-ecommerce/test-plan.md",
+      "sections": ["scope", "test-cases", "risk-assessment", "coverage-targets", "environment-requirements"],
+      "event_type": "sdlc.test_plan.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-plan-002",
+    "input": {
+      "tenant_id": "tenant-globex",
+      "workspace_id": "ws-mobile",
+      "app_id": "app-banking",
+      "api_contract_path": "contracts/openapi/app-banking.yaml",
+      "criticality": "critical",
+      "coverage_targets": {"line": 95, "branch": 90, "function": 95}
+    },
+    "expected": {
+      "status": "success",
+      "plan_path": "test-plans/app-banking/test-plan.md",
+      "sections": ["scope", "test-cases", "risk-assessment", "coverage-targets", "environment-requirements", "security-test-cases", "performance-benchmarks"],
+      "event_type": "sdlc.test_plan.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-plan-003",
+    "input": {
+      "tenant_id": "tenant-initech",
+      "workspace_id": "ws-saas",
+      "app_id": "app-crm",
+      "api_contract_path": "contracts/openapi/app-crm.yaml",
+      "criticality": "medium",
+      "coverage_targets": null
+    },
+    "expected": {
+      "status": "success",
+      "plan_path": "test-plans/app-crm/test-plan.md",
+      "sections": ["scope", "test-cases", "risk-assessment", "environment-requirements"],
+      "event_type": "sdlc.test_plan.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-plan-004",
+    "input": {
+      "tenant_id": "tenant-umbrella",
+      "workspace_id": "ws-internal-tools",
+      "app_id": "app-hr-portal",
+      "api_contract_path": "contracts/openapi/app-hr-portal.yaml",
+      "criticality": "high",
+      "coverage_targets": {"line": 85, "branch": 75}
+    },
+    "expected": {
+      "status": "success",
+      "plan_path": "test-plans/app-hr-portal/test-plan.md",
+      "sections": ["scope", "test-cases", "risk-assessment", "coverage-targets", "environment-requirements"],
+      "event_type": "sdlc.test_plan.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-plan-005",
+    "input": {
+      "tenant_id": "tenant-stark",
+      "workspace_id": "ws-saas",
+      "app_id": "app-project-mgmt",
+      "api_contract_path": "contracts/openapi/app-project-mgmt.yaml",
+      "criticality": "low",
+      "coverage_targets": {"line": 60}
+    },
+    "expected": {
+      "status": "success",
+      "plan_path": "test-plans/app-project-mgmt/test-plan.md",
+      "sections": ["scope", "test-cases", "coverage-targets"],
+      "event_type": "sdlc.test_plan.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-plan-006",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-analytics",
+      "app_id": "app-reporting",
+      "api_contract_path": "contracts/openapi/app-reporting.yaml",
+      "criticality": "high",
+      "coverage_targets": {"line": 80, "branch": 75, "function": 85}
+    },
+    "expected": {
+      "status": "success",
+      "plan_path": "test-plans/app-reporting/test-plan.md",
+      "sections": ["scope", "test-cases", "risk-assessment", "coverage-targets", "environment-requirements"],
+      "event_type": "sdlc.test_plan.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-plan-007",
+    "input": {
+      "tenant_id": "tenant-wayne",
+      "workspace_id": "ws-iot",
+      "app_id": "app-device-monitor",
+      "api_contract_path": "contracts/openapi/app-device-monitor.yaml",
+      "criticality": "critical",
+      "coverage_targets": {"line": 95, "branch": 90}
+    },
+    "expected": {
+      "status": "success",
+      "plan_path": "test-plans/app-device-monitor/test-plan.md",
+      "sections": ["scope", "test-cases", "risk-assessment", "coverage-targets", "environment-requirements", "security-test-cases", "performance-benchmarks"],
+      "event_type": "sdlc.test_plan.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-plan-008",
+    "input": {
+      "tenant_id": "tenant-globex",
+      "workspace_id": "ws-customer",
+      "app_id": "app-support",
+      "api_contract_path": "contracts/openapi/app-support.yaml",
+      "criticality": "medium",
+      "coverage_targets": {"line": 70, "branch": 65}
+    },
+    "expected": {
+      "status": "success",
+      "plan_path": "test-plans/app-support/test-plan.md",
+      "sections": ["scope", "test-cases", "risk-assessment", "coverage-targets"],
+      "event_type": "sdlc.test_plan.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-plan-009",
+    "input": {
+      "tenant_id": "tenant-initech",
+      "workspace_id": "ws-compliance",
+      "app_id": "app-audit-trail",
+      "api_contract_path": "contracts/openapi/app-audit-trail.yaml",
+      "criticality": "critical",
+      "coverage_targets": {"line": 98, "branch": 95, "function": 98}
+    },
+    "expected": {
+      "status": "success",
+      "plan_path": "test-plans/app-audit-trail/test-plan.md",
+      "sections": ["scope", "test-cases", "risk-assessment", "coverage-targets", "environment-requirements", "security-test-cases", "performance-benchmarks", "compliance-checks"],
+      "event_type": "sdlc.test_plan.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-plan-010",
+    "input": {
+      "tenant_id": "tenant-umbrella",
+      "workspace_id": "ws-ops",
+      "app_id": "app-incident-mgmt",
+      "api_contract_path": "contracts/openapi/app-incident-mgmt.yaml",
+      "criticality": "high",
+      "coverage_targets": {"line": 85, "branch": 80}
+    },
+    "expected": {
+      "status": "success",
+      "plan_path": "test-plans/app-incident-mgmt/test-plan.md",
+      "sections": ["scope", "test-cases", "risk-assessment", "coverage-targets", "environment-requirements"],
+      "event_type": "sdlc.test_plan.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-plan-011",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-content",
+      "app_id": "app-cms",
+      "api_contract_path": "contracts/openapi/app-cms.yaml",
+      "criticality": "medium",
+      "coverage_targets": null
+    },
+    "expected": {
+      "status": "success",
+      "plan_path": "test-plans/app-cms/test-plan.md",
+      "sections": ["scope", "test-cases", "risk-assessment", "environment-requirements"],
+      "event_type": "sdlc.test_plan.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-plan-012",
+    "input": {
+      "tenant_id": "tenant-stark",
+      "workspace_id": "ws-ai",
+      "app_id": "app-llm-studio",
+      "api_contract_path": "contracts/openapi/app-llm-studio.yaml",
+      "criticality": "high",
+      "coverage_targets": {"line": 80, "branch": 70}
+    },
+    "expected": {
+      "status": "success",
+      "plan_path": "test-plans/app-llm-studio/test-plan.md",
+      "sections": ["scope", "test-cases", "risk-assessment", "coverage-targets", "environment-requirements", "model-evaluation-cases"],
+      "event_type": "sdlc.test_plan.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-plan-013",
+    "input": {
+      "tenant_id": "tenant-globex",
+      "workspace_id": "ws-devex",
+      "app_id": "app-ci-dashboard",
+      "api_contract_path": "contracts/openapi/app-ci-dashboard.yaml",
+      "criticality": "medium",
+      "coverage_targets": {"line": 75, "branch": 70}
+    },
+    "expected": {
+      "status": "success",
+      "plan_path": "test-plans/app-ci-dashboard/test-plan.md",
+      "sections": ["scope", "test-cases", "risk-assessment", "coverage-targets"],
+      "event_type": "sdlc.test_plan.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-plan-014",
+    "input": {
+      "tenant_id": "tenant-initech",
+      "workspace_id": "ws-education",
+      "app_id": "app-lms",
+      "api_contract_path": "contracts/openapi/app-lms.yaml",
+      "criticality": "medium",
+      "coverage_targets": {"line": 75}
+    },
+    "expected": {
+      "status": "success",
+      "plan_path": "test-plans/app-lms/test-plan.md",
+      "sections": ["scope", "test-cases", "coverage-targets", "environment-requirements"],
+      "event_type": "sdlc.test_plan.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-plan-015",
+    "input": {
+      "tenant_id": "tenant-umbrella",
+      "workspace_id": "ws-retail",
+      "app_id": "app-pos",
+      "api_contract_path": "contracts/openapi/app-pos.yaml",
+      "criticality": "critical",
+      "coverage_targets": {"line": 95, "branch": 90, "function": 95}
+    },
+    "expected": {
+      "status": "success",
+      "plan_path": "test-plans/app-pos/test-plan.md",
+      "sections": ["scope", "test-cases", "risk-assessment", "coverage-targets", "environment-requirements", "security-test-cases", "performance-benchmarks"],
+      "event_type": "sdlc.test_plan.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-plan-016",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-data",
+      "app_id": "app-data-catalog",
+      "api_contract_path": "contracts/openapi/app-data-catalog.yaml",
+      "criticality": "medium",
+      "coverage_targets": {"line": 70, "branch": 65}
+    },
+    "expected": {
+      "status": "success",
+      "plan_path": "test-plans/app-data-catalog/test-plan.md",
+      "sections": ["scope", "test-cases", "coverage-targets", "environment-requirements"],
+      "event_type": "sdlc.test_plan.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-plan-017",
+    "input": {
+      "tenant_id": "tenant-stark",
+      "workspace_id": "ws-fintech",
+      "app_id": "app-portfolio",
+      "api_contract_path": "contracts/openapi/app-portfolio.yaml",
+      "criticality": "critical",
+      "coverage_targets": {"line": 98, "branch": 95}
+    },
+    "expected": {
+      "status": "success",
+      "plan_path": "test-plans/app-portfolio/test-plan.md",
+      "sections": ["scope", "test-cases", "risk-assessment", "coverage-targets", "environment-requirements", "security-test-cases", "performance-benchmarks", "compliance-checks"],
+      "event_type": "sdlc.test_plan.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-plan-018",
+    "input": {
+      "tenant_id": "tenant-globex",
+      "workspace_id": "ws-admin",
+      "app_id": "app-user-mgmt",
+      "api_contract_path": "contracts/openapi/app-user-mgmt.yaml",
+      "criticality": "high",
+      "coverage_targets": {"line": 85, "branch": 80}
+    },
+    "expected": {
+      "status": "success",
+      "plan_path": "test-plans/app-user-mgmt/test-plan.md",
+      "sections": ["scope", "test-cases", "risk-assessment", "coverage-targets", "environment-requirements", "security-test-cases"],
+      "event_type": "sdlc.test_plan.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-plan-019",
+    "input": {
+      "tenant_id": "tenant-wayne",
+      "workspace_id": "ws-manufacturing",
+      "app_id": "app-quality-control",
+      "api_contract_path": "contracts/openapi/app-quality-control.yaml",
+      "criticality": "high",
+      "coverage_targets": {"line": 88, "branch": 80}
+    },
+    "expected": {
+      "status": "success",
+      "plan_path": "test-plans/app-quality-control/test-plan.md",
+      "sections": ["scope", "test-cases", "risk-assessment", "coverage-targets", "environment-requirements"],
+      "event_type": "sdlc.test_plan.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-plan-020",
+    "input": {
+      "tenant_id": "tenant-initech",
+      "workspace_id": "ws-healthcare",
+      "app_id": "app-patient-portal",
+      "api_contract_path": "contracts/openapi/app-patient-portal.yaml",
+      "criticality": "critical",
+      "coverage_targets": {"line": 95, "branch": 90, "function": 98}
+    },
+    "expected": {
+      "status": "success",
+      "plan_path": "test-plans/app-patient-portal/test-plan.md",
+      "sections": ["scope", "test-cases", "risk-assessment", "coverage-targets", "environment-requirements", "security-test-cases", "performance-benchmarks", "compliance-checks"],
+      "event_type": "sdlc.test_plan.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-plan-021",
+    "input": {
+      "tenant_id": "tenant-umbrella",
+      "workspace_id": "ws-supply-chain",
+      "app_id": "app-procurement",
+      "api_contract_path": "contracts/openapi/app-procurement.yaml",
+      "criticality": "high",
+      "coverage_targets": {"line": 82, "branch": 78}
+    },
+    "expected": {
+      "status": "success",
+      "plan_path": "test-plans/app-procurement/test-plan.md",
+      "sections": ["scope", "test-cases", "risk-assessment", "coverage-targets", "environment-requirements"],
+      "event_type": "sdlc.test_plan.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-plan-022",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-gamification",
+      "app_id": "app-loyalty",
+      "api_contract_path": "contracts/openapi/app-loyalty.yaml",
+      "criticality": "low",
+      "coverage_targets": null
+    },
+    "expected": {
+      "status": "success",
+      "plan_path": "test-plans/app-loyalty/test-plan.md",
+      "sections": ["scope", "test-cases"],
+      "event_type": "sdlc.test_plan.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-plan-023",
+    "input": {
+      "tenant_id": "tenant-wayne",
+      "workspace_id": "ws-energy",
+      "app_id": "app-grid-monitor",
+      "api_contract_path": "contracts/openapi/app-grid-monitor.yaml",
+      "criticality": "critical",
+      "coverage_targets": {"line": 95, "branch": 92}
+    },
+    "expected": {
+      "status": "success",
+      "plan_path": "test-plans/app-grid-monitor/test-plan.md",
+      "sections": ["scope", "test-cases", "risk-assessment", "coverage-targets", "environment-requirements", "security-test-cases", "performance-benchmarks"],
+      "event_type": "sdlc.test_plan.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-plan-024",
+    "input": {
+      "tenant_id": "tenant-stark",
+      "workspace_id": "ws-marketplace",
+      "app_id": "app-vendor-portal",
+      "api_contract_path": "contracts/openapi/app-vendor-portal.yaml",
+      "criticality": "medium",
+      "coverage_targets": {"line": 72, "branch": 68}
+    },
+    "expected": {
+      "status": "success",
+      "plan_path": "test-plans/app-vendor-portal/test-plan.md",
+      "sections": ["scope", "test-cases", "risk-assessment", "coverage-targets"],
+      "event_type": "sdlc.test_plan.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-plan-025",
+    "input": {
+      "tenant_id": "tenant-globex",
+      "workspace_id": "ws-bi",
+      "app_id": "app-bi-suite",
+      "api_contract_path": "contracts/openapi/app-bi-suite.yaml",
+      "criticality": "medium",
+      "coverage_targets": {"line": 75, "branch": 70}
+    },
+    "expected": {
+      "status": "success",
+      "plan_path": "test-plans/app-bi-suite/test-plan.md",
+      "sections": ["scope", "test-cases", "coverage-targets", "environment-requirements"],
+      "event_type": "sdlc.test_plan.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-plan-026",
+    "input": {
+      "tenant_id": "tenant-initech",
+      "workspace_id": "ws-realestate",
+      "app_id": "app-property-mgmt",
+      "api_contract_path": "contracts/openapi/app-property-mgmt.yaml",
+      "criticality": "medium",
+      "coverage_targets": null
+    },
+    "expected": {
+      "status": "success",
+      "plan_path": "test-plans/app-property-mgmt/test-plan.md",
+      "sections": ["scope", "test-cases", "risk-assessment", "environment-requirements"],
+      "event_type": "sdlc.test_plan.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-plan-027",
+    "input": {
+      "tenant_id": "tenant-umbrella",
+      "workspace_id": "ws-logistics",
+      "app_id": "app-shipment-tracker",
+      "api_contract_path": "contracts/openapi/app-shipment-tracker.yaml",
+      "criticality": "high",
+      "coverage_targets": {"line": 85, "branch": 80}
+    },
+    "expected": {
+      "status": "success",
+      "plan_path": "test-plans/app-shipment-tracker/test-plan.md",
+      "sections": ["scope", "test-cases", "risk-assessment", "coverage-targets", "environment-requirements"],
+      "event_type": "sdlc.test_plan.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-plan-028",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-frontend",
+      "app_id": "app-ecommerce",
+      "api_contract_path": "contracts/openapi/app-ecommerce-v2.yaml",
+      "criticality": "critical",
+      "coverage_targets": {"line": 95, "branch": 90, "function": 98}
+    },
+    "expected": {
+      "status": "success",
+      "plan_path": "test-plans/app-ecommerce/test-plan.md",
+      "sections": ["scope", "test-cases", "risk-assessment", "coverage-targets", "environment-requirements", "security-test-cases", "performance-benchmarks"],
+      "event_type": "sdlc.test_plan.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-plan-029",
+    "input": {
+      "tenant_id": "tenant-wayne",
+      "workspace_id": "ws-security",
+      "app_id": "app-access-control",
+      "api_contract_path": "contracts/openapi/app-access-control.yaml",
+      "criticality": "critical",
+      "coverage_targets": {"line": 98, "branch": 95, "function": 98}
+    },
+    "expected": {
+      "status": "success",
+      "plan_path": "test-plans/app-access-control/test-plan.md",
+      "sections": ["scope", "test-cases", "risk-assessment", "coverage-targets", "environment-requirements", "security-test-cases", "performance-benchmarks", "compliance-checks"],
+      "event_type": "sdlc.test_plan.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-plan-030",
+    "input": {
+      "tenant_id": "tenant-globex",
+      "workspace_id": "ws-mobile",
+      "app_id": "app-banking",
+      "api_contract_path": "contracts/openapi/app-banking-mobile.yaml",
+      "criticality": "critical",
+      "coverage_targets": {"line": 97, "branch": 93}
+    },
+    "expected": {
+      "status": "success",
+      "plan_path": "test-plans/app-banking/test-plan.md",
+      "sections": ["scope", "test-cases", "risk-assessment", "coverage-targets", "environment-requirements", "security-test-cases", "performance-benchmarks", "compliance-checks"],
+      "event_type": "sdlc.test_plan.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-plan-adv-001",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-frontend",
+      "app_id": "app-ecommerce",
+      "api_contract_path": "contracts/openapi/nonexistent.yaml",
+      "criticality": "high",
+      "coverage_targets": {"line": 80}
+    },
+    "expected": {
+      "status": "error",
+      "error_code": "CONTRACT_NOT_FOUND",
+      "error_detail": "API contract file does not exist at the specified path",
+      "event_type": "sdlc.test_plan.proposed.v1"
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "qa-plan-adv-002",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-frontend",
+      "app_id": "app-ecommerce",
+      "api_contract_path": "contracts/openapi/app-ecommerce.yaml",
+      "criticality": "catastrophic",
+      "coverage_targets": null
+    },
+    "expected": {
+      "status": "error",
+      "error_code": "INVALID_INPUT",
+      "error_detail": "criticality must be one of: low, medium, high, critical",
+      "event_type": "sdlc.test_plan.proposed.v1"
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "qa-plan-adv-003",
+    "input": {
+      "tenant_id": "",
+      "workspace_id": "",
+      "app_id": "",
+      "api_contract_path": "contracts/openapi/app-ecommerce.yaml",
+      "criticality": "medium",
+      "coverage_targets": null
+    },
+    "expected": {
+      "status": "error",
+      "error_code": "INVALID_INPUT",
+      "error_detail": "tenant_id, workspace_id, and app_id are required",
+      "event_type": "sdlc.test_plan.proposed.v1"
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "qa-plan-adv-004",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-frontend",
+      "app_id": "app-ecommerce",
+      "api_contract_path": "contracts/openapi/app-ecommerce.yaml",
+      "criticality": "high",
+      "coverage_targets": {"line": 101, "branch": 80}
+    },
+    "expected": {
+      "status": "error",
+      "error_code": "INVALID_INPUT",
+      "error_detail": "coverage_targets values must be between 0 and 100",
+      "event_type": "sdlc.test_plan.proposed.v1"
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "qa-plan-adv-005",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-frontend",
+      "app_id": "app-ecommerce",
+      "api_contract_path": "contracts/openapi/app-ecommerce-empty.yaml",
+      "criticality": "high",
+      "coverage_targets": null
+    },
+    "expected": {
+      "status": "success",
+      "plan_path": "test-plans/app-ecommerce/test-plan.md",
+      "sections": [],
+      "event_type": "sdlc.test_plan.proposed.v1"
+    },
+    "weight": 2.0
+  }
+]

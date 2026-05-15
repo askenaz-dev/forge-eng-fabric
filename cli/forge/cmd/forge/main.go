@@ -43,7 +43,41 @@ func main() {
 		Version:       fmt.Sprintf("%s (commit %s, signed-by %s)", version, commit, signed),
 	}
 
-	root.AddCommand(loginCmd(), logoutCmd(), skillsCmd(), clientsCmd(), configCmd())
+	root.AddCommand(loginCmd(), logoutCmd(), skillsCmd(), clientsCmd(), configCmd(), designSystemCmd())
+
+	// alfred-console-redesign §8.2 + §8.5: `openspec` sub-tree is a deprecated
+	// alias. Each sub-command prints a warning to stderr and delegates to the
+	// equivalent `forge` sub-command. The alias remains for two minor versions.
+	openspecDeprecated := func(subCmd string) *cobra.Command {
+		return &cobra.Command{
+			Use:   subCmd,
+			Short: fmt.Sprintf("Deprecated — use `forge %s` instead", subCmd),
+			RunE: func(cmd *cobra.Command, args []string) error {
+				fmt.Fprintln(os.Stderr, "WARNING: /openspec is deprecated; use /forge — https://forge.dev/docs/rename")
+				// Delegate to the matching forge sub-command.
+				root.SetArgs(append([]string{subCmd}, args...))
+				return root.Execute()
+			},
+		}
+	}
+	openspecRoot := &cobra.Command{
+		Use:   "openspec",
+		Short: "Deprecated alias for `forge` — use `forge` instead",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			fmt.Fprintln(os.Stderr, "WARNING: /openspec is deprecated; use /forge — https://forge.dev/docs/rename")
+			return nil
+		},
+	}
+	openspecRoot.AddCommand(
+		openspecDeprecated("login"),
+		openspecDeprecated("logout"),
+		openspecDeprecated("skills"),
+		openspecDeprecated("clients"),
+		openspecDeprecated("config"),
+	)
+	root.AddCommand(openspecRoot)
+
+	_ = openspecDeprecated // suppress unused warning if never called directly
 
 	if err := root.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, "forge:", err.Error())

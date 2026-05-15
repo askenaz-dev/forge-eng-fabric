@@ -1,0 +1,5 @@
+asset_id: sdlc.iac.generate-terraform.eval
+version: "1.0.0"
+description: "Graded fixtures for generate-terraform skill: AWS/GCP/Azure provider modules, environment overlays."
+trust_level: T1
+fixtures: fixtures.json

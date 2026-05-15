@@ -1,0 +1,72 @@
+{
+  "title": "Forge SDLC Phases",
+  "schemaVersion": 39,
+  "tags": ["forge", "sdlc", "sdlc-end-to-end"],
+  "panels": [
+    {
+      "title": "Skill invocation rate by phase",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "sum by (phase, skill) (rate(forge_skill_invocations_total[5m]))" }
+      ]
+    },
+    {
+      "title": "Gate pass/fail ratio by phase",
+      "type": "bargauge",
+      "targets": [
+        { "expr": "sum by (phase, gate, outcome) (increase(forge_sdlc_gate_evaluations_total[1h]))" }
+      ]
+    },
+    {
+      "title": "Skill p95 latency by phase",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "histogram_quantile(0.95, sum by (le, phase, skill) (rate(forge_skill_duration_seconds_bucket[5m])))" }
+      ]
+    },
+    {
+      "title": "Phases skipped (opt-in / skipped targets)",
+      "type": "stat",
+      "targets": [
+        { "expr": "sum by (phase) (increase(forge_sdlc_phase_skipped_total[1h]))" }
+      ]
+    },
+    {
+      "title": "L1 healing detections / hour",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "sum by (signal_source) (increase(forge_healing_detections_total[1h]))" }
+      ]
+    },
+    {
+      "title": "L2 fix proposals — approve/reject ratio",
+      "type": "piechart",
+      "targets": [
+        { "expr": "sum by (outcome) (increase(forge_healing_proposals_total[24h]))" }
+      ]
+    },
+    {
+      "title": "IaC PR open/merge ratio",
+      "type": "bargauge",
+      "targets": [
+        { "expr": "sum by (event) (increase(forge_iac_prs_total[24h]))" }
+      ]
+    },
+    {
+      "title": "Registry sync: checked/drifted/mirrored",
+      "type": "stat",
+      "targets": [
+        { "expr": "sum(increase(forge_registry_sync_assets_checked_total[24h]))" },
+        { "expr": "sum(increase(forge_registry_sync_assets_drifted_total[24h]))" },
+        { "expr": "sum(increase(forge_registry_sync_mirrors_triggered_total[24h]))" }
+      ]
+    },
+    {
+      "title": "Registry sync duration p95",
+      "type": "stat",
+      "targets": [
+        { "expr": "histogram_quantile(0.95, rate(forge_registry_sync_duration_seconds_bucket[1h]))" }
+      ]
+    }
+  ]
+}

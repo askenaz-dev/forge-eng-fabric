@@ -1,0 +1,824 @@
+[
+  {
+    "id": "qa-triage-001",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-frontend",
+      "app_id": "app-ecommerce",
+      "ci_run_id": "run-12345",
+      "failed_tests": [
+        {"name": "checkout > should complete purchase with credit card", "error": "TimeoutError: Waiting for selector '.order-confirmation' exceeded 30000ms", "file": "e2e/app-ecommerce/checkout.spec.ts"},
+        {"name": "checkout > should apply discount code", "error": "AssertionError: expected 90.00 to equal 85.00", "file": "e2e/app-ecommerce/checkout.spec.ts"}
+      ],
+      "pr_number": 482
+    },
+    "expected": {
+      "status": "success",
+      "hypotheses": [
+        {"description": "Order confirmation page rendering is delayed beyond test timeout; possible async state update regression in checkout flow", "confidence": 0.85, "affected_files": ["src/components/app-ecommerce/checkout/OrderConfirmation.tsx", "src/hooks/useCheckout.ts"]},
+        {"description": "Discount calculation logic has an off-by-one or rounding error for specific code types", "confidence": 0.75, "affected_files": ["src/lib/discounts.ts"]}
+      ],
+      "proposed_patch": null,
+      "auto_fix_eligible": false,
+      "event_type": "sdlc.triage.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-triage-002",
+    "input": {
+      "tenant_id": "tenant-globex",
+      "workspace_id": "ws-mobile",
+      "app_id": "app-banking",
+      "ci_run_id": "run-67890",
+      "failed_tests": [
+        {"name": "fund-transfer > should transfer between accounts", "error": "Error: expected status 200, got 403 Forbidden", "file": "e2e/app-banking/fund-transfer.spec.ts"}
+      ],
+      "pr_number": 201
+    },
+    "expected": {
+      "status": "success",
+      "hypotheses": [
+        {"description": "CSRF token or session cookie not being forwarded in test environment, causing 403 on authenticated endpoint", "confidence": 0.90, "affected_files": ["src/middleware/auth.ts", "e2e/app-banking/fund-transfer.spec.ts"]}
+      ],
+      "proposed_patch": "// In fund-transfer.spec.ts, add:\nawait page.context().addCookies([{ name: 'X-CSRF-Token', value: csrfToken, url: baseURL }]);",
+      "auto_fix_eligible": true,
+      "event_type": "sdlc.triage.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-triage-003",
+    "input": {
+      "tenant_id": "tenant-initech",
+      "workspace_id": "ws-saas",
+      "app_id": "app-crm",
+      "ci_run_id": "run-11111",
+      "failed_tests": [
+        {"name": "contact-search > should find contacts by email", "error": "AssertionError: expected [] to have length 3", "file": "e2e/app-crm/contact-search.spec.ts"},
+        {"name": "contact-search > should filter by company", "error": "AssertionError: expected [] to have length 5", "file": "e2e/app-crm/contact-search.spec.ts"},
+        {"name": "contact-create > should create a new contact", "error": "TimeoutError: locator.click: element is not visible", "file": "e2e/app-crm/contact-create.spec.ts"}
+      ],
+      "pr_number": 334
+    },
+    "expected": {
+      "status": "success",
+      "hypotheses": [
+        {"description": "Search index was not re-populated after test data migration in CI; seed data for contacts is missing", "confidence": 0.88, "affected_files": ["tests/fixtures/contacts.sql", "e2e/setup/seed.ts"]},
+        {"description": "Create contact button may have a rendering issue causing it to be hidden, possibly a CSS z-index conflict introduced in PR 334", "confidence": 0.70, "affected_files": ["src/components/app-crm/contact-management/ContactForm.tsx"]}
+      ],
+      "proposed_patch": null,
+      "auto_fix_eligible": false,
+      "event_type": "sdlc.triage.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-triage-004",
+    "input": {
+      "tenant_id": "tenant-umbrella",
+      "workspace_id": "ws-internal-tools",
+      "app_id": "app-hr-portal",
+      "ci_run_id": "run-22222",
+      "failed_tests": [
+        {"name": "document-upload > should upload PDF successfully", "error": "Error: File size exceeds limit: 10MB max, got 12.3MB in test fixture", "file": "e2e/app-hr-portal/document-upload.spec.ts"}
+      ],
+      "pr_number": null
+    },
+    "expected": {
+      "status": "success",
+      "hypotheses": [
+        {"description": "Test fixture PDF file exceeds the service's file size limit; the fixture needs to be replaced with a smaller file or the test should use a mock", "confidence": 0.97, "affected_files": ["e2e/fixtures/large-test.pdf", "e2e/app-hr-portal/document-upload.spec.ts"]}
+      ],
+      "proposed_patch": "// Replace fixture with a smaller file or mock the upload endpoint:\nawait page.route('**/api/documents/upload', route => route.fulfill({ status: 200, body: JSON.stringify({ id: 'doc-123', status: 'uploaded' }) }));",
+      "auto_fix_eligible": true,
+      "event_type": "sdlc.triage.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-triage-005",
+    "input": {
+      "tenant_id": "tenant-stark",
+      "workspace_id": "ws-saas",
+      "app_id": "app-project-mgmt",
+      "ci_run_id": "run-33333",
+      "failed_tests": [
+        {"name": "kanban-board > should drag task to done column", "error": "Error: Drag-and-drop interaction failed: dragstart event not fired", "file": "e2e/app-project-mgmt/kanban-board.spec.ts"},
+        {"name": "kanban-board > should reorder tasks within column", "error": "Error: Drag-and-drop interaction failed: dragstart event not fired", "file": "e2e/app-project-mgmt/kanban-board.spec.ts"}
+      ],
+      "pr_number": 118
+    },
+    "expected": {
+      "status": "success",
+      "hypotheses": [
+        {"description": "The drag-and-drop library was upgraded and the dragstart event now requires a pointer event sequence rather than mouse events; Playwright's dragTo may need updated selector strategy", "confidence": 0.82, "affected_files": ["src/components/app-project-mgmt/kanban-board/KanbanBoard.tsx", "package.json"]},
+        {"description": "PR 118 may have introduced a CSS change that covers the drag handle, preventing pointer events", "confidence": 0.65, "affected_files": ["src/styles/kanban.css"]}
+      ],
+      "proposed_patch": null,
+      "auto_fix_eligible": false,
+      "event_type": "sdlc.triage.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-triage-006",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-analytics",
+      "app_id": "app-reporting",
+      "ci_run_id": "run-44444",
+      "failed_tests": [
+        {"name": "report-schedule > should schedule weekly report", "error": "AssertionError: expected 'pending' to equal 'scheduled'", "file": "e2e/app-reporting/report-schedule.spec.ts"}
+      ],
+      "pr_number": 567
+    },
+    "expected": {
+      "status": "success",
+      "hypotheses": [
+        {"description": "Schedule job worker is not running in CI, so status stays 'pending'; test should mock the job queue or use a stub worker", "confidence": 0.91, "affected_files": ["e2e/app-reporting/report-schedule.spec.ts", "src/workers/schedule-job.ts"]}
+      ],
+      "proposed_patch": null,
+      "auto_fix_eligible": false,
+      "event_type": "sdlc.triage.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-triage-007",
+    "input": {
+      "tenant_id": "tenant-wayne",
+      "workspace_id": "ws-iot",
+      "app_id": "app-device-monitor",
+      "ci_run_id": "run-55555",
+      "failed_tests": [
+        {"name": "threshold-config > should save new alert threshold", "error": "Error: Network request failed: POST /api/thresholds returned 500", "file": "e2e/app-device-monitor/threshold-config.spec.ts"},
+        {"name": "alert-acknowledge > should acknowledge critical alert", "error": "TimeoutError: Waiting for selector '.alert-row.acknowledged' exceeded 10000ms", "file": "e2e/app-device-monitor/alert-acknowledge.spec.ts"}
+      ],
+      "pr_number": 89
+    },
+    "expected": {
+      "status": "success",
+      "hypotheses": [
+        {"description": "The thresholds API is returning 500 due to a missing database migration for the new alert_threshold_v2 schema introduced in PR 89", "confidence": 0.88, "affected_files": ["migrations/0042_alert_threshold_v2.sql", "src/api/thresholds.py"]},
+        {"description": "Acknowledgement status update is not reflected in UI without a page refresh; the UI may be missing a real-time subscription update", "confidence": 0.73, "affected_files": ["src/components/app-device-monitor/alert-console/AlertTable.tsx"]}
+      ],
+      "proposed_patch": null,
+      "auto_fix_eligible": false,
+      "event_type": "sdlc.triage.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-triage-008",
+    "input": {
+      "tenant_id": "tenant-globex",
+      "workspace_id": "ws-customer",
+      "app_id": "app-support",
+      "ci_run_id": "run-66666",
+      "failed_tests": [
+        {"name": "chat-support > should connect to live agent", "error": "TimeoutError: WebSocket connection timed out after 5000ms", "file": "e2e/app-support/chat-support.spec.ts"}
+      ],
+      "pr_number": null
+    },
+    "expected": {
+      "status": "success",
+      "hypotheses": [
+        {"description": "The live-agent WebSocket service is not available in CI environment; test requires network egress to an external chat platform", "confidence": 0.94, "affected_files": ["e2e/app-support/chat-support.spec.ts"]}
+      ],
+      "proposed_patch": "// Mock the WebSocket connection in CI:\nawait page.route('wss://chat.globex.com/**', route => { /* mock ws handshake */ });",
+      "auto_fix_eligible": true,
+      "event_type": "sdlc.triage.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-triage-009",
+    "input": {
+      "tenant_id": "tenant-initech",
+      "workspace_id": "ws-compliance",
+      "app_id": "app-audit-trail",
+      "ci_run_id": "run-77777",
+      "failed_tests": [
+        {"name": "log-export > should export logs as CSV", "error": "AssertionError: expected file download to be triggered within 3000ms", "file": "e2e/app-audit-trail/log-export.spec.ts"},
+        {"name": "log-filter > should filter by user", "error": "AssertionError: expected 2 rows, got 0", "file": "e2e/app-audit-trail/log-filter.spec.ts"}
+      ],
+      "pr_number": 203
+    },
+    "expected": {
+      "status": "success",
+      "hypotheses": [
+        {"description": "Browser download interception may not be configured in Playwright; need to set acceptDownloads: true in the browser context", "confidence": 0.92, "affected_files": ["e2e/app-audit-trail/log-export.spec.ts", "e2e/playwright.config.ts"]},
+        {"description": "User filter relies on audit log seed data; seed script is not populating user-specific entries for test users", "confidence": 0.80, "affected_files": ["tests/fixtures/audit-logs.sql"]}
+      ],
+      "proposed_patch": "// In playwright.config.ts, add to use block:\nacceptDownloads: true,",
+      "auto_fix_eligible": true,
+      "event_type": "sdlc.triage.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-triage-010",
+    "input": {
+      "tenant_id": "tenant-umbrella",
+      "workspace_id": "ws-ops",
+      "app_id": "app-incident-mgmt",
+      "ci_run_id": "run-88888",
+      "failed_tests": [
+        {"name": "incident-close > should close incident and generate report", "error": "Error: PDF generation service unavailable: connection refused localhost:9090", "file": "e2e/app-incident-mgmt/incident-close.spec.ts"}
+      ],
+      "pr_number": 441
+    },
+    "expected": {
+      "status": "success",
+      "hypotheses": [
+        {"description": "The PDF generation sidecar service is not started in the CI Docker Compose setup; test environment is missing the service dependency", "confidence": 0.95, "affected_files": ["docker-compose.ci.yml", "e2e/app-incident-mgmt/incident-close.spec.ts"]}
+      ],
+      "proposed_patch": null,
+      "auto_fix_eligible": false,
+      "event_type": "sdlc.triage.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-triage-011",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-content",
+      "app_id": "app-cms",
+      "ci_run_id": "run-99999",
+      "failed_tests": [
+        {"name": "article-publish > should publish to staging", "error": "AssertionError: expected status 'published', got 'pending_review'", "file": "e2e/app-cms/article-publish.spec.ts"}
+      ],
+      "pr_number": 712
+    },
+    "expected": {
+      "status": "success",
+      "hypotheses": [
+        {"description": "PR 712 introduced a mandatory review workflow flag that changes publish behavior; test user does not have the 'bypass_review' permission in the test environment", "confidence": 0.87, "affected_files": ["src/services/publish-service.ts", "tests/fixtures/users.json"]}
+      ],
+      "proposed_patch": null,
+      "auto_fix_eligible": false,
+      "event_type": "sdlc.triage.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-triage-012",
+    "input": {
+      "tenant_id": "tenant-stark",
+      "workspace_id": "ws-ai",
+      "app_id": "app-llm-studio",
+      "ci_run_id": "run-10001",
+      "failed_tests": [
+        {"name": "prompt-run > should return response within 10s", "error": "TimeoutError: response not received within 10000ms", "file": "e2e/app-llm-studio/prompt-run.spec.ts"},
+        {"name": "model-select > should switch model and rerun", "error": "AssertionError: expected model 'gpt-4' to be selected, got 'claude-3'", "file": "e2e/app-llm-studio/model-select.spec.ts"}
+      ],
+      "pr_number": 55
+    },
+    "expected": {
+      "status": "success",
+      "hypotheses": [
+        {"description": "LLM API is rate-limited or slow in CI; response timeout of 10s is too aggressive for real inference calls and should be increased or mocked", "confidence": 0.85, "affected_files": ["e2e/app-llm-studio/prompt-run.spec.ts"]},
+        {"description": "Default model selection was changed from 'gpt-4' to 'claude-3' in PR 55 without updating the test assertion", "confidence": 0.93, "affected_files": ["e2e/app-llm-studio/model-select.spec.ts", "src/constants/defaults.ts"]}
+      ],
+      "proposed_patch": "// In model-select.spec.ts, update assertion:\nawait expect(modelSelector).toHaveValue('claude-3');",
+      "auto_fix_eligible": true,
+      "event_type": "sdlc.triage.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-triage-013",
+    "input": {
+      "tenant_id": "tenant-globex",
+      "workspace_id": "ws-devex",
+      "app_id": "app-ci-dashboard",
+      "ci_run_id": "run-10002",
+      "failed_tests": [
+        {"name": "job-rerun > should rerun failed job", "error": "Error: Unauthorized: 403 Forbidden on POST /api/jobs/rerun", "file": "e2e/app-ci-dashboard/job-rerun.spec.ts"}
+      ],
+      "pr_number": 278
+    },
+    "expected": {
+      "status": "success",
+      "hypotheses": [
+        {"description": "The rerun endpoint now requires the 'ci:write' scope which the test service account does not have; RBAC was tightened in PR 278", "confidence": 0.89, "affected_files": ["src/api/jobs.ts", "tests/fixtures/service-accounts.json"]}
+      ],
+      "proposed_patch": null,
+      "auto_fix_eligible": false,
+      "event_type": "sdlc.triage.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-triage-014",
+    "input": {
+      "tenant_id": "tenant-initech",
+      "workspace_id": "ws-education",
+      "app_id": "app-lms",
+      "ci_run_id": "run-10003",
+      "failed_tests": [
+        {"name": "certificate-download > should download course certificate as PDF", "error": "AssertionError: expected download filename 'certificate.pdf', got 'certificate.html'", "file": "e2e/app-lms/certificate-download.spec.ts"}
+      ],
+      "pr_number": 399
+    },
+    "expected": {
+      "status": "success",
+      "hypotheses": [
+        {"description": "PR 399 changed the certificate generator to return HTML instead of PDF in non-production environments; the CI environment flag is not set to production mode", "confidence": 0.91, "affected_files": ["src/services/certificate-generator.ts", ".env.ci"]}
+      ],
+      "proposed_patch": null,
+      "auto_fix_eligible": false,
+      "event_type": "sdlc.triage.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-triage-015",
+    "input": {
+      "tenant_id": "tenant-umbrella",
+      "workspace_id": "ws-retail",
+      "app_id": "app-pos",
+      "ci_run_id": "run-10004",
+      "failed_tests": [
+        {"name": "payment-process > should process Visa card payment", "error": "Error: Stripe test key not configured: STRIPE_TEST_KEY env var is missing", "file": "e2e/app-pos/payment-process.spec.ts"},
+        {"name": "payment-process > should process Mastercard payment", "error": "Error: Stripe test key not configured: STRIPE_TEST_KEY env var is missing", "file": "e2e/app-pos/payment-process.spec.ts"}
+      ],
+      "pr_number": null
+    },
+    "expected": {
+      "status": "success",
+      "hypotheses": [
+        {"description": "STRIPE_TEST_KEY environment variable is not set in the CI secret store; this was working locally because developers have it in .env", "confidence": 0.99, "affected_files": [".github/workflows/e2e.yml", ".env.example"]}
+      ],
+      "proposed_patch": null,
+      "auto_fix_eligible": false,
+      "event_type": "sdlc.triage.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-triage-016",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-data",
+      "app_id": "app-data-catalog",
+      "ci_run_id": "run-10005",
+      "failed_tests": [
+        {"name": "data-preview > should show first 100 rows", "error": "AssertionError: expected 100 rows, got 50", "file": "e2e/app-data-catalog/data-preview.spec.ts"}
+      ],
+      "pr_number": 621
+    },
+    "expected": {
+      "status": "success",
+      "hypotheses": [
+        {"description": "PR 621 changed the default page size from 100 to 50 rows for performance reasons; the test assertion was not updated to match the new default", "confidence": 0.90, "affected_files": ["e2e/app-data-catalog/data-preview.spec.ts", "src/components/app-data-catalog/dataset-browser/DataPreviewTable.tsx"]}
+      ],
+      "proposed_patch": "// In data-preview.spec.ts, update assertion:\nawait expect(page.locator('table tbody tr')).toHaveCount(50);",
+      "auto_fix_eligible": true,
+      "event_type": "sdlc.triage.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-triage-017",
+    "input": {
+      "tenant_id": "tenant-stark",
+      "workspace_id": "ws-fintech",
+      "app_id": "app-portfolio",
+      "ci_run_id": "run-10006",
+      "failed_tests": [
+        {"name": "csv-export > should export trade history as CSV", "error": "AssertionError: expected file to have 15 rows, got 14", "file": "e2e/app-portfolio/csv-export.spec.ts"},
+        {"name": "pnl-chart > should render profit and loss chart", "error": "TimeoutError: SVG element not rendered within 5000ms", "file": "e2e/app-portfolio/pnl-chart.spec.ts"}
+      ],
+      "pr_number": 187
+    },
+    "expected": {
+      "status": "success",
+      "hypotheses": [
+        {"description": "CSV export is off by one row due to header row counting discrepancy; the test counts including header but the assertion expects data rows only", "confidence": 0.80, "affected_files": ["e2e/app-portfolio/csv-export.spec.ts"]},
+        {"description": "PnL chart uses a lazy-loaded charting library that renders asynchronously; the 5s timeout may not account for library initialization in CI", "confidence": 0.75, "affected_files": ["src/components/app-portfolio/trade-history/PnLChart.tsx", "e2e/app-portfolio/pnl-chart.spec.ts"]}
+      ],
+      "proposed_patch": null,
+      "auto_fix_eligible": false,
+      "event_type": "sdlc.triage.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-triage-018",
+    "input": {
+      "tenant_id": "tenant-globex",
+      "workspace_id": "ws-admin",
+      "app_id": "app-user-mgmt",
+      "ci_run_id": "run-10007",
+      "failed_tests": [
+        {"name": "bulk-import > should import 500 users from CSV", "error": "TimeoutError: Operation timed out after 30000ms (uploaded 500 rows)", "file": "e2e/app-user-mgmt/bulk-import.spec.ts"}
+      ],
+      "pr_number": null
+    },
+    "expected": {
+      "status": "success",
+      "hypotheses": [
+        {"description": "Bulk import of 500 users is a slow operation that legitimately exceeds the default 30s test timeout in CI; increase timeout or reduce fixture size for the test", "confidence": 0.93, "affected_files": ["e2e/app-user-mgmt/bulk-import.spec.ts"]}
+      ],
+      "proposed_patch": "// In bulk-import.spec.ts, increase test timeout:\ntest('should import 500 users from CSV', { timeout: 90000 }, async ({ page }) => {",
+      "auto_fix_eligible": true,
+      "event_type": "sdlc.triage.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-triage-019",
+    "input": {
+      "tenant_id": "tenant-wayne",
+      "workspace_id": "ws-manufacturing",
+      "app_id": "app-quality-control",
+      "ci_run_id": "run-10008",
+      "failed_tests": [
+        {"name": "photo-capture > should upload defect photo", "error": "Error: Camera API not available in headless browser", "file": "e2e/app-quality-control/photo-capture.spec.ts"}
+      ],
+      "pr_number": 300
+    },
+    "expected": {
+      "status": "success",
+      "hypotheses": [
+        {"description": "The photo capture test uses the real Camera API which is unavailable in headless Playwright; needs to be mocked using page.route or input file upload simulation", "confidence": 0.96, "affected_files": ["e2e/app-quality-control/photo-capture.spec.ts"]}
+      ],
+      "proposed_patch": "// In photo-capture.spec.ts, replace camera API call with file input:\nconst [fileChooser] = await Promise.all([page.waitForEvent('filechooser'), page.click('[data-testid=capture-btn]')]);\nawait fileChooser.setFiles('e2e/fixtures/defect-photo.jpg');",
+      "auto_fix_eligible": true,
+      "event_type": "sdlc.triage.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-triage-020",
+    "input": {
+      "tenant_id": "tenant-initech",
+      "workspace_id": "ws-healthcare",
+      "app_id": "app-patient-portal",
+      "ci_run_id": "run-10009",
+      "failed_tests": [
+        {"name": "appointment-book > should book appointment with Dr. Smith", "error": "AssertionError: No available slots found for provider 'Dr. Smith'", "file": "e2e/app-patient-portal/appointment-book.spec.ts"},
+        {"name": "reminder-setup > should save reminder preferences", "error": "Error: HIPAA audit log write failed: database constraint violation", "file": "e2e/app-patient-portal/reminder-setup.spec.ts"}
+      ],
+      "pr_number": 456
+    },
+    "expected": {
+      "status": "success",
+      "hypotheses": [
+        {"description": "Test provider 'Dr. Smith' has no available slots in the CI test calendar; the appointment seed data has expired dates", "confidence": 0.88, "affected_files": ["tests/fixtures/appointment-slots.sql"]},
+        {"description": "HIPAA audit log table has a NOT NULL constraint on a new column added in PR 456 migration but the ORM model was not updated", "confidence": 0.85, "affected_files": ["migrations/0031_hipaa_audit.sql", "src/models/hipaa_audit.py"]}
+      ],
+      "proposed_patch": null,
+      "auto_fix_eligible": false,
+      "event_type": "sdlc.triage.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-triage-021",
+    "input": {
+      "tenant_id": "tenant-umbrella",
+      "workspace_id": "ws-supply-chain",
+      "app_id": "app-procurement",
+      "ci_run_id": "run-10010",
+      "failed_tests": [
+        {"name": "approval-flow > should send approval email notification", "error": "TimeoutError: Mailhog inbox did not receive email within 15000ms", "file": "e2e/app-procurement/approval-flow.spec.ts"}
+      ],
+      "pr_number": null
+    },
+    "expected": {
+      "status": "success",
+      "hypotheses": [
+        {"description": "Mailhog is not running in CI or SMTP_HOST is misconfigured to point at production SMTP; email service is not reachable in the CI environment", "confidence": 0.92, "affected_files": ["docker-compose.ci.yml", ".env.ci"]}
+      ],
+      "proposed_patch": null,
+      "auto_fix_eligible": false,
+      "event_type": "sdlc.triage.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-triage-022",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-gamification",
+      "app_id": "app-loyalty",
+      "ci_run_id": "run-10011",
+      "failed_tests": [
+        {"name": "reward-redeem > should redeem 500 points for coffee voucher", "error": "AssertionError: expected points balance to decrease by 500, decreased by 0", "file": "e2e/app-loyalty/reward-redeem.spec.ts"}
+      ],
+      "pr_number": 522
+    },
+    "expected": {
+      "status": "success",
+      "hypotheses": [
+        {"description": "Point deduction is asynchronous and processed by a background job not running in CI; the test checks balance immediately after redemption before the worker runs", "confidence": 0.86, "affected_files": ["src/workers/points-deduction.ts", "e2e/app-loyalty/reward-redeem.spec.ts"]}
+      ],
+      "proposed_patch": null,
+      "auto_fix_eligible": false,
+      "event_type": "sdlc.triage.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-triage-023",
+    "input": {
+      "tenant_id": "tenant-wayne",
+      "workspace_id": "ws-energy",
+      "app_id": "app-grid-monitor",
+      "ci_run_id": "run-10012",
+      "failed_tests": [
+        {"name": "billing-compare > should compare Q1 vs Q2 consumption", "error": "Error: Chart rendering error: Cannot read property 'data' of undefined", "file": "e2e/app-grid-monitor/billing-compare.spec.ts"}
+      ],
+      "pr_number": 143
+    },
+    "expected": {
+      "status": "success",
+      "hypotheses": [
+        {"description": "Chart component receives undefined data when the API returns an empty array for a billing period with no data; PR 143 may have removed a null guard", "confidence": 0.88, "affected_files": ["src/components/app-grid-monitor/energy-dashboard/ConsumptionChart.tsx"]}
+      ],
+      "proposed_patch": null,
+      "auto_fix_eligible": false,
+      "event_type": "sdlc.triage.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-triage-024",
+    "input": {
+      "tenant_id": "tenant-stark",
+      "workspace_id": "ws-marketplace",
+      "app_id": "app-vendor-portal",
+      "ci_run_id": "run-10013",
+      "failed_tests": [
+        {"name": "product-upload > should reject non-image file", "error": "AssertionError: expected validation error toast to appear, got success toast", "file": "e2e/app-vendor-portal/product-upload.spec.ts"}
+      ],
+      "pr_number": 388
+    },
+    "expected": {
+      "status": "success",
+      "hypotheses": [
+        {"description": "PR 388 accidentally removed the MIME type validation from the upload handler, allowing non-image files to be accepted; this is a regression in server-side validation", "confidence": 0.91, "affected_files": ["src/api/products/upload.ts"]}
+      ],
+      "proposed_patch": null,
+      "auto_fix_eligible": false,
+      "event_type": "sdlc.triage.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-triage-025",
+    "input": {
+      "tenant_id": "tenant-globex",
+      "workspace_id": "ws-bi",
+      "app_id": "app-bi-suite",
+      "ci_run_id": "run-10014",
+      "failed_tests": [
+        {"name": "chart-publish > should publish chart to team workspace", "error": "Error: 404 Not Found: PUT /api/charts/pub-789/publish", "file": "e2e/app-bi-suite/chart-publish.spec.ts"}
+      ],
+      "pr_number": 261
+    },
+    "expected": {
+      "status": "success",
+      "hypotheses": [
+        {"description": "The publish endpoint URL changed in PR 261 from PUT /api/charts/:id/publish to POST /api/charts/:id/publish but the frontend client was not updated", "confidence": 0.87, "affected_files": ["src/api/charts.ts", "src/components/app-bi-suite/chart-builder/PublishChartButton.tsx"]}
+      ],
+      "proposed_patch": null,
+      "auto_fix_eligible": false,
+      "event_type": "sdlc.triage.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-triage-026",
+    "input": {
+      "tenant_id": "tenant-initech",
+      "workspace_id": "ws-realestate",
+      "app_id": "app-property-mgmt",
+      "ci_run_id": "run-10015",
+      "failed_tests": [
+        {"name": "lease-terminate > should prevent termination within lock-in period", "error": "AssertionError: expected termination to be blocked, but lease was terminated", "file": "e2e/app-property-mgmt/lease-terminate.spec.ts"}
+      ],
+      "pr_number": 177
+    },
+    "expected": {
+      "status": "success",
+      "hypotheses": [
+        {"description": "Business rule enforcement for lock-in period was accidentally disabled by a feature flag change in PR 177; the ENFORCE_LOCK_IN_PERIOD flag defaults to false in CI", "confidence": 0.89, "affected_files": ["src/services/lease-service.ts", ".env.ci"]}
+      ],
+      "proposed_patch": null,
+      "auto_fix_eligible": false,
+      "event_type": "sdlc.triage.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-triage-027",
+    "input": {
+      "tenant_id": "tenant-umbrella",
+      "workspace_id": "ws-logistics",
+      "app_id": "app-shipment-tracker",
+      "ci_run_id": "run-10016",
+      "failed_tests": [
+        {"name": "map-view > should display shipment on map", "error": "Error: Google Maps API key is invalid or missing", "file": "e2e/app-shipment-tracker/map-view.spec.ts"}
+      ],
+      "pr_number": null
+    },
+    "expected": {
+      "status": "success",
+      "hypotheses": [
+        {"description": "GOOGLE_MAPS_API_KEY is not configured in CI secrets; map component falls back to error state and the test cannot proceed", "confidence": 0.97, "affected_files": [".github/workflows/e2e.yml"]}
+      ],
+      "proposed_patch": null,
+      "auto_fix_eligible": false,
+      "event_type": "sdlc.triage.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-triage-028",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-frontend",
+      "app_id": "app-ecommerce",
+      "ci_run_id": "run-10017",
+      "failed_tests": [
+        {"name": "cart > should persist cart after page refresh", "error": "AssertionError: expected 2 cart items after refresh, got 0", "file": "e2e/app-ecommerce/cart.spec.ts"},
+        {"name": "cart > should update quantity", "error": "AssertionError: expected quantity 3, got 1", "file": "e2e/app-ecommerce/cart.spec.ts"},
+        {"name": "cart > should remove item from cart", "error": "TimeoutError: cart item still visible after remove click", "file": "e2e/app-ecommerce/cart.spec.ts"}
+      ],
+      "pr_number": 534
+    },
+    "expected": {
+      "status": "success",
+      "hypotheses": [
+        {"description": "PR 534 migrated cart state from localStorage to a server-side session but the session cookie domain is misconfigured in the test environment, causing cart to not persist across navigation", "confidence": 0.84, "affected_files": ["src/stores/cart-store.ts", "src/middleware/session.ts"]},
+        {"description": "Multiple cart test failures share the same root cause; investigating cart persistence is the primary fix needed", "confidence": 0.88, "affected_files": ["src/stores/cart-store.ts"]}
+      ],
+      "proposed_patch": null,
+      "auto_fix_eligible": false,
+      "event_type": "sdlc.triage.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-triage-029",
+    "input": {
+      "tenant_id": "tenant-wayne",
+      "workspace_id": "ws-security",
+      "app_id": "app-access-control",
+      "ci_run_id": "run-10018",
+      "failed_tests": [
+        {"name": "access-grant > should grant temporary access for 30 minutes", "error": "AssertionError: expected access expiry in 30 minutes, got null", "file": "e2e/app-access-control/access-grant.spec.ts"}
+      ],
+      "pr_number": 99
+    },
+    "expected": {
+      "status": "success",
+      "hypotheses": [
+        {"description": "Temporary access expiry field is not being set in the response; PR 99 may have introduced a null return when the expiry calculation encounters a timezone offset issue in CI", "confidence": 0.82, "affected_files": ["src/services/access-service.ts"]}
+      ],
+      "proposed_patch": null,
+      "auto_fix_eligible": false,
+      "event_type": "sdlc.triage.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-triage-030",
+    "input": {
+      "tenant_id": "tenant-globex",
+      "workspace_id": "ws-mobile",
+      "app_id": "app-banking",
+      "ci_run_id": "run-10019",
+      "failed_tests": [
+        {"name": "statements > should download statement as PDF", "error": "Error: Expected MIME type application/pdf, got text/html", "file": "e2e/app-banking/statements.spec.ts"}
+      ],
+      "pr_number": 314
+    },
+    "expected": {
+      "status": "success",
+      "hypotheses": [
+        {"description": "Statement PDF generation is returning an HTML error page in CI because the PDF renderer license key is not set; the service silently degrades to HTML", "confidence": 0.88, "affected_files": ["src/services/statement-generator.ts", ".env.ci"]}
+      ],
+      "proposed_patch": null,
+      "auto_fix_eligible": false,
+      "event_type": "sdlc.triage.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "qa-triage-adv-001",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-frontend",
+      "app_id": "app-ecommerce",
+      "ci_run_id": "run-adv-001",
+      "failed_tests": [
+        {"name": "checkout > should process payment", "error": "UnknownError: x", "file": "e2e/app-ecommerce/checkout.spec.ts"}
+      ],
+      "pr_number": null
+    },
+    "expected": {
+      "status": "success",
+      "hypotheses": [
+        {"description": "Insufficient error information to determine root cause; the 'UnknownError: x' message indicates an unhandled exception with no stack trace captured", "confidence": 0.30, "affected_files": ["e2e/app-ecommerce/checkout.spec.ts"]}
+      ],
+      "proposed_patch": null,
+      "auto_fix_eligible": false,
+      "event_type": "sdlc.triage.completed.v1"
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "qa-triage-adv-002",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-frontend",
+      "app_id": "app-ecommerce",
+      "ci_run_id": "run-adv-002",
+      "failed_tests": [],
+      "pr_number": 999
+    },
+    "expected": {
+      "status": "error",
+      "error_code": "INVALID_INPUT",
+      "error_detail": "failed_tests must contain at least one test failure",
+      "event_type": "sdlc.triage.completed.v1"
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "qa-triage-adv-003",
+    "input": {
+      "tenant_id": "",
+      "workspace_id": "",
+      "app_id": "",
+      "ci_run_id": "",
+      "failed_tests": [
+        {"name": "some-test", "error": "some error", "file": "some/file.spec.ts"}
+      ],
+      "pr_number": null
+    },
+    "expected": {
+      "status": "error",
+      "error_code": "INVALID_INPUT",
+      "error_detail": "tenant_id, workspace_id, app_id, and ci_run_id are required",
+      "event_type": "sdlc.triage.completed.v1"
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "qa-triage-adv-004",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-frontend",
+      "app_id": "app-ecommerce",
+      "ci_run_id": "run-adv-004",
+      "failed_tests": [
+        {"name": "checkout > flaky timing test", "error": "TimeoutError: element not visible (intermittent)", "file": "e2e/app-ecommerce/checkout.spec.ts"},
+        {"name": "checkout > another flaky test", "error": "TimeoutError: navigation timeout (intermittent)", "file": "e2e/app-ecommerce/checkout.spec.ts"},
+        {"name": "checkout > third flaky test", "error": "TimeoutError: locator not found (intermittent)", "file": "e2e/app-ecommerce/checkout.spec.ts"},
+        {"name": "cart > cart flaky test", "error": "TimeoutError: element detached from DOM (intermittent)", "file": "e2e/app-ecommerce/cart.spec.ts"},
+        {"name": "product-catalog > slow render", "error": "TimeoutError: expected element to be visible within 5000ms (intermittent)", "file": "e2e/app-ecommerce/product-catalog.spec.ts"}
+      ],
+      "pr_number": null
+    },
+    "expected": {
+      "status": "success",
+      "hypotheses": [
+        {"description": "Multiple intermittent timeout failures across unrelated components suggest a systemic CI environment performance degradation rather than code defects; consider increasing global timeout or investigating CI runner resource constraints", "confidence": 0.78, "affected_files": ["e2e/playwright.config.ts", ".github/workflows/e2e.yml"]}
+      ],
+      "proposed_patch": null,
+      "auto_fix_eligible": false,
+      "event_type": "sdlc.triage.completed.v1"
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "qa-triage-adv-005",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-frontend",
+      "app_id": "app-ecommerce",
+      "ci_run_id": "run-adv-005",
+      "failed_tests": [
+        {"name": "checkout > should process payment", "error": "AssertionError: expected 'success', got 'success'", "file": "e2e/app-ecommerce/checkout.spec.ts"}
+      ],
+      "pr_number": null
+    },
+    "expected": {
+      "status": "success",
+      "hypotheses": [
+        {"description": "The test is asserting the correct value but still failing; this may indicate a Playwright version bug where string comparison fails due to invisible Unicode characters or whitespace in the actual value", "confidence": 0.55, "affected_files": ["e2e/app-ecommerce/checkout.spec.ts"]}
+      ],
+      "proposed_patch": "// Try trimming the actual value in the assertion:\nawait expect(page.locator('.status').textContent()).resolves.toMatch(/^success$/);",
+      "auto_fix_eligible": true,
+      "event_type": "sdlc.triage.completed.v1"
+    },
+    "weight": 2.0
+  }
+]

@@ -17,6 +17,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/forge-eng-fabric/services/registry/internal/cron/drift"
 	"github.com/forge-eng-fabric/services/registry/internal/telemetry"
 
 	"github.com/MicahParks/keyfunc/v3"
@@ -70,14 +71,17 @@ func main() {
 		w.WriteHeader(200)
 	})
 
+	defaultFetch := newDefaultFetcher()
 	srv := &server{
-		pool:     pool,
-		keys:     keys,
-		kc:       kc,
-		fga:      newOpenFGAClient(cfg.OpenFGAURL, cfg.OpenFGAStoreID, cfg.OpenFGAModelID),
-		topic:    cfg.EventsTopic,
-		issuer:   cfg.KeycloakIssuer,
-		audience: cfg.KeycloakAudience,
+		pool:       pool,
+		keys:       keys,
+		kc:         kc,
+		fga:        newOpenFGAClient(cfg.OpenFGAURL, cfg.OpenFGAStoreID, cfg.OpenFGAModelID),
+		topic:      cfg.EventsTopic,
+		issuer:     cfg.KeycloakIssuer,
+		audience:   cfg.KeycloakAudience,
+		mcpFetcher: mcpManifestFetcher{inner: defaultFetch},
+		a2aFetcher: a2aCardFetcher{inner: defaultFetch},
 	}
 
 	r.Group(func(r chi.Router) {
@@ -94,8 +98,37 @@ func main() {
 			r.Post("/assets/{assetID}/versions/{version}/lifecycle-hooks/workspace-owner-approval", srv.workspaceOwnerApprovalHook)
 			r.Post("/assets/{assetID}/versions/{version}/lifecycle-hooks/gateway-publish", srv.gatewayPublishHook)
 			r.Post("/assets/{assetID}/versions/{version}/invoke-check", srv.checkAssetInvocation)
+			// Task 13.3: public-origin mirror flow.
+			r.Post("/assets/{assetID}/versions/{version}/mirror", srv.mirrorHandler)
+			r.Post("/registry/mcps/external", srv.registerExternalMCP)
+			r.Post("/registry/agents/external", srv.registerExternalA2A)
+
+			// Task 13.7: webhook receivers for npm publish and GitHub release events.
+			r.Post("/registry/webhooks/npm", srv.npmWebhookHandler)
+			r.Post("/registry/webhooks/github", srv.githubWebhookHandler)
+
+			// design-system-catalog: catalog discovery + alias resolution.
+			r.Get("/design-systems", srv.listDesignSystems)
+			r.Get("/design-systems/{ref}", srv.getDesignSystem)
+			r.Post("/design-systems/aliases/{alias}", srv.retargetDesignSystemAlias)
 		})
 	})
+
+	driftCtx, driftCancel := context.WithCancel(context.Background())
+	defer driftCancel()
+	driftRunner := &drift.Runner{
+		Pool:       pool,
+		MCP:        defaultFetch,
+		A2A:        defaultFetch,
+		Publisher:  &drift.KafkaPublisher{Client: kc, Topic: cfg.EventsTopic},
+		EventTopic: cfg.EventsTopic,
+		Interval:   cfg.DriftInterval,
+	}
+	go driftRunner.Start(driftCtx)
+
+	// Task 13.6: periodic public-origin sync worker.
+	syncWorker := NewSyncWorker(srv, syncWorkerIntervalFromEnv())
+	go syncWorker.Run(driftCtx)
 
 	httpSrv := &http.Server{Addr: cfg.Addr, Handler: otelhttp.NewHandler(r, "registry"), ReadHeaderTimeout: 10 * time.Second}
 	go func() {
@@ -107,6 +140,7 @@ func main() {
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 	<-stop
+	driftCancel()
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	_ = httpSrv.Shutdown(ctx)
@@ -124,6 +158,7 @@ type config struct {
 	OpenFGAModelID   string
 	Environment      string
 	OTLPEndpoint     string
+	DriftInterval    time.Duration
 }
 
 func loadConfig() config {
@@ -132,6 +167,11 @@ func loadConfig() config {
 			return v
 		}
 		return def
+	}
+	interval, err := time.ParseDuration(get("DRIFT_CRON_INTERVAL", "24h"))
+	if err != nil {
+		log.Printf("DRIFT_CRON_INTERVAL parse error %v; defaulting to 24h", err)
+		interval = 24 * time.Hour
 	}
 	return config{
 		Addr:             get("ADDR", ":8082"),
@@ -145,6 +185,7 @@ func loadConfig() config {
 		OpenFGAModelID:   get("OPENFGA_AUTHORIZATION_MODEL_ID", ""),
 		Environment:      get("ENV", "local"),
 		OTLPEndpoint:     get("OTEL_EXPORTER_OTLP_ENDPOINT", "localhost:4317"),
+		DriftInterval:    interval,
 	}
 }
 
@@ -169,13 +210,15 @@ func correlationID(next http.Handler) http.Handler {
 }
 
 type server struct {
-	pool     *pgxpool.Pool
-	keys     keyfunc.Keyfunc
-	kc       *kgo.Client
-	fga      *openFGAClient
-	topic    string
-	issuer   string
-	audience string
+	pool        *pgxpool.Pool
+	keys        keyfunc.Keyfunc
+	kc          *kgo.Client
+	fga         *openFGAClient
+	topic       string
+	issuer      string
+	audience    string
+	mcpFetcher  mcpManifestFetcher
+	a2aFetcher  a2aCardFetcher
 }
 
 func (s *server) requireJWT(next http.Handler) http.Handler {
@@ -298,6 +341,11 @@ type Asset struct {
 	OutputsSchema  map[string]any `json:"outputs_schema"`
 	WorkspaceID    uuid.UUID      `json:"workspace_id"`
 	TenantID       uuid.UUID      `json:"tenant_id"`
+	// Phase 5 (app-first-class-entity 8.4): Apps published by an App carry
+	// app_id alongside workspace_id. Nullable until M5 cutover, after which
+	// the registry rejects writes without it for workspaces with the
+	// `forge.app_entity.enabled` flag on.
+	AppID          *uuid.UUID     `json:"app_id,omitempty"`
 	Visibility     string         `json:"visibility"`
 	LifecycleState string         `json:"lifecycle_state"`
 	TrustLevel     string         `json:"trust_level"`
@@ -307,6 +355,15 @@ type Asset struct {
 	CreatedAt      time.Time      `json:"created_at"`
 	CreatedBy      string         `json:"created_by"`
 	Distribution   Distribution   `json:"distribution"`
+	HowTo          map[string]any `json:"how_to,omitempty"`
+	ActiveSurface  map[string]any `json:"active_surface,omitempty"`
+	Provenance     string         `json:"provenance"`
+	// design-system-catalog: payload of the design_system manifest (tokens,
+	// components, fonts, screenshots, use_case). Populated only when type =
+	// design_system. Built-in templates are platform-owned and bypass the
+	// runtime sanity validator; this flag records that bypass for audit.
+	Manifest        map[string]any `json:"manifest,omitempty"`
+	BuiltInTemplate bool           `json:"built_in_template,omitempty"`
 }
 
 // Distribution describes how an asset is exposed to external developer clients
@@ -321,19 +378,44 @@ type Distribution struct {
 
 // assetSelectColumns is the canonical column list returned by every asset read.
 // Keep this in sync with rowScanAsset(...).
-const assetSelectColumns = `id,version,type,name,COALESCE(description,''),owner_team,inputs_schema,outputs_schema,workspace_id,tenant_id,visibility,lifecycle_state,COALESCE(trust_level,'T0'),COALESCE(eval_scores,'{}'::jsonb),owners,metadata,created_at,COALESCE(created_by,''),COALESCE(distribution_gateway_published,false),COALESCE(distribution_gateway_channel,'stable'),distribution_package_digest,distribution_package_signed_at,distribution_deprecation_pointer`
+const assetSelectColumns = `id,version,type,name,COALESCE(description,''),owner_team,inputs_schema,outputs_schema,workspace_id,tenant_id,app_id,visibility,lifecycle_state,COALESCE(trust_level,'T0'),COALESCE(eval_scores,'{}'::jsonb),owners,metadata,created_at,COALESCE(created_by,''),COALESCE(distribution_gateway_published,false),COALESCE(distribution_gateway_channel,'stable'),distribution_package_digest,distribution_package_signed_at,distribution_deprecation_pointer,how_to_json,active_surface_json,COALESCE(external_provenance,'internal'),design_system_manifest,COALESCE(built_in_template,false)`
 
 // rowScanAsset reads a single asset row produced by assetSelectColumns.
 func rowScanAsset(row interface{ Scan(...any) error }, a *Asset) error {
-	return row.Scan(
+	var howTo, activeSurface, manifest []byte
+	if err := row.Scan(
 		&a.ID, &a.Version, &a.Type, &a.Name, &a.Description, &a.OwnerTeam,
 		&a.InputsSchema, &a.OutputsSchema, &a.WorkspaceID, &a.TenantID,
+		&a.AppID,
 		&a.Visibility, &a.LifecycleState, &a.TrustLevel, &a.EvalScores,
 		&a.Owners, &a.Metadata, &a.CreatedAt, &a.CreatedBy,
 		&a.Distribution.GatewayPublished, &a.Distribution.GatewayChannel,
 		&a.Distribution.PackageDigest, &a.Distribution.PackageSignedAt,
 		&a.Distribution.DeprecationPointer,
-	)
+		&howTo, &activeSurface, &a.Provenance,
+		&manifest, &a.BuiltInTemplate,
+	); err != nil {
+		return err
+	}
+	a.HowTo = nil
+	a.ActiveSurface = nil
+	a.Manifest = nil
+	if len(howTo) > 0 {
+		if err := json.Unmarshal(howTo, &a.HowTo); err != nil {
+			return fmt.Errorf("decode how_to_json: %w", err)
+		}
+	}
+	if len(activeSurface) > 0 {
+		if err := json.Unmarshal(activeSurface, &a.ActiveSurface); err != nil {
+			return fmt.Errorf("decode active_surface_json: %w", err)
+		}
+	}
+	if len(manifest) > 0 {
+		if err := json.Unmarshal(manifest, &a.Manifest); err != nil {
+			return fmt.Errorf("decode design_system_manifest: %w", err)
+		}
+	}
+	return nil
 }
 
 type assetCreate struct {
@@ -344,12 +426,21 @@ type assetCreate struct {
 	OwnerTeam      string         `json:"owner_team"`
 	InputsSchema   map[string]any `json:"inputs_schema"`
 	OutputsSchema  map[string]any `json:"outputs_schema"`
+	// Phase 5 (app-first-class-entity 8.4): the App scope of an asset
+	// publication. Nullable until the per-workspace cutover flips. When
+	// supplied, the registry rejects cross-workspace App references.
+	AppID          *uuid.UUID     `json:"app_id,omitempty"`
 	Visibility     string         `json:"visibility"`
 	LifecycleState string         `json:"lifecycle_state"`
 	TrustLevel     string         `json:"trust_level"`
 	EvalScores     map[string]any `json:"eval_scores"`
 	Owners         []string       `json:"owners"`
 	Metadata       map[string]any `json:"metadata"`
+	// design-system-catalog: required for type=design_system. Carries the
+	// token sheet URL/digest, component pack URL/digest, font preload list,
+	// screenshots and use-case copy. See spec for the contract.
+	Manifest        map[string]any `json:"manifest,omitempty"`
+	BuiltInTemplate bool           `json:"built_in_template,omitempty"`
 }
 
 type AssetDeployment struct {
@@ -385,12 +476,12 @@ type recordAssetDeploymentRequest struct {
 var validTypes = map[string]struct{}{
 	"mcp": {}, "skill": {}, "agent": {}, "workflow": {}, "prompt_template": {},
 	"application": {}, "repo_template": {}, "eval_dataset": {},
-	"healing_action": {},
+	"healing_action": {}, "design_system": {},
 }
 
 var validVisibility = map[string]struct{}{"workspace": {}, "tenant": {}}
 
-var validLifecycle = map[string]struct{}{"proposed": {}, "in_review": {}, "approved": {}, "deprecated": {}, "retired": {}}
+var validLifecycle = map[string]struct{}{"proposed": {}, "in_review": {}, "approved": {}, "deprecated": {}, "retired": {}, "mirrored": {}, "rejected": {}}
 
 var validTrustLevels = map[string]struct{}{"T0": {}, "T1": {}, "T2": {}, "T3": {}, "T4": {}, "T5": {}}
 
@@ -432,6 +523,28 @@ func (s *server) listAssets(w http.ResponseWriter, r *http.Request) {
 			q += fmt.Sprintf(" AND %s=$%d", filter.column, len(args)+1)
 			args = append(args, value)
 		}
+	}
+	// Phase 5 (app-first-class-entity 8.5): scope listings to an App when
+	// `?app_id=` is supplied. Workspace-scoped (NULL app_id) assets are
+	// excluded by default unless `include_workspace_scope=true` is passed.
+	if appIDParam := r.URL.Query().Get("app_id"); appIDParam != "" {
+		appUUID, parseErr := uuid.Parse(appIDParam)
+		if parseErr != nil {
+			http.Error(w, "invalid app_id", 400)
+			return
+		}
+		if r.URL.Query().Get("include_workspace_scope") == "true" {
+			q += fmt.Sprintf(" AND (app_id=$%d OR app_id IS NULL)", len(args)+1)
+		} else {
+			q += fmt.Sprintf(" AND app_id=$%d", len(args)+1)
+		}
+		args = append(args, appUUID)
+	} else if r.URL.Query().Get("include_workspace_scope") != "true" {
+		// No app_id supplied: legacy behaviour returns everything. The
+		// `include_workspace_scope=false` parameter is reserved for callers
+		// that explicitly want only App-scoped rows; default keeps backward
+		// compatibility with pre-Phase-5 callers.
+		_ = args // no-op, kept for clarity
 	}
 	q += " ORDER BY name, version"
 	rows, err := s.pool.Query(r.Context(), q, args...)
@@ -528,16 +641,37 @@ func (s *server) createAsset(w http.ResponseWriter, r *http.Request) {
 	// new versions chain correctly; (id,version) UNIQUE prevents re-writes.
 	assetID := req.Type + ":" + wsID.String() + ":" + req.Name
 
+	// design-system-catalog: design_system assets carry a structured manifest
+	// (tokens, components, fonts, screenshots, use_case) that the wizard and the
+	// build-time merger consume. Validate the wire shape and the sha256 pinning
+	// rule at publication time. Built-in templates ship pre-validated and may
+	// be seeded with the bypass flag; only the platform principal is permitted
+	// to set it.
+	if req.Type == "design_system" {
+		if req.BuiltInTemplate && sub != "system:forge-platform" {
+			writeJSON(w, 403, map[string]string{"code": "built_in_template_forbidden", "message": "only the platform principal may seed built-in templates"})
+			return
+		}
+		if _, fault := validateDesignSystemManifest(req.Manifest); fault != nil {
+			writeJSON(w, 422, map[string]string{"code": fault.Code, "message": fault.Message})
+			return
+		}
+	}
+
 	metaBytes, _ := json.Marshal(req.Metadata)
 	inputsBytes, _ := json.Marshal(req.InputsSchema)
 	outputsBytes, _ := json.Marshal(req.OutputsSchema)
 	evalBytes, _ := json.Marshal(normalizeEvalScores(req.EvalScores))
+	var manifestBytes []byte
+	if req.Manifest != nil {
+		manifestBytes, _ = json.Marshal(req.Manifest)
+	}
 	var a Asset
 	err = rowScanAsset(s.pool.QueryRow(r.Context(),
-		`INSERT INTO asset(id,version,type,name,description,owner_team,inputs_schema,outputs_schema,workspace_id,tenant_id,visibility,lifecycle_state,trust_level,eval_scores,owners,metadata,created_by)
-		 VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8::jsonb,$9,$10,$11,$12,$13,$14::jsonb,$15,$16::jsonb,$17)
+		`INSERT INTO asset(id,version,type,name,description,owner_team,inputs_schema,outputs_schema,workspace_id,tenant_id,app_id,visibility,lifecycle_state,trust_level,eval_scores,owners,metadata,created_by,design_system_manifest,built_in_template)
+		 VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8::jsonb,$9,$10,$11,$12,$13,$14,$15::jsonb,$16,$17::jsonb,$18,NULLIF($19,'')::jsonb,$20)
 		 RETURNING `+assetSelectColumns,
-		assetID, req.Version, req.Type, req.Name, req.Description, req.OwnerTeam, string(inputsBytes), string(outputsBytes), wsID, tenantID, req.Visibility, req.LifecycleState, req.TrustLevel, string(evalBytes), req.Owners, string(metaBytes), sub), &a)
+		assetID, req.Version, req.Type, req.Name, req.Description, req.OwnerTeam, string(inputsBytes), string(outputsBytes), wsID, tenantID, req.AppID, req.Visibility, req.LifecycleState, req.TrustLevel, string(evalBytes), req.Owners, string(metaBytes), sub, string(manifestBytes), req.BuiltInTemplate), &a)
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
@@ -592,6 +726,14 @@ func (s *server) createAsset(w http.ResponseWriter, r *http.Request) {
 			{Key: "content-type", Value: []byte("application/cloudevents+json")},
 		},
 	}).FirstErr()
+
+	// design-system-catalog: emit the design-system-specific publication
+	// event in addition to the generic asset.created. The Asset Registry
+	// consumer relies on the dedicated event type to route catalog
+	// notifications without parsing every asset.created body.
+	if a.Type == "design_system" {
+		s.publishDesignSystemPublished(r, a)
+	}
 
 	writeJSON(w, 201, a)
 }
@@ -727,6 +869,7 @@ type lifecycleTransition struct {
 	TrustLevel         string         `json:"trust_level"`
 	EvalScores         map[string]any `json:"eval_scores"`
 	ApprovedBySDLCteam bool           `json:"approved_by_sdlc_team"`
+	AcknowledgeDrift   bool           `json:"acknowledge_drift,omitempty"`
 }
 
 func (s *server) transitionAsset(w http.ResponseWriter, r *http.Request) {
@@ -748,12 +891,12 @@ func (s *server) transitionAsset(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid trust_level", 400)
 		return
 	}
-	var current string
-	if err := s.pool.QueryRow(r.Context(), `SELECT lifecycle_state FROM asset WHERE id=$1 AND version=$2`, id, v).Scan(&current); err != nil {
+	pre, err := s.loadPromotionPrerequisites(r.Context(), id, v)
+	if err != nil {
 		http.Error(w, "not found", 404)
 		return
 	}
-	if !canTransition(current, req.LifecycleState) {
+	if !canTransition(pre.LifecycleState, req.LifecycleState) {
 		writeJSON(w, 409, map[string]string{"code": "invalid_transition", "message": "lifecycle transition is not allowed"})
 		return
 	}
@@ -762,19 +905,40 @@ func (s *server) transitionAsset(w http.ResponseWriter, r *http.Request) {
 			writeJSON(w, 202, map[string]any{"decision": "requires_approval", "required_approvers": []string{"sdlc-team"}})
 			return
 		}
-		if failing := failingEvalScores(req.TrustLevel, req.EvalScores); len(failing) > 0 {
-			writeJSON(w, 400, map[string]any{"code": "eval_threshold_failed", "failing": failing})
-			return
+		// design_system assets have a parallel approval contract: instead of
+		// the generic how_to/active_surface gate, they require the structural
+		// manifest, the sanity validator pass (unless built-in) and the
+		// accessibility/brand_fidelity thresholds.
+		if pre.Type == "design_system" {
+			if fault := s.transitionDesignSystemToApproved(r, id, v, req.EvalScores); fault != nil {
+				writeJSON(w, statusForValidationFault(fault.Code), map[string]any{"code": fault.Code, "message": fault.Message})
+				return
+			}
+		} else {
+			if fault := validateAssetActiveSurface(pre.Type, pre.HowTo, pre.ActiveSurface); fault != nil {
+				writeJSON(w, statusForValidationFault(fault.Code), map[string]any{"code": fault.Code, "message": fault.Message})
+				return
+			}
+			if failing := failingEvalScores(req.TrustLevel, req.EvalScores); len(failing) > 0 {
+				writeJSON(w, 400, map[string]any{"code": "eval_threshold_failed", "failing": failing})
+				return
+			}
+			if pre.Provenance == "external" {
+				if fault := s.reverifyOnPromotion(r.Context(), id, pre.Type, req.AcknowledgeDrift); fault != nil {
+					writeJSON(w, statusForValidationFault(fault.Code), map[string]any{"code": fault.Code, "message": fault.Message})
+					return
+				}
+			}
 		}
 	}
+	current := pre.LifecycleState
 	evalBytes, _ := json.Marshal(req.EvalScores)
 	var a Asset
-	err := rowScanAsset(s.pool.QueryRow(r.Context(),
+	if scanErr := rowScanAsset(s.pool.QueryRow(r.Context(),
 		`UPDATE asset SET lifecycle_state=$3, trust_level=$4, eval_scores=$5::jsonb WHERE id=$1 AND version=$2
 		 RETURNING `+assetSelectColumns,
-		id, v, req.LifecycleState, req.TrustLevel, string(evalBytes)), &a)
-	if err != nil {
-		http.Error(w, err.Error(), 500)
+		id, v, req.LifecycleState, req.TrustLevel, string(evalBytes)), &a); scanErr != nil {
+		http.Error(w, scanErr.Error(), 500)
 		return
 	}
 	if next := req.LifecycleState; next == "deprecated" || next == "retired" {
@@ -783,6 +947,12 @@ func (s *server) transitionAsset(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	s.publishAssetLifecycleEvent(r, a, current, req.LifecycleState)
+	// Task 13.4: when a mirrored asset is promoted to approved, emit the
+	// dedicated promoted event in addition to the standard lifecycle event.
+	if current == "mirrored" && req.LifecycleState == "approved" {
+		cid, _ := r.Context().Value(cidKey).(string)
+		s.publishPromotedEvent(r.Context(), a, cid)
+	}
 	writeJSON(w, 200, a)
 }
 
@@ -913,22 +1083,36 @@ func (s *server) transitionAssetWithPatch(r *http.Request, id, version, nextStat
 	if _, ok := validTrustLevels[trustLevel]; !ok {
 		return Asset{}, "", fmt.Errorf("invalid trust_level")
 	}
-	var current string
-	if err := s.pool.QueryRow(r.Context(), `SELECT lifecycle_state FROM asset WHERE id=$1 AND version=$2`, id, version).Scan(&current); err != nil {
+	pre, err := s.loadPromotionPrerequisites(r.Context(), id, version)
+	if err != nil {
 		return Asset{}, "", fmt.Errorf("not found")
 	}
+	current := pre.LifecycleState
 	if !canTransition(current, nextState) {
 		return Asset{}, current, fmt.Errorf("invalid_transition")
+	}
+	if nextState == "approved" {
+		if fault := validateAssetActiveSurface(pre.Type, pre.HowTo, pre.ActiveSurface); fault != nil {
+			return Asset{}, current, fmt.Errorf("%s: %s", fault.Code, fault.Message)
+		}
+		if pre.Provenance == "external" {
+			// The hook does not currently take an acknowledge_drift flag — the
+			// signed-approval comes from a workspace owner who is treated as
+			// implicitly acknowledging upstream changes. The drift event is
+			// still emitted by the daily cron so observability is preserved.
+			if fault := s.reverifyOnPromotion(r.Context(), id, pre.Type, true); fault != nil {
+				return Asset{}, current, fmt.Errorf("%s: %s", fault.Code, fault.Message)
+			}
+		}
 	}
 	evalBytes, _ := json.Marshal(normalizeEvalScores(evalScores))
 	patchBytes, _ := json.Marshal(metadataPatch)
 	var a Asset
-	err := rowScanAsset(s.pool.QueryRow(r.Context(),
+	if scanErr := rowScanAsset(s.pool.QueryRow(r.Context(),
 		`UPDATE asset SET lifecycle_state=$3, trust_level=$4, eval_scores=$5::jsonb, metadata=metadata || $6::jsonb WHERE id=$1 AND version=$2
 		 RETURNING `+assetSelectColumns,
-		id, version, nextState, trustLevel, string(evalBytes), string(patchBytes)), &a)
-	if err != nil {
-		return Asset{}, current, err
+		id, version, nextState, trustLevel, string(evalBytes), string(patchBytes)), &a); scanErr != nil {
+		return Asset{}, current, scanErr
 	}
 	if nextState == "deprecated" || nextState == "retired" {
 		if unpub, uerr := s.autoUnpublishOnLifecycle(r, id, version); uerr == nil && unpub != nil {
@@ -939,11 +1123,22 @@ func (s *server) transitionAssetWithPatch(r *http.Request, id, version, nextStat
 }
 
 func statusForLifecycleError(err error) int {
-	if strings.Contains(err.Error(), "not found") {
+	msg := err.Error()
+	if strings.Contains(msg, "not found") {
 		return http.StatusNotFound
 	}
-	if strings.Contains(err.Error(), "invalid_transition") {
+	if strings.Contains(msg, "invalid_transition") {
 		return http.StatusConflict
+	}
+	for _, code := range []string{"missing_how_to", "missing_active_surface", "drift_detected"} {
+		if strings.HasPrefix(msg, code+":") {
+			return http.StatusConflict
+		}
+	}
+	for _, code := range []string{"invalid_how_to", "invalid_active_surface", "active_surface_type_mismatch"} {
+		if strings.HasPrefix(msg, code+":") {
+			return http.StatusBadRequest
+		}
 	}
 	return http.StatusBadRequest
 }
@@ -996,6 +1191,9 @@ func canTransition(from, to string) bool {
 		"approved":   {"deprecated", "retired"},
 		"deprecated": {"retired"},
 		"retired":    {},
+		// mirror flow (Task 13.4): mirrored assets may be promoted or rejected.
+		"mirrored": {"approved", "rejected"},
+		"rejected": {},
 	}
 	for _, candidate := range allowed[from] {
 		if candidate == to {

@@ -80,4 +80,29 @@ describe("flowise-adapter", () => {
     const openPr = back.spec.steps.find((s) => s.id === "open-pr")!;
     expect(openPr.depends_on).toBeUndefined();
   });
+
+  it("preserves active_surface across the round trip (active-registry-gateways §7.5)", () => {
+    const pinned: CanonicalWorkflow = {
+      ...sample,
+      spec: {
+        ...sample.spec,
+        steps: sample.spec.steps.map((s) =>
+          s.id === "open-pr"
+            ? {
+                ...s,
+                active_surface: {
+                  family: "mcp",
+                  endpoint: "/v1/gw/mcp/registry:mcp/github@write",
+                },
+              }
+            : s,
+        ),
+      },
+    };
+    const back = roundTrip(pinned);
+    const openPr = back.spec.steps.find((s) => s.id === "open-pr")!;
+    expect(openPr.active_surface).toBeDefined();
+    expect(openPr.active_surface?.family).toBe("mcp");
+    expect(openPr.active_surface?.endpoint).toBe("/v1/gw/mcp/registry:mcp/github@write");
+  });
 });

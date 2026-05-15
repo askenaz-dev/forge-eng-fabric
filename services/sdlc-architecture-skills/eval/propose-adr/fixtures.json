@@ -1,0 +1,1003 @@
+[
+  {
+    "id": "arch-adr-001",
+    "input": {
+      "tenant_id": "tenant-ecom-01",
+      "workspace_id": "ws-ecom-platform",
+      "title": "Choose message broker for order events",
+      "context": "Our e-commerce platform processes thousands of orders per day. We need a reliable way to propagate order state changes (placed, paid, shipped, delivered) to downstream services like inventory, notifications, and analytics without tight coupling.",
+      "decision_drivers": [
+        "High throughput with low latency",
+        "At-least-once delivery guarantee",
+        "Replay capability for event sourcing",
+        "Operational simplicity for a 3-person platform team"
+      ],
+      "options_considered": [
+        "Apache Kafka",
+        "RabbitMQ",
+        "AWS SQS + SNS",
+        "Google Pub/Sub"
+      ],
+      "output_dir": "docs/adr"
+    },
+    "expected": {
+      "status": "ok",
+      "adr_path": "docs/adr/0001-choose-message-broker-for-order-events.md",
+      "adr_number": 1,
+      "slug": "choose-message-broker-for-order-events",
+      "event_type": "sdlc.adr.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-adr-002",
+    "input": {
+      "tenant_id": "tenant-fintech-01",
+      "workspace_id": "ws-payments",
+      "title": "Select database for transaction ledger",
+      "context": "Our payments platform records financial transactions that must never be lost or corrupted. We need ACID guarantees, auditability, and the ability to run complex reconciliation queries across millions of rows.",
+      "decision_drivers": [
+        "ACID compliance is mandatory",
+        "Strong consistency over eventual consistency",
+        "Support for complex SQL joins for reconciliation",
+        "PCI-DSS audit trail requirements",
+        "Cost efficiency at 50M rows/month"
+      ],
+      "options_considered": [
+        "PostgreSQL",
+        "CockroachDB",
+        "Amazon Aurora",
+        "DynamoDB with transactions"
+      ],
+      "output_dir": "docs/adr"
+    },
+    "expected": {
+      "status": "ok",
+      "adr_path": "docs/adr/0002-select-database-for-transaction-ledger.md",
+      "adr_number": 2,
+      "slug": "select-database-for-transaction-ledger",
+      "event_type": "sdlc.adr.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-adr-003",
+    "input": {
+      "tenant_id": "tenant-health-01",
+      "workspace_id": "ws-patient-portal",
+      "title": "Adopt API gateway pattern for patient data services",
+      "context": "The patient portal currently calls 12 backend microservices directly from the React frontend. This causes CORS issues, token proliferation, and makes it hard to enforce HIPAA data access policies consistently.",
+      "decision_drivers": [
+        "Centralized HIPAA access control enforcement",
+        "Reduce frontend complexity (single origin)",
+        "Rate limiting to prevent data scraping",
+        "Observability and audit logging for all PHI access"
+      ],
+      "options_considered": [
+        "Kong Gateway (self-hosted)",
+        "AWS API Gateway",
+        "Nginx with Lua scripting",
+        "GraphQL federation gateway"
+      ],
+      "output_dir": "docs/adr"
+    },
+    "expected": {
+      "status": "ok",
+      "adr_path": "docs/adr/0003-adopt-api-gateway-pattern-for-patient-data-services.md",
+      "adr_number": 3,
+      "slug": "adopt-api-gateway-pattern-for-patient-data-services",
+      "event_type": "sdlc.adr.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-adr-004",
+    "input": {
+      "tenant_id": "tenant-saas-01",
+      "workspace_id": "ws-multi-tenant-app",
+      "title": "Multi-tenancy isolation strategy",
+      "context": "We are building a B2B SaaS product serving mid-market enterprises. Customers have strict data isolation requirements and some have contractual obligations that their data cannot be co-mingled with other tenants.",
+      "decision_drivers": [
+        "Data isolation guarantees for enterprise compliance",
+        "Cost efficiency (pooled resources where possible)",
+        "Onboarding new tenants in under 5 minutes",
+        "Schema evolution without cross-tenant risk"
+      ],
+      "options_considered": [
+        "Shared database, shared schema (row-level security)",
+        "Shared database, separate schemas per tenant",
+        "Separate database per tenant",
+        "Hybrid: pooled for SMB, dedicated for enterprise"
+      ],
+      "output_dir": "docs/adr"
+    },
+    "expected": {
+      "status": "ok",
+      "adr_path": "docs/adr/0004-multi-tenancy-isolation-strategy.md",
+      "adr_number": 4,
+      "slug": "multi-tenancy-isolation-strategy",
+      "event_type": "sdlc.adr.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-adr-005",
+    "input": {
+      "tenant_id": "tenant-ecom-01",
+      "workspace_id": "ws-ecom-platform",
+      "title": "Frontend architecture for product catalog",
+      "context": "The product catalog page is the highest traffic page in our store, serving 2M page views per day. Current SSR approach causes high TTFB during sale events. We need to improve performance without sacrificing SEO.",
+      "decision_drivers": [
+        "SEO indexability is non-negotiable",
+        "Sub-200ms TTFB at peak load",
+        "Incremental static regeneration for price updates",
+        "Team familiarity with React ecosystem"
+      ],
+      "options_considered": [
+        "Next.js ISR with CDN edge caching",
+        "Remix with streaming SSR",
+        "Astro with React islands",
+        "Pure CSR with prerendering for Googlebot"
+      ],
+      "output_dir": "docs/adr"
+    },
+    "expected": {
+      "status": "ok",
+      "adr_path": "docs/adr/0005-frontend-architecture-for-product-catalog.md",
+      "adr_number": 5,
+      "slug": "frontend-architecture-for-product-catalog",
+      "event_type": "sdlc.adr.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-adr-006",
+    "input": {
+      "tenant_id": "tenant-fintech-01",
+      "workspace_id": "ws-fraud-detection",
+      "title": "Real-time fraud scoring architecture",
+      "context": "We need to score every payment transaction for fraud risk within 150ms. Current batch ML model runs overnight and misses real-time fraud patterns. We need a streaming inference pipeline that integrates with our checkout flow.",
+      "decision_drivers": [
+        "P99 latency under 150ms including model inference",
+        "Model hot-reload without service restart",
+        "Feature store for consistent training/serving features",
+        "Fallback strategy when model is unavailable"
+      ],
+      "options_considered": [
+        "Kafka Streams + embedded ONNX model",
+        "AWS SageMaker real-time endpoints",
+        "Feast feature store + Triton inference server",
+        "Redis-based rule engine with periodic model refresh"
+      ],
+      "output_dir": "docs/adr"
+    },
+    "expected": {
+      "status": "ok",
+      "adr_path": "docs/adr/0006-real-time-fraud-scoring-architecture.md",
+      "adr_number": 6,
+      "slug": "real-time-fraud-scoring-architecture",
+      "event_type": "sdlc.adr.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-adr-007",
+    "input": {
+      "tenant_id": "tenant-health-01",
+      "workspace_id": "ws-ehr-integration",
+      "title": "FHIR data exchange strategy",
+      "context": "We need to integrate with 15 different hospital EHR systems (Epic, Cerner, Meditech) for patient record retrieval. Each system has different APIs and data formats. We need a normalized internal representation.",
+      "decision_drivers": [
+        "HL7 FHIR R4 as canonical internal format",
+        "Support for both push (webhooks) and pull (scheduled sync) patterns",
+        "Idempotent ingestion to handle duplicate deliveries",
+        "Transformation auditability for debugging mapping errors"
+      ],
+      "options_considered": [
+        "Mirth Connect integration engine",
+        "AWS HealthLake with custom ETL",
+        "Custom FHIR facade service per EHR vendor",
+        "Azure Health Data Services"
+      ],
+      "output_dir": "docs/adr"
+    },
+    "expected": {
+      "status": "ok",
+      "adr_path": "docs/adr/0007-fhir-data-exchange-strategy.md",
+      "adr_number": 7,
+      "slug": "fhir-data-exchange-strategy",
+      "event_type": "sdlc.adr.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-adr-008",
+    "input": {
+      "tenant_id": "tenant-saas-01",
+      "workspace_id": "ws-analytics-platform",
+      "title": "Analytics data warehouse selection",
+      "context": "Our product analytics team needs a warehouse to power customer-facing usage dashboards. Queries range from simple counts to complex cohort retention analyses. Data volume is 500GB today, projected to 10TB in 2 years.",
+      "decision_drivers": [
+        "Query performance on cold data under 10 seconds",
+        "Cost predictability for customer-facing queries",
+        "dbt compatibility for transformation layer",
+        "Easy connection to our existing Postgres operational DB via CDC"
+      ],
+      "options_considered": [
+        "Snowflake",
+        "BigQuery",
+        "ClickHouse (self-hosted)",
+        "Redshift Serverless"
+      ],
+      "output_dir": "docs/adr"
+    },
+    "expected": {
+      "status": "ok",
+      "adr_path": "docs/adr/0008-analytics-data-warehouse-selection.md",
+      "adr_number": 8,
+      "slug": "analytics-data-warehouse-selection",
+      "event_type": "sdlc.adr.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-adr-009",
+    "input": {
+      "tenant_id": "tenant-logistics-01",
+      "workspace_id": "ws-routing-engine",
+      "title": "Route optimization algorithm selection",
+      "context": "Our last-mile delivery platform dispatches 500 drivers daily across metro areas. We currently use a greedy nearest-neighbor algorithm that produces routes 15-20% longer than optimal. We need to improve fleet efficiency.",
+      "decision_drivers": [
+        "Solution quality: routes within 5% of optimal",
+        "Computation time under 30 seconds for 500 stops",
+        "Support for time window constraints",
+        "Team capability: no dedicated OR researcher on staff"
+      ],
+      "options_considered": [
+        "Google OR-Tools (open source)",
+        "Vroom (open source VRP solver)",
+        "Google Maps Platform Routes Optimization API",
+        "Custom genetic algorithm"
+      ],
+      "output_dir": "docs/adr"
+    },
+    "expected": {
+      "status": "ok",
+      "adr_path": "docs/adr/0009-route-optimization-algorithm-selection.md",
+      "adr_number": 9,
+      "slug": "route-optimization-algorithm-selection",
+      "event_type": "sdlc.adr.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-adr-010",
+    "input": {
+      "tenant_id": "tenant-ecom-01",
+      "workspace_id": "ws-search",
+      "title": "Product search engine selection",
+      "context": "Customer search is the primary product discovery mechanism, driving 60% of conversions. The current MySQL LIKE query approach returns poor results and cannot handle typos, synonyms, or faceted filtering at scale.",
+      "decision_drivers": [
+        "Relevance tuning capability (BM25 + vector hybrid)",
+        "Faceted filtering with real-time index updates",
+        "Handles 10M product catalog with <100ms response",
+        "Managed service preferred to reduce ops burden"
+      ],
+      "options_considered": [
+        "Elasticsearch (self-hosted on Kubernetes)",
+        "Algolia",
+        "Typesense Cloud",
+        "OpenSearch Serverless"
+      ],
+      "output_dir": "docs/adr"
+    },
+    "expected": {
+      "status": "ok",
+      "adr_path": "docs/adr/0010-product-search-engine-selection.md",
+      "adr_number": 10,
+      "slug": "product-search-engine-selection",
+      "event_type": "sdlc.adr.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-adr-011",
+    "input": {
+      "tenant_id": "tenant-health-01",
+      "workspace_id": "ws-telehealth",
+      "title": "Video conferencing infrastructure for telehealth",
+      "context": "Our telehealth platform needs HIPAA-compliant video calls between patients and clinicians. We serve rural areas with variable connectivity. Current third-party vendor has 99.5% uptime which is insufficient for clinical consultations.",
+      "decision_drivers": [
+        "HIPAA Business Associate Agreement available",
+        "Adaptive bitrate for low-bandwidth rural connections",
+        "99.95%+ uptime SLA",
+        "Recording with end-to-end encryption for visit notes"
+      ],
+      "options_considered": [
+        "Twilio Video (with BAA)",
+        "Daily.co (with BAA)",
+        "Amazon Chime SDK (self-operated)",
+        "Vonage Video API"
+      ],
+      "output_dir": "docs/adr"
+    },
+    "expected": {
+      "status": "ok",
+      "adr_path": "docs/adr/0011-video-conferencing-infrastructure-for-telehealth.md",
+      "adr_number": 11,
+      "slug": "video-conferencing-infrastructure-for-telehealth",
+      "event_type": "sdlc.adr.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-adr-012",
+    "input": {
+      "tenant_id": "tenant-saas-01",
+      "workspace_id": "ws-notifications",
+      "title": "Notification delivery infrastructure",
+      "context": "Our platform needs to send transactional emails, push notifications, and in-app notifications reliably. We currently use three separate vendors with no unified tracking. Marketing wants a unified delivery status for user engagement analysis.",
+      "decision_drivers": [
+        "Unified API across email, push, and in-app channels",
+        "Delivery receipt tracking with webhook callbacks",
+        "Template management with A/B testing",
+        "Cost at 10M notifications/month"
+      ],
+      "options_considered": [
+        "Courier",
+        "Knock.app",
+        "Custom service with SendGrid + Firebase + WebSockets",
+        "Novu (open source)"
+      ],
+      "output_dir": "docs/adr"
+    },
+    "expected": {
+      "status": "ok",
+      "adr_path": "docs/adr/0012-notification-delivery-infrastructure.md",
+      "adr_number": 12,
+      "slug": "notification-delivery-infrastructure",
+      "event_type": "sdlc.adr.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-adr-013",
+    "input": {
+      "tenant_id": "tenant-fintech-01",
+      "workspace_id": "ws-open-banking",
+      "title": "Open banking API aggregation strategy",
+      "context": "Our personal finance app needs read access to users' bank accounts across 3,000+ US financial institutions. Building direct integrations is not feasible. We need a reliable aggregation layer with strong data freshness guarantees.",
+      "decision_drivers": [
+        "Coverage of major US banks and credit unions",
+        "OAuth-based account linking (not credential scraping)",
+        "Webhook delivery for real-time transaction notifications",
+        "SOC 2 Type II certified vendor"
+      ],
+      "options_considered": [
+        "Plaid",
+        "MX Technologies",
+        "Finicity (Mastercard)",
+        "Akoya (bank-operated network)"
+      ],
+      "output_dir": "docs/adr"
+    },
+    "expected": {
+      "status": "ok",
+      "adr_path": "docs/adr/0013-open-banking-api-aggregation-strategy.md",
+      "adr_number": 13,
+      "slug": "open-banking-api-aggregation-strategy",
+      "event_type": "sdlc.adr.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-adr-014",
+    "input": {
+      "tenant_id": "tenant-ecom-01",
+      "workspace_id": "ws-inventory",
+      "title": "Inventory reservation strategy for flash sales",
+      "context": "Flash sales cause thundering herd on our inventory service. During a 10-minute sale window, we see 50,000 concurrent users attempting to purchase limited stock. Current optimistic locking causes massive transaction retry storms.",
+      "decision_drivers": [
+        "Prevent overselling under extreme concurrency",
+        "Reserve inventory within 200ms",
+        "Auto-release stale reservations after 10 minutes",
+        "Consistency: user must see accurate remaining stock count"
+      ],
+      "options_considered": [
+        "Redis DECR with Lua script for atomic reservation",
+        "Pessimistic DB locking with queue",
+        "Event-driven saga with compensating transactions",
+        "Dedicated reservation microservice with in-memory state"
+      ],
+      "output_dir": "docs/adr"
+    },
+    "expected": {
+      "status": "ok",
+      "adr_path": "docs/adr/0014-inventory-reservation-strategy-for-flash-sales.md",
+      "adr_number": 14,
+      "slug": "inventory-reservation-strategy-for-flash-sales",
+      "event_type": "sdlc.adr.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-adr-015",
+    "input": {
+      "tenant_id": "tenant-logistics-01",
+      "workspace_id": "ws-iot-platform",
+      "title": "IoT telemetry ingestion pipeline",
+      "context": "We have 20,000 GPS tracking devices in delivery vehicles sending location pings every 30 seconds. We need to ingest, store, and serve real-time location to our dispatcher dashboard with under 5-second latency.",
+      "decision_drivers": [
+        "Ingest 20,000 messages/minute with room to grow to 200,000",
+        "Time-series storage optimized for geo queries",
+        "WebSocket push to dispatcher dashboard",
+        "7-day hot storage, 2-year cold archive"
+      ],
+      "options_considered": [
+        "AWS IoT Core + Timestream + API Gateway WebSocket",
+        "MQTT broker (EMQX) + TimescaleDB + custom WebSocket service",
+        "Kafka + InfluxDB + Grafana Live",
+        "Google Cloud IoT Core + BigQuery + Datastream"
+      ],
+      "output_dir": "docs/adr"
+    },
+    "expected": {
+      "status": "ok",
+      "adr_path": "docs/adr/0015-iot-telemetry-ingestion-pipeline.md",
+      "adr_number": 15,
+      "slug": "iot-telemetry-ingestion-pipeline",
+      "event_type": "sdlc.adr.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-adr-016",
+    "input": {
+      "tenant_id": "tenant-saas-01",
+      "workspace_id": "ws-auth",
+      "title": "Authentication and authorization framework",
+      "context": "Our SaaS app currently has a homegrown JWT auth system. We are adding SSO for enterprise customers, MFA requirements, and fine-grained RBAC. The current system cannot support these requirements without significant rework.",
+      "decision_drivers": [
+        "SAML 2.0 and OIDC SSO support for enterprise",
+        "MFA with TOTP and WebAuthn",
+        "Fine-grained RBAC at resource level",
+        "Audit log of all authentication events"
+      ],
+      "options_considered": [
+        "Auth0",
+        "Okta Customer Identity (CIC)",
+        "Keycloak (self-hosted)",
+        "WorkOS"
+      ],
+      "output_dir": "docs/adr"
+    },
+    "expected": {
+      "status": "ok",
+      "adr_path": "docs/adr/0016-authentication-and-authorization-framework.md",
+      "adr_number": 16,
+      "slug": "authentication-and-authorization-framework",
+      "event_type": "sdlc.adr.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-adr-017",
+    "input": {
+      "tenant_id": "tenant-health-01",
+      "workspace_id": "ws-clinical-nlp",
+      "title": "Clinical note NLP pipeline",
+      "context": "Clinicians write unstructured SOAP notes. We need to extract structured data (diagnoses, medications, procedures) from these notes to populate discrete EHR fields and support billing code suggestion.",
+      "decision_drivers": [
+        "HIPAA-compliant: PHI must not leave our AWS boundary",
+        "Named entity recognition for medical terminology (ICD-10, SNOMED CT)",
+        "Processing latency under 3 seconds per note",
+        "Human review workflow for low-confidence extractions"
+      ],
+      "options_considered": [
+        "AWS Comprehend Medical (managed, stays in AWS)",
+        "spaCy + scispaCy models (self-hosted)",
+        "Google Healthcare Natural Language API",
+        "Fine-tuned BioBERT on private infrastructure"
+      ],
+      "output_dir": "docs/adr"
+    },
+    "expected": {
+      "status": "ok",
+      "adr_path": "docs/adr/0017-clinical-note-nlp-pipeline.md",
+      "adr_number": 17,
+      "slug": "clinical-note-nlp-pipeline",
+      "event_type": "sdlc.adr.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-adr-018",
+    "input": {
+      "tenant_id": "tenant-fintech-01",
+      "workspace_id": "ws-crypto-custody",
+      "title": "Cryptographic key management for digital assets",
+      "context": "Our custody platform holds private keys for customer digital asset wallets. A compromise would be catastrophic. We need a key management system that meets institutional custody security standards and our SOC 2 Type II requirements.",
+      "decision_drivers": [
+        "FIPS 140-2 Level 3 certified HSM",
+        "Multi-party computation (MPC) for key signing",
+        "Air-gapped key ceremony for root key generation",
+        "Disaster recovery with geographically distributed key shards"
+      ],
+      "options_considered": [
+        "AWS CloudHSM + custom MPC layer",
+        "Fireblocks (MPC-CMP protocol)",
+        "Thales Luna HSM (on-premises)",
+        "Sepior/Blockdaemon MPC Vault"
+      ],
+      "output_dir": "docs/adr"
+    },
+    "expected": {
+      "status": "ok",
+      "adr_path": "docs/adr/0018-cryptographic-key-management-for-digital-assets.md",
+      "adr_number": 18,
+      "slug": "cryptographic-key-management-for-digital-assets",
+      "event_type": "sdlc.adr.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-adr-019",
+    "input": {
+      "tenant_id": "tenant-ecom-01",
+      "workspace_id": "ws-recommendation",
+      "title": "Product recommendation engine approach",
+      "context": "We want to add personalized product recommendations to improve average order value. We have 2 years of purchase history and browsing data for 5M users. The data science team is small (2 ML engineers).",
+      "decision_drivers": [
+        "Recommendation quality (CTR and conversion lift)",
+        "Cold start handling for new users and new products",
+        "Real-time personalization with sub-100ms serving latency",
+        "Operational burden on the small ML team"
+      ],
+      "options_considered": [
+        "Amazon Personalize (managed ML service)",
+        "Custom collaborative filtering model on SageMaker",
+        "Recombee (recommendation API)",
+        "Rule-based system with popularity signals"
+      ],
+      "output_dir": "docs/adr"
+    },
+    "expected": {
+      "status": "ok",
+      "adr_path": "docs/adr/0019-product-recommendation-engine-approach.md",
+      "adr_number": 19,
+      "slug": "product-recommendation-engine-approach",
+      "event_type": "sdlc.adr.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-adr-020",
+    "input": {
+      "tenant_id": "tenant-logistics-01",
+      "workspace_id": "ws-warehouse-mgmt",
+      "title": "Warehouse management system integration pattern",
+      "context": "We are integrating with 8 third-party warehouse management systems (WMS) used by our fulfillment partners. Each WMS has a different API (REST, SOAP, EDI X12, flat file FTP). We need a normalized integration layer.",
+      "decision_drivers": [
+        "Support for REST, SOAP, EDI, and file-based integrations",
+        "Dead letter queue for failed messages with retry",
+        "Mapping transformations must be auditable and version-controlled",
+        "New WMS integration deployable in under 1 week"
+      ],
+      "options_considered": [
+        "Apache Camel on Kubernetes",
+        "MuleSoft Anypoint Platform",
+        "AWS Step Functions + Lambda per connector",
+        "Temporal workflow + custom connector SDK"
+      ],
+      "output_dir": "docs/adr"
+    },
+    "expected": {
+      "status": "ok",
+      "adr_path": "docs/adr/0020-warehouse-management-system-integration-pattern.md",
+      "adr_number": 20,
+      "slug": "warehouse-management-system-integration-pattern",
+      "event_type": "sdlc.adr.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-adr-021",
+    "input": {
+      "tenant_id": "tenant-saas-01",
+      "workspace_id": "ws-billing",
+      "title": "Usage-based billing metering system",
+      "context": "We are transitioning from seat-based to usage-based pricing. We need to meter API calls, compute minutes, and data transfer per tenant. Billing must be accurate to within 0.1% and we cannot afford to double-bill or miss events.",
+      "decision_drivers": [
+        "Exactly-once metering semantics",
+        "Handles 1M metering events per hour",
+        "Tamper-evident audit trail for dispute resolution",
+        "Integration with Stripe Billing for invoicing"
+      ],
+      "options_considered": [
+        "Amberflo",
+        "Lago (open source)",
+        "Orb",
+        "Custom metering service with Kafka + Postgres"
+      ],
+      "output_dir": "docs/adr"
+    },
+    "expected": {
+      "status": "ok",
+      "adr_path": "docs/adr/0021-usage-based-billing-metering-system.md",
+      "adr_number": 21,
+      "slug": "usage-based-billing-metering-system",
+      "event_type": "sdlc.adr.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-adr-022",
+    "input": {
+      "tenant_id": "tenant-health-01",
+      "workspace_id": "ws-genomics",
+      "title": "Genomic data storage and query architecture",
+      "context": "We process whole genome sequencing files (WGS) averaging 100GB per sample. Researchers need to query variants across thousands of samples to identify disease associations. Storage and query costs are becoming unsustainable.",
+      "decision_drivers": [
+        "Efficient storage of VCF and CRAM formats",
+        "Federated queries across samples without full data movement",
+        "Access control at the sample level for consent compliance",
+        "Cost reduction of at least 60% vs current S3 + Athena approach"
+      ],
+      "options_considered": [
+        "TileDB-VCF on S3 with serverless query",
+        "DNAnexus platform",
+        "Hail on Spark (managed by Terra)",
+        "Custom Parquet-based variant store on Iceberg"
+      ],
+      "output_dir": "docs/adr"
+    },
+    "expected": {
+      "status": "ok",
+      "adr_path": "docs/adr/0022-genomic-data-storage-and-query-architecture.md",
+      "adr_number": 22,
+      "slug": "genomic-data-storage-and-query-architecture",
+      "event_type": "sdlc.adr.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-adr-023",
+    "input": {
+      "tenant_id": "tenant-fintech-01",
+      "workspace_id": "ws-reporting",
+      "title": "Regulatory reporting pipeline architecture",
+      "context": "As a registered broker-dealer, we must submit daily FINRA transaction reports and monthly CFTC position reports. Reports have strict format specifications and must be delivered by regulatory deadlines. Late or incorrect submissions incur significant fines.",
+      "decision_drivers": [
+        "Zero missed submission windows",
+        "Report format validation before submission",
+        "Reconciliation against source systems before each submission",
+        "Audit trail with immutable storage of every submitted report"
+      ],
+      "options_considered": [
+        "Managed regulatory reporting vendor (Broadridge)",
+        "Custom pipeline: Airflow + dbt + SFTP delivery",
+        "Custom pipeline: Temporal + Postgres + encrypted S3 archive",
+        "FIS Regulatory Reporting as a Service"
+      ],
+      "output_dir": "docs/adr"
+    },
+    "expected": {
+      "status": "ok",
+      "adr_path": "docs/adr/0023-regulatory-reporting-pipeline-architecture.md",
+      "adr_number": 23,
+      "slug": "regulatory-reporting-pipeline-architecture",
+      "event_type": "sdlc.adr.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-adr-024",
+    "input": {
+      "tenant_id": "tenant-ecom-01",
+      "workspace_id": "ws-returns",
+      "title": "Returns processing workflow engine",
+      "context": "Our returns process involves multiple steps: label generation, carrier pickup, warehouse inspection, refund approval, and restocking. Currently implemented as a monolithic state machine in Postgres that is difficult to extend and has no visibility into in-flight returns.",
+      "decision_drivers": [
+        "Visual workflow visibility for operations team",
+        "Compensation and rollback for failed steps",
+        "Human-in-the-loop steps for inspection disputes",
+        "SLA monitoring with alerts for stuck returns"
+      ],
+      "options_considered": [
+        "Temporal workflow orchestration",
+        "AWS Step Functions",
+        "Apache Airflow",
+        "Refactored Postgres state machine with pg_cron"
+      ],
+      "output_dir": "docs/adr"
+    },
+    "expected": {
+      "status": "ok",
+      "adr_path": "docs/adr/0024-returns-processing-workflow-engine.md",
+      "adr_number": 24,
+      "slug": "returns-processing-workflow-engine",
+      "event_type": "sdlc.adr.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-adr-025",
+    "input": {
+      "tenant_id": "tenant-saas-01",
+      "workspace_id": "ws-document-processing",
+      "title": "Document intelligence pipeline for contract analysis",
+      "context": "Legal teams upload contracts for automated clause extraction and risk flagging. Documents are PDFs averaging 50 pages with complex layouts. We need to extract structured data with high accuracy to reduce manual review time.",
+      "decision_drivers": [
+        "Layout-aware extraction (tables, headers, multi-column)",
+        "Custom model fine-tuning for legal clause taxonomy",
+        "Human review queue for low-confidence extractions",
+        "Data residency: documents cannot leave US AWS regions"
+      ],
+      "options_considered": [
+        "AWS Textract + Comprehend",
+        "Azure Document Intelligence (Form Recognizer)",
+        "Reducto AI",
+        "Unstructured.io + fine-tuned LLM"
+      ],
+      "output_dir": "docs/adr"
+    },
+    "expected": {
+      "status": "ok",
+      "adr_path": "docs/adr/0025-document-intelligence-pipeline-for-contract-analysis.md",
+      "adr_number": 25,
+      "slug": "document-intelligence-pipeline-for-contract-analysis",
+      "event_type": "sdlc.adr.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-adr-026",
+    "input": {
+      "tenant_id": "tenant-logistics-01",
+      "workspace_id": "ws-dispatch",
+      "title": "Driver dispatch communication channel",
+      "context": "Dispatchers communicate with 500 active drivers through a legacy PTT radio system that is being decommissioned. We need a digital replacement that works in dead-zones (tunnels, parking garages) and supports file attachments for delivery instructions.",
+      "decision_drivers": [
+        "Offline message queuing and sync when connectivity returns",
+        "Push-to-talk voice messaging with <500ms latency on 4G",
+        "File attachment support for delivery instructions (PDF, image)",
+        "Read receipts for critical dispatch messages"
+      ],
+      "options_considered": [
+        "Zello Work (PTT app)",
+        "Custom solution: MQTT + WebRTC + React Native",
+        "Twilio Conversations API",
+        "Axon Dispatch (public safety comms platform)"
+      ],
+      "output_dir": "docs/adr"
+    },
+    "expected": {
+      "status": "ok",
+      "adr_path": "docs/adr/0026-driver-dispatch-communication-channel.md",
+      "adr_number": 26,
+      "slug": "driver-dispatch-communication-channel",
+      "event_type": "sdlc.adr.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-adr-027",
+    "input": {
+      "tenant_id": "tenant-health-01",
+      "workspace_id": "ws-remote-monitoring",
+      "title": "Remote patient monitoring data ingestion",
+      "context": "We are onboarding patients with chronic conditions who use Bluetooth medical devices (glucose meters, blood pressure cuffs, pulse oximeters). Device readings must reach clinical dashboards within 5 minutes of measurement.",
+      "decision_drivers": [
+        "Device SDK support for major BLE medical device manufacturers",
+        "HIPAA-compliant data transit and storage",
+        "Alerting when readings exceed clinical thresholds",
+        "Battery-efficient mobile SDK (< 3% battery drain/day)"
+      ],
+      "options_considered": [
+        "Validic (medical device integration platform)",
+        "Apple HealthKit + custom backend",
+        "Custom BLE SDK + AWS IoT Core",
+        "Human API"
+      ],
+      "output_dir": "docs/adr"
+    },
+    "expected": {
+      "status": "ok",
+      "adr_path": "docs/adr/0027-remote-patient-monitoring-data-ingestion.md",
+      "adr_number": 27,
+      "slug": "remote-patient-monitoring-data-ingestion",
+      "event_type": "sdlc.adr.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-adr-028",
+    "input": {
+      "tenant_id": "tenant-saas-01",
+      "workspace_id": "ws-collab-editing",
+      "title": "Real-time collaborative editing architecture",
+      "context": "We are adding collaborative document editing to our project management tool. Multiple users need to edit the same document simultaneously with conflict-free merge semantics and presence indicators.",
+      "decision_drivers": [
+        "Conflict-free merging without manual conflict resolution",
+        "Presence indicators (cursors, selections) with <100ms propagation",
+        "Offline editing with sync when reconnected",
+        "Historical version tracking with per-character attribution"
+      ],
+      "options_considered": [
+        "Yjs CRDT library + y-websocket server",
+        "Automerge CRDT",
+        "ShareDB (OT-based)",
+        "Liveblocks (managed collaboration platform)"
+      ],
+      "output_dir": "docs/adr"
+    },
+    "expected": {
+      "status": "ok",
+      "adr_path": "docs/adr/0028-real-time-collaborative-editing-architecture.md",
+      "adr_number": 28,
+      "slug": "real-time-collaborative-editing-architecture",
+      "event_type": "sdlc.adr.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-adr-029",
+    "input": {
+      "tenant_id": "tenant-fintech-01",
+      "workspace_id": "ws-kyc",
+      "title": "KYC identity verification vendor selection",
+      "context": "Our investment platform is legally required to verify customer identity (KYC) before account funding. Manual review is not scalable beyond 100 signups/day. We need automated document verification with liveness detection to prevent identity fraud.",
+      "decision_drivers": [
+        "Government ID document coverage for 50+ countries",
+        "Liveness detection accuracy > 99.9% (ISO 30107-3 certified)",
+        "Automated adverse media and PEP screening",
+        "API integration completable in 2 weeks"
+      ],
+      "options_considered": [
+        "Persona",
+        "Jumio",
+        "Onfido",
+        "Stripe Identity"
+      ],
+      "output_dir": "docs/adr"
+    },
+    "expected": {
+      "status": "ok",
+      "adr_path": "docs/adr/0029-kyc-identity-verification-vendor-selection.md",
+      "adr_number": 29,
+      "slug": "kyc-identity-verification-vendor-selection",
+      "event_type": "sdlc.adr.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-adr-030",
+    "input": {
+      "tenant_id": "tenant-ecom-01",
+      "workspace_id": "ws-pricing",
+      "title": "Dynamic pricing engine architecture",
+      "context": "We want to implement demand-based pricing that adjusts product prices in real-time based on inventory levels, competitor prices, and demand signals. This is a new capability with no existing system to build on.",
+      "decision_drivers": [
+        "Price changes propagate to storefront within 30 seconds",
+        "Pricing rules are configurable by merchandisers without code changes",
+        "Competitor price feeds from at least 5 sources",
+        "Audit log of every price change with reasoning"
+      ],
+      "options_considered": [
+        "Wiser pricing intelligence platform",
+        "Custom rules engine with competitor price feed integration",
+        "Revionics AI pricing",
+        "Prisync + custom rules layer"
+      ],
+      "output_dir": "docs/adr"
+    },
+    "expected": {
+      "status": "ok",
+      "adr_path": "docs/adr/0030-dynamic-pricing-engine-architecture.md",
+      "adr_number": 30,
+      "slug": "dynamic-pricing-engine-architecture",
+      "event_type": "sdlc.adr.proposed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "arch-adr-031",
+    "input": {
+      "tenant_id": "tenant-adversarial-01",
+      "workspace_id": "ws-test",
+      "title": "",
+      "context": "We need to make a decision.",
+      "decision_drivers": [],
+      "options_considered": [],
+      "output_dir": "docs/adr"
+    },
+    "expected": {
+      "status": "error",
+      "adr_path": null,
+      "adr_number": null,
+      "slug": null,
+      "event_type": "sdlc.adr.proposed.v1"
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "arch-adr-032",
+    "input": {
+      "tenant_id": "tenant-adversarial-01",
+      "workspace_id": "ws-test",
+      "title": "Choose a database",
+      "context": "",
+      "decision_drivers": ["Performance"],
+      "options_considered": ["PostgreSQL"],
+      "output_dir": "docs/adr"
+    },
+    "expected": {
+      "status": "ok",
+      "adr_path": "docs/adr/0032-choose-a-database.md",
+      "adr_number": 32,
+      "slug": "choose-a-database",
+      "event_type": "sdlc.adr.proposed.v1"
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "arch-adr-033",
+    "input": {
+      "tenant_id": "",
+      "workspace_id": "",
+      "title": "Decide on cloud provider",
+      "context": "We need to pick a cloud provider for our new product.",
+      "decision_drivers": ["Cost", "Region availability"],
+      "options_considered": ["AWS", "Azure", "GCP"],
+      "output_dir": "docs/adr"
+    },
+    "expected": {
+      "status": "error",
+      "adr_path": null,
+      "adr_number": null,
+      "slug": null,
+      "event_type": "sdlc.adr.proposed.v1"
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "arch-adr-034",
+    "input": {
+      "tenant_id": "tenant-adversarial-01",
+      "workspace_id": "ws-test",
+      "title": "A" ,
+      "context": "x",
+      "decision_drivers": ["a"],
+      "options_considered": ["b"],
+      "output_dir": ""
+    },
+    "expected": {
+      "status": "error",
+      "adr_path": null,
+      "adr_number": null,
+      "slug": null,
+      "event_type": "sdlc.adr.proposed.v1"
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "arch-adr-035",
+    "input": {
+      "tenant_id": "tenant-adversarial-01",
+      "workspace_id": "ws-test",
+      "title": "A title that is extremely long and contains many words that would produce a very lengthy slug if not properly truncated by the system under evaluation during slug generation",
+      "context": "This tests slug truncation behavior for very long titles.",
+      "decision_drivers": ["Slug length limits", "URL safety"],
+      "options_considered": ["Option A", "Option B"],
+      "output_dir": "docs/adr"
+    },
+    "expected": {
+      "status": "ok",
+      "adr_path": "docs/adr/0035-a-title-that-is-extremely-long-and-contains-many-words-that-would-produce-a-very-lengthy-slug-if-not-properly-truncated-by-the-system-under-evaluation-during-slug-generation.md",
+      "adr_number": 35,
+      "slug": "a-title-that-is-extremely-long-and-contains-many-words-that-would-produce-a-very-lengthy-slug-if-not-properly-truncated-by-the-system-under-evaluation-during-slug-generation",
+      "event_type": "sdlc.adr.proposed.v1"
+    },
+    "weight": 2.0
+  }
+]

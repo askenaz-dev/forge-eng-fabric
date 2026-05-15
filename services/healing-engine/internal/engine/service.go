@@ -127,8 +127,34 @@ func (s *Service) Trigger(ctx context.Context, in IncidentInput) (*HealingDecisi
 
 	switch decision.Level {
 	case LevelL1:
+		if in.AppID != "" {
+			_, _ = s.Detect(ctx, DetectionInput{
+				AppID:               in.AppID,
+				TenantID:            in.TenantID,
+				WorkspaceID:         in.WorkspaceID,
+				CorrelationID:       in.IncidentID,
+				SignalSource:        SignalIncidentCreated,
+				CandidateActions:    in.SuggestedActions,
+				BlastRadiusEstimate: action.BlastRadius,
+			})
+		}
 		decision.Outcome = OutcomeNotified
 	case LevelL2:
+		if in.AppID != "" {
+			_, _ = s.ProposeFix(ctx, ProposeFixInput{
+				AppID:         in.AppID,
+				TenantID:      in.TenantID,
+				WorkspaceID:   in.WorkspaceID,
+				CorrelationID: in.IncidentID,
+				TopHypothesis: Hypothesis{
+					ID:          "hyp-" + decision.ID,
+					Description: "incident " + in.IncidentID + " on action " + action.ID,
+					Confidence:  0.8,
+				},
+				DiffType:        "config",
+				SizeBudgetLines: 200,
+			})
+		}
 		decision.Outcome = OutcomeSuggested
 	case LevelL3:
 		s.runL3(ctx, in, action, decision)

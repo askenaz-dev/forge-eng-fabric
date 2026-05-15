@@ -72,6 +72,17 @@ class Settings(BaseSettings):
         default="gemini-1.5-pro", alias="ALFRED_AGENT_MODE_MODEL"
     )
 
+    # Alfred Console v2 (alfred-console-redesign). Per-tenant flag default=false.
+    # Flip ALFRED_CONSOLE_V2_ENABLED=true to enable the Friendly/Advanced views.
+    alfred_console_v2_enabled: bool = Field(default=False, alias="ALFRED_CONSOLE_V2_ENABLED")
+
+    # Spec dedup threshold. Configurable per tenant; hard floor enforced at write.
+    spec_match_threshold_default: float = Field(default=0.80, alias="SPEC_MATCH_THRESHOLD_DEFAULT")
+    spec_match_threshold_floor: float = Field(default=0.65, alias="SPEC_MATCH_THRESHOLD_FLOOR")
+
+    # Milvus / dedup index endpoint (reuses RAG infra).
+    dedup_index_url: str = Field(default="http://localhost:8086", alias="DEDUP_INDEX_URL")
+
 
 def load_settings() -> Settings:
     return Settings()

@@ -257,6 +257,99 @@ const DICTIONARY = {
     alfred_admin_lede:    "Configuración por workspace para la consola de Alfred.",
     alfred_admin_dock_help:"Cuando está activado, los miembros del workspace pueden iniciar sesiones de agente desde cualquier ruta autenticada.",
     alfred_admin_dock_toggle:"Habilitar dock de Alfred en este workspace",
+
+    // design-system-catalog — wizard Design System step (ES).
+    wiz_ds_title:        "Elige un Design System",
+    wiz_ds_subtitle:     "Selecciona la apariencia base para esta App. Podrás cambiarla más tarde desde la pestaña de Configuración.",
+    wiz_ds_default_hint: "Por defecto: ds-forge-default (la apariencia del Portal).",
+    wiz_ds_continue:     "Continuar",
+    wiz_ds_back:         "Volver",
+    wiz_ds_preview_light:"Claro",
+    wiz_ds_preview_dark: "Oscuro",
+    wiz_ds_a11y_badge:   "Accesibilidad",
+    wiz_ds_no_catalog:   "No se pudo cargar el catálogo de Design Systems.",
+    wiz_ds_app_settings_panel_title: "Design System",
+    wiz_ds_app_settings_current:     "Actualmente activo",
+    wiz_ds_app_settings_swap:        "Cambiar Design System",
+    wiz_ds_app_settings_overrides:   "Sustituciones por componente",
+    wiz_ds_app_settings_open_pr:     "Cambio en curso (PR abierta)",
+    wiz_ds_app_settings_diff_title:  "Diferencia (actual → objetivo)",
+    wiz_ds_app_settings_policy_gate: "Este cambio abre una pull-request y requiere CI verde antes de desplegarse.",
+
+    // alfred-console-redesign: Friendly view landing cards
+    alfred_friendly_title:           "Alfred",
+    alfred_friendly_subtitle:        "¿Qué quieres hacer hoy?",
+    alfred_card_new_app:             "Nueva App",
+    alfred_card_new_app_body:        "Crea una app nueva desde cero",
+    alfred_card_improve:             "Mejorar",
+    alfred_card_improve_body:        "Añade o cambia algo en una app existente",
+    alfred_card_operate:             "Operar",
+    alfred_card_operate_body:        "Despliega, supervisa o resuelve un problema",
+    alfred_card_start:               "Empezar",
+
+    // sdlc-end-to-end: intent-to-infrastructure workflow trigger
+    alfred_new_app_run_workflow:     "Lanzar pipeline completo (SDLC)",
+    alfred_new_app_workflow_started: "¡Pipeline iniciado! Puedes seguir el progreso en la pestaña Actividad.",
+    alfred_new_app_workflow_err:     "No se pudo iniciar el pipeline. Inténtalo desde la vista avanzada.",
+
+    // sdlc-end-to-end: Operar card — healing L1/L2 events
+    alfred_operate_healing_title:    "Eventos de auto-sanación",
+    alfred_operate_healing_empty:    "No hay eventos recientes.",
+    alfred_operate_healing_l1:       "Anomalía detectada",
+    alfred_operate_healing_l2:       "Corrección propuesta",
+    alfred_operate_healing_severity: "Severidad: {severity}",
+    alfred_operate_healing_loading:  "Cargando eventos…",
+    alfred_operate_healing_err:      "No se pudieron cargar los eventos de sanación.",
+
+    // alfred-console-redesign: Friendly view conversation
+    alfred_friendly_back:            "Volver",
+    alfred_friendly_switch_dev:      "Cambiar a modo desarrollador",
+    alfred_friendly_label_fallback:  "una App reciente",
+    alfred_friendly_send:            "Enviar",
+    alfred_friendly_placeholder:     "Describe lo que necesitas…",
+
+    // alfred-console-redesign: App switcher
+    alfred_app_switcher_label:       "App:",
+    alfred_app_switcher_aria:        "Cambiar App",
+    alfred_app_switcher_last:        "Última actividad",
+
+    // alfred-console-redesign: error messages (friendly copies)
+    alfred_err_missing_app_editor:   "No tienes permisos para editar esta App. Pide acceso a {owner}.",
+    alfred_err_generic:              "Ocurrió un error inesperado.",
+    alfred_err_show_details:         "Ver detalles técnicos",
+    alfred_err_hide_details:         "Ocultar detalles técnicos",
+
+    // alfred-console-redesign: view toggle
+    alfred_dev_mode_toggle:          "Modo desarrollador",
+    alfred_dev_mode_on:              "Modo desarrollador activado",
+    alfred_dev_mode_off:             "Modo desarrollador desactivado",
+    alfred_session_toggle:           "Cambiar para esta sesión",
+    alfred_save_default:             "Guardar como predeterminado",
+
+    // alfred-console-redesign: match dialog (spec dedup)
+    alfred_match_title:              "Encontré un spec muy parecido",
+    alfred_match_subtitle:           "¿Quieres extenderlo o crear uno nuevo?",
+    alfred_match_implement:          "Implementar",
+    alfred_match_extend:             "Extender",
+    alfred_match_create_new:         "Crear nuevo",
+    alfred_match_not_same:           "No, esto no es lo mismo",
+    alfred_match_score:              "Similaridad",
+    alfred_match_lifecycle:          "Estado",
+    alfred_match_see_others:         "Ver otros similares",
+
+    // alfred-console-redesign: Advanced view
+    alfred_advanced_title:           "Alfred",
+    alfred_advanced_subtitle:        "Consola de desarrollador",
+    alfred_advanced_app_label:       "App:",
+    alfred_advanced_placeholder:     "/forge create title='…' intent='…'",
+    alfred_advanced_shortcuts_title: "Atajos de teclado",
+    alfred_advanced_shortcut_palette:"Abrir paleta de comandos",
+    alfred_advanced_shortcut_alfred: "Convocar a Alfred",
+    alfred_advanced_shortcut_dark:   "Cambiar tema",
+    alfred_advanced_shortcut_sidebar:"Alternar barra lateral",
+
+    // alfred-console-redesign: command deprecation toast
+    alfred_cmd_deprecated_toast:     "El comando /openspec se renombró a /forge. Úsalo a partir del próximo release.",
   },
   en: {
     nav_platform:    "Platform",
@@ -487,6 +580,99 @@ const DICTIONARY = {
     alfred_admin_lede:     "Per-workspace configuration for the Alfred console.",
     alfred_admin_dock_help:"When enabled, workspace members can start agent-mode sessions from any authenticated route.",
     alfred_admin_dock_toggle:"Enable the Alfred dock for this workspace",
+
+    // design-system-catalog — wizard Design System step (EN).
+    wiz_ds_title:        "Pick a Design System",
+    wiz_ds_subtitle:     "Choose the look-and-feel for this App. You can swap it later from the Settings tab.",
+    wiz_ds_default_hint: "Default: ds-forge-default (the Portal's own look).",
+    wiz_ds_continue:     "Continue",
+    wiz_ds_back:         "Back",
+    wiz_ds_preview_light:"Light",
+    wiz_ds_preview_dark: "Dark",
+    wiz_ds_a11y_badge:   "Accessibility",
+    wiz_ds_no_catalog:   "Could not load the Design System catalog.",
+    wiz_ds_app_settings_panel_title: "Design System",
+    wiz_ds_app_settings_current:     "Currently active",
+    wiz_ds_app_settings_swap:        "Swap Design System",
+    wiz_ds_app_settings_overrides:   "Per-component overrides",
+    wiz_ds_app_settings_open_pr:     "Swap in progress (PR open)",
+    wiz_ds_app_settings_diff_title:  "Diff (current → target)",
+    wiz_ds_app_settings_policy_gate: "This swap opens a pull-request and requires CI green before it deploys.",
+
+    // alfred-console-redesign: Friendly view landing cards
+    alfred_friendly_title:           "Alfred",
+    alfred_friendly_subtitle:        "What do you want to do today?",
+    alfred_card_new_app:             "Nueva App",
+    alfred_card_new_app_body:        "Start a brand new app",
+    alfred_card_improve:             "Mejorar",
+    alfred_card_improve_body:        "Add or change something in an existing app",
+    alfred_card_operate:             "Operar",
+    alfred_card_operate_body:        "Deploy, monitor or troubleshoot",
+    alfred_card_start:               "Start",
+
+    // sdlc-end-to-end: intent-to-infrastructure workflow trigger
+    alfred_new_app_run_workflow:     "Launch full pipeline (SDLC)",
+    alfred_new_app_workflow_started: "Pipeline started! Track progress in the Activity tab.",
+    alfred_new_app_workflow_err:     "Could not start the pipeline. Try from developer view.",
+
+    // sdlc-end-to-end: Operar card — healing L1/L2 events
+    alfred_operate_healing_title:    "Self-healing events",
+    alfred_operate_healing_empty:    "No recent events.",
+    alfred_operate_healing_l1:       "Anomaly detected",
+    alfred_operate_healing_l2:       "Fix proposed",
+    alfred_operate_healing_severity: "Severity: {severity}",
+    alfred_operate_healing_loading:  "Loading events…",
+    alfred_operate_healing_err:      "Could not load healing events.",
+
+    // alfred-console-redesign: Friendly view conversation
+    alfred_friendly_back:            "Back",
+    alfred_friendly_switch_dev:      "Switch to developer mode",
+    alfred_friendly_label_fallback:  "a recent App",
+    alfred_friendly_send:            "Send",
+    alfred_friendly_placeholder:     "Describe what you need…",
+
+    // alfred-console-redesign: App switcher
+    alfred_app_switcher_label:       "App:",
+    alfred_app_switcher_aria:        "Switch App",
+    alfred_app_switcher_last:        "Last activity",
+
+    // alfred-console-redesign: error messages (friendly copies)
+    alfred_err_missing_app_editor:   "You don't have permission to edit this app. Ask {owner}.",
+    alfred_err_generic:              "An unexpected error occurred.",
+    alfred_err_show_details:         "Show technical details",
+    alfred_err_hide_details:         "Hide technical details",
+
+    // alfred-console-redesign: view toggle
+    alfred_dev_mode_toggle:          "Developer mode",
+    alfred_dev_mode_on:              "Developer mode on",
+    alfred_dev_mode_off:             "Developer mode off",
+    alfred_session_toggle:           "Switch for this session",
+    alfred_save_default:             "Save as my default",
+
+    // alfred-console-redesign: match dialog (spec dedup)
+    alfred_match_title:              "I found a very similar spec",
+    alfred_match_subtitle:           "Do you want to extend it or create a new one?",
+    alfred_match_implement:          "Implement",
+    alfred_match_extend:             "Extend",
+    alfred_match_create_new:         "Create new",
+    alfred_match_not_same:           "No, this is not the same",
+    alfred_match_score:              "Similarity",
+    alfred_match_lifecycle:          "State",
+    alfred_match_see_others:         "See other similar specs",
+
+    // alfred-console-redesign: Advanced view
+    alfred_advanced_title:           "Alfred",
+    alfred_advanced_subtitle:        "Developer console",
+    alfred_advanced_app_label:       "App:",
+    alfred_advanced_placeholder:     "/forge create title='…' intent='…'",
+    alfred_advanced_shortcuts_title: "Keyboard shortcuts",
+    alfred_advanced_shortcut_palette:"Open command palette",
+    alfred_advanced_shortcut_alfred: "Summon Alfred",
+    alfred_advanced_shortcut_dark:   "Toggle theme",
+    alfred_advanced_shortcut_sidebar:"Toggle sidebar",
+
+    // alfred-console-redesign: command deprecation toast
+    alfred_cmd_deprecated_toast:     "/openspec has been renamed to /forge. Please use /forge going forward.",
   },
 } as const;
 

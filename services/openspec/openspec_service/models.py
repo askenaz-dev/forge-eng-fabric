@@ -92,6 +92,11 @@ class IntentDraft(BaseModel):
 
     draft_id: str
     workspace_id: uuid.UUID
+    # Phase 5 (app-first-class-entity): every spec belongs to exactly one App.
+    # Drafts carry an optional app_id while the wizard's first step
+    # (`app_scope`) collects the scope; commit refuses if app_id is unset or
+    # points at the `_unassigned` bucket.
+    app_id: uuid.UUID | None = None
     openspec_id: str | None = None
     status: LifecycleStatus = "drafting"
     title: str = ""
@@ -123,6 +128,11 @@ class IntentAnswer(BaseModel):
 class OpenSpecDocument(BaseModel):
     openspec_id: str
     workspace_id: uuid.UUID
+    # Phase 5 (app-first-class-entity): every spec belongs to exactly one App.
+    # The field is optional in the model so existing records remain valid;
+    # the persistence layer rejects writes without app_id once
+    # `forge.app_entity.enabled` is on for the spec's workspace.
+    app_id: uuid.UUID | None = None
     title: str
     business_intent: str
     problem_statement: str
@@ -160,6 +170,10 @@ class OpenSpecDocument(BaseModel):
 
 class OpenSpecCreate(BaseModel):
     workspace_id: uuid.UUID
+    # Optional during the M1-M4 migration window; the persistence layer
+    # promotes this to required (`missing_app_scope`) for workspaces with
+    # `forge.app_entity.enabled=true`.
+    app_id: uuid.UUID | None = None
     title: str
     business_intent: str
     problem_statement: str
@@ -200,6 +214,20 @@ class OpenSpecReviewRequest(BaseModel):
     approved: bool
     reviewer: str
     comment: str | None = None
+
+
+class OpenSpecReparentRequest(BaseModel):
+    """Body for `POST /v1/specs/{id}:reparent` (app-first-class-entity 5.4).
+
+    The platform must hold `app#editor` on both the source and target App for
+    the call to succeed. The handler emits `spec.reparented.v1` with the
+    correlation id captured here.
+    """
+
+    target_app_id: uuid.UUID
+    reason: str
+    actor: str
+    correlation_id: str | None = None
 
 
 class EvolutionLoopStats(BaseModel):

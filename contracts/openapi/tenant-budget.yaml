@@ -1,0 +1,136 @@
+openapi: 3.1.0
+info:
+  title: Tenant Budget Service
+  version: 0.1.0
+  description: |
+    Per-Tenant budget contract consumed by `model-gateway`, `mcp-gateway`
+    and `a2a-gateway` to gate invocations on cost. Adds the `family`
+    discriminator (active-registry-gateways §8.2) so spend rolls up
+    independently per LLM / MCP / A2A surface; `model-gateway`'s
+    existing posture is preserved with `family=llm`.
+
+    The contract is intentionally narrow: a single POST that returns
+    `allow + remaining_cents + reason`. The gateway is responsible for
+    metering spend post-call via the `report` endpoint.
+servers:
+  - url: http://tenant-budget:8080
+    description: In-cluster service
+security:
+  - bearerAuth: []
+paths:
+  /v1/budget/check:
+    post:
+      summary: Decide whether to allow a forecasted spend
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/BudgetCheckRequest" }
+      responses:
+        "200":
+          description: decision
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BudgetDecision" }
+        "429":
+          description: budget exhausted (shortcut response)
+  /v1/budget/report:
+    post:
+      summary: Record realized spend after a call completes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/BudgetReportRequest" }
+      responses:
+        "202": { description: accepted }
+  /v1/budget/snapshot:
+    get:
+      summary: Inspect remaining budget per family for a Tenant
+      parameters:
+        - { name: tenant_id, in: query, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: snapshot
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BudgetSnapshot" }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  schemas:
+    Family:
+      type: string
+      enum: [llm, mcp, a2a]
+      description: |
+        Cost family the call belongs to. `model-gateway` always sets
+        `llm`; `mcp-gateway` always sets `mcp`; `a2a-gateway` always
+        sets `a2a`. The service maintains independent counters per
+        family per Tenant so a noisy MCP partner cannot starve the
+        LLM budget.
+    BudgetCheckRequest:
+      type: object
+      required: [tenant_id, family]
+      properties:
+        tenant_id: { type: string, format: uuid }
+        family: { $ref: "#/components/schemas/Family" }
+        workspace_id: { type: string, format: uuid }
+        cost_cents:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Forecasted spend in cents. Zero means "I don't have a forecast; just tell me if I'm exhausted."
+        correlation_id: { type: string }
+        asset_id: { type: string, description: Optional; useful for per-asset rollups in observability. }
+    BudgetDecision:
+      type: object
+      required: [allow]
+      properties:
+        allow:
+          type: boolean
+          description: |
+            Whether the caller may proceed with the forecasted spend. On
+            `false`, the gateway returns 429 to the caller with the
+            reason. Note: the decision can be fail-open on budget-service
+            outage per the model-gateway posture; the `reason` field
+            disambiguates fail-open from a real allow.
+        reason:
+          type: string
+          description: |
+            One of: `budget_unconfigured`, `within_budget`, `budget_exhausted`,
+            `budget_unreachable_failopen`, `family_unknown`.
+        remaining_cents:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Headroom remaining in this family for this Tenant, in cents.
+        period_starts_at: { type: string, format: date-time }
+        period_ends_at:   { type: string, format: date-time }
+    BudgetReportRequest:
+      type: object
+      required: [tenant_id, family, cost_cents]
+      properties:
+        tenant_id:     { type: string, format: uuid }
+        family:        { $ref: "#/components/schemas/Family" }
+        workspace_id:  { type: string, format: uuid }
+        cost_cents:    { type: integer, format: int64, minimum: 0 }
+        correlation_id:{ type: string }
+        asset_id:      { type: string }
+        observed_at:   { type: string, format: date-time }
+    BudgetSnapshot:
+      type: object
+      required: [tenant_id, families]
+      properties:
+        tenant_id: { type: string, format: uuid }
+        families:
+          type: object
+          description: Per-family snapshot keyed by `Family`.
+          additionalProperties:
+            type: object
+            required: [used_cents, limit_cents, remaining_cents]
+            properties:
+              used_cents:      { type: integer, format: int64, minimum: 0 }
+              limit_cents:     { type: integer, format: int64, minimum: 0 }
+              remaining_cents: { type: integer, format: int64, minimum: 0 }
+              period_starts_at:{ type: string, format: date-time }
+              period_ends_at:  { type: string, format: date-time }

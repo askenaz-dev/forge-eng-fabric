@@ -106,6 +106,7 @@ export function AlfredDock() {
           <Dialog.Content
             className="alfred-dock"
             aria-label={t("alfred_dock_aria")}
+            aria-describedby={undefined}
             onOpenAutoFocus={(e) => {
               // Focus trap manages first focus; let Radix attempt it then we
               // restore to the launcher on close.
@@ -118,6 +119,7 @@ export function AlfredDock() {
               launcherRef.current?.focus();
             }}
           >
+            <Dialog.Title className="sr-only">{t("alfred_dock_aria")}</Dialog.Title>
             <DockHeader paused={isPaused} />
             <DockBody perms={perms} />
           </Dialog.Content>

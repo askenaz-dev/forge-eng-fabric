@@ -5,7 +5,7 @@
 SHELL := /bin/sh
 COMPOSE := docker compose -f deploy/compose/docker-compose.yaml
 
-.PHONY: help bootstrap lint test codegen up down logs ps smoke clean fmt sizing-check helm-lint verify-runtime demo-intent-to-deploy retention-policy-check portal-rebrand-e2e audit-no-mocks dev-up seed-portal portal-lint package-skill
+.PHONY: help bootstrap lint test codegen up down logs ps smoke clean fmt sizing-check helm-lint verify-runtime demo-intent-to-deploy demo-intent-to-infrastructure retention-policy-check portal-rebrand-e2e audit-no-mocks dev-up seed-portal portal-lint package-skill
 
 help:
 	@echo "Forge — make targets:"
@@ -96,6 +96,14 @@ verify-runtime:
 
 demo-intent-to-deploy:
 	@python scripts/demo_intent_to_deploy.py
+
+# sdlc-end-to-end: exercises forge.reference.intent-to-infrastructure@1 end-to-end
+# against the local stack. Requires: make up, a registered Minikube runtime, and
+# the feature flags forge.workflow.intent_to_infrastructure.enabled=true (per-tenant).
+# Output: build/demo-intent-to-infrastructure/<timestamp>.json
+demo-intent-to-infrastructure:
+	@mkdir -p build/demo-intent-to-infrastructure
+	@python scripts/demo_intent_to_infrastructure.py
 
 # Optimize Alfred SVG marks, copy to portal/public, and regenerate the Alfred
 # section of the standalone brand notebook. svgo is optional — if missing the

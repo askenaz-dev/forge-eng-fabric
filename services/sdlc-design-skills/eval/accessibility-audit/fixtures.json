@@ -1,0 +1,850 @@
+[
+  {
+    "id": "design-a11y-001",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-frontend",
+      "app_id": "app-ecommerce",
+      "target_url": "https://staging.acme.com/products",
+      "component_paths": ["src/components/app-ecommerce/product-catalog/ProductGrid.tsx"],
+      "min_severity": "medium"
+    },
+    "expected": {
+      "status": "success",
+      "gate_verdict": "pass",
+      "violations": [],
+      "event_type": "sdlc.accessibility_audit.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-a11y-002",
+    "input": {
+      "tenant_id": "tenant-globex",
+      "workspace_id": "ws-mobile",
+      "app_id": "app-banking",
+      "target_url": "https://staging.globex.com/dashboard",
+      "component_paths": [
+        "src/components/app-banking/account-dashboard/AccountSummary.tsx",
+        "src/components/app-banking/account-dashboard/BalanceCard.tsx"
+      ],
+      "min_severity": "high"
+    },
+    "expected": {
+      "status": "success",
+      "gate_verdict": "fail",
+      "violations": [
+        {
+          "rule": "color-contrast",
+          "severity": "high",
+          "element": "BalanceCard .amount-text",
+          "description": "Text color #aaaaaa on #ffffff does not meet WCAG AA contrast ratio of 4.5:1"
+        }
+      ],
+      "event_type": "sdlc.accessibility_audit.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-a11y-003",
+    "input": {
+      "tenant_id": "tenant-initech",
+      "workspace_id": "ws-saas",
+      "app_id": "app-crm",
+      "target_url": null,
+      "component_paths": [
+        "src/components/app-crm/contact-management/ContactTable.tsx",
+        "src/components/app-crm/contact-management/ContactForm.tsx"
+      ],
+      "min_severity": "low"
+    },
+    "expected": {
+      "status": "success",
+      "gate_verdict": "fail",
+      "violations": [
+        {
+          "rule": "label",
+          "severity": "critical",
+          "element": "ContactForm input[name='phone']",
+          "description": "Form input is missing an associated label"
+        },
+        {
+          "rule": "aria-required-attr",
+          "severity": "medium",
+          "element": "ContactTable [role='columnheader']",
+          "description": "Required ARIA attribute 'scope' is missing from table header"
+        }
+      ],
+      "event_type": "sdlc.accessibility_audit.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-a11y-004",
+    "input": {
+      "tenant_id": "tenant-umbrella",
+      "workspace_id": "ws-internal-tools",
+      "app_id": "app-hr-portal",
+      "target_url": "https://staging.umbrella.com/onboarding",
+      "component_paths": [
+        "src/components/app-hr-portal/onboarding-wizard/WizardShell.tsx",
+        "src/components/app-hr-portal/onboarding-wizard/PersonalInfoStep.tsx",
+        "src/components/app-hr-portal/onboarding-wizard/DocumentUploadStep.tsx"
+      ],
+      "min_severity": "medium"
+    },
+    "expected": {
+      "status": "success",
+      "gate_verdict": "pass",
+      "violations": [],
+      "event_type": "sdlc.accessibility_audit.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-a11y-005",
+    "input": {
+      "tenant_id": "tenant-stark",
+      "workspace_id": "ws-saas",
+      "app_id": "app-project-mgmt",
+      "target_url": "https://staging.stark.com/kanban",
+      "component_paths": [
+        "src/components/app-project-mgmt/kanban-board/KanbanBoard.tsx",
+        "src/components/app-project-mgmt/kanban-board/TaskCard.tsx"
+      ],
+      "min_severity": "high"
+    },
+    "expected": {
+      "status": "success",
+      "gate_verdict": "fail",
+      "violations": [
+        {
+          "rule": "keyboard",
+          "severity": "critical",
+          "element": "KanbanBoard .drag-handle",
+          "description": "Drag-and-drop interaction has no keyboard alternative"
+        }
+      ],
+      "event_type": "sdlc.accessibility_audit.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-a11y-006",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-analytics",
+      "app_id": "app-reporting",
+      "target_url": "https://staging.acme.com/dashboard",
+      "component_paths": [
+        "src/components/app-reporting/dashboard-builder/DashboardCanvas.tsx",
+        "src/components/app-reporting/dashboard-builder/WidgetPicker.tsx"
+      ],
+      "min_severity": "medium"
+    },
+    "expected": {
+      "status": "success",
+      "gate_verdict": "fail",
+      "violations": [
+        {
+          "rule": "image-alt",
+          "severity": "high",
+          "element": "WidgetPicker img.widget-icon",
+          "description": "Image is missing alt text"
+        },
+        {
+          "rule": "focus-visible",
+          "severity": "medium",
+          "element": "DashboardCanvas .widget-resize-handle",
+          "description": "Focus indicator is not visible on resize handle"
+        }
+      ],
+      "event_type": "sdlc.accessibility_audit.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-a11y-007",
+    "input": {
+      "tenant_id": "tenant-wayne",
+      "workspace_id": "ws-iot",
+      "app_id": "app-device-monitor",
+      "target_url": null,
+      "component_paths": [
+        "src/components/app-device-monitor/alert-console/AlertTable.tsx",
+        "src/components/app-device-monitor/alert-console/AlertBadge.tsx"
+      ],
+      "min_severity": "low"
+    },
+    "expected": {
+      "status": "success",
+      "gate_verdict": "pass",
+      "violations": [],
+      "event_type": "sdlc.accessibility_audit.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-a11y-008",
+    "input": {
+      "tenant_id": "tenant-globex",
+      "workspace_id": "ws-customer",
+      "app_id": "app-support",
+      "target_url": "https://staging.globex.com/support",
+      "component_paths": [
+        "src/components/app-support/ticket-portal/TicketForm.tsx",
+        "src/components/app-support/ticket-portal/ChatWidget.tsx"
+      ],
+      "min_severity": "medium"
+    },
+    "expected": {
+      "status": "success",
+      "gate_verdict": "fail",
+      "violations": [
+        {
+          "rule": "autocomplete-valid",
+          "severity": "medium",
+          "element": "TicketForm input[name='email']",
+          "description": "Autocomplete attribute value is invalid"
+        }
+      ],
+      "event_type": "sdlc.accessibility_audit.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-a11y-009",
+    "input": {
+      "tenant_id": "tenant-initech",
+      "workspace_id": "ws-compliance",
+      "app_id": "app-audit-trail",
+      "target_url": "https://staging.initech.com/audit-logs",
+      "component_paths": [
+        "src/components/app-audit-trail/audit-log-viewer/AuditLogTable.tsx"
+      ],
+      "min_severity": "high"
+    },
+    "expected": {
+      "status": "success",
+      "gate_verdict": "pass",
+      "violations": [],
+      "event_type": "sdlc.accessibility_audit.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-a11y-010",
+    "input": {
+      "tenant_id": "tenant-umbrella",
+      "workspace_id": "ws-ops",
+      "app_id": "app-incident-mgmt",
+      "target_url": "https://staging.umbrella.com/incidents",
+      "component_paths": [
+        "src/components/app-incident-mgmt/incident-timeline/IncidentHeader.tsx",
+        "src/components/app-incident-mgmt/incident-timeline/TimelineEventList.tsx"
+      ],
+      "min_severity": "medium"
+    },
+    "expected": {
+      "status": "success",
+      "gate_verdict": "fail",
+      "violations": [
+        {
+          "rule": "color-contrast",
+          "severity": "high",
+          "element": "IncidentHeader .severity-badge.critical",
+          "description": "Red-on-white badge text fails WCAG AA contrast requirement"
+        },
+        {
+          "rule": "region",
+          "severity": "medium",
+          "element": "TimelineEventList",
+          "description": "Content is not contained within a landmark region"
+        }
+      ],
+      "event_type": "sdlc.accessibility_audit.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-a11y-011",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-content",
+      "app_id": "app-cms",
+      "target_url": "https://staging.acme.com/cms/editor",
+      "component_paths": [
+        "src/components/app-cms/article-editor/RichTextEditor.tsx"
+      ],
+      "min_severity": "low"
+    },
+    "expected": {
+      "status": "success",
+      "gate_verdict": "fail",
+      "violations": [
+        {
+          "rule": "aria-allowed-role",
+          "severity": "low",
+          "element": "RichTextEditor [contenteditable] div",
+          "description": "Role 'textbox' is not appropriate for a div with contenteditable"
+        }
+      ],
+      "event_type": "sdlc.accessibility_audit.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-a11y-012",
+    "input": {
+      "tenant_id": "tenant-stark",
+      "workspace_id": "ws-ai",
+      "app_id": "app-llm-studio",
+      "target_url": null,
+      "component_paths": [
+        "src/components/app-llm-studio/prompt-playground/PromptEditor.tsx",
+        "src/components/app-llm-studio/prompt-playground/ResponseViewer.tsx"
+      ],
+      "min_severity": "medium"
+    },
+    "expected": {
+      "status": "success",
+      "gate_verdict": "pass",
+      "violations": [],
+      "event_type": "sdlc.accessibility_audit.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-a11y-013",
+    "input": {
+      "tenant_id": "tenant-globex",
+      "workspace_id": "ws-devex",
+      "app_id": "app-ci-dashboard",
+      "target_url": "https://staging.globex.com/ci",
+      "component_paths": [
+        "src/components/app-ci-dashboard/pipeline-viewer/PipelineList.tsx",
+        "src/components/app-ci-dashboard/pipeline-viewer/LogViewer.tsx"
+      ],
+      "min_severity": "high"
+    },
+    "expected": {
+      "status": "success",
+      "gate_verdict": "pass",
+      "violations": [],
+      "event_type": "sdlc.accessibility_audit.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-a11y-014",
+    "input": {
+      "tenant_id": "tenant-initech",
+      "workspace_id": "ws-education",
+      "app_id": "app-lms",
+      "target_url": "https://staging.initech.com/courses",
+      "component_paths": [
+        "src/components/app-lms/course-catalog/CourseCard.tsx",
+        "src/components/app-lms/course-catalog/ProgressBar.tsx"
+      ],
+      "min_severity": "medium"
+    },
+    "expected": {
+      "status": "success",
+      "gate_verdict": "fail",
+      "violations": [
+        {
+          "rule": "aria-valuenow",
+          "severity": "medium",
+          "element": "ProgressBar [role='progressbar']",
+          "description": "progressbar role is missing aria-valuenow attribute"
+        }
+      ],
+      "event_type": "sdlc.accessibility_audit.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-a11y-015",
+    "input": {
+      "tenant_id": "tenant-umbrella",
+      "workspace_id": "ws-retail",
+      "app_id": "app-pos",
+      "target_url": null,
+      "component_paths": [
+        "src/components/app-pos/checkout-terminal/PaymentTerminal.tsx"
+      ],
+      "min_severity": "critical"
+    },
+    "expected": {
+      "status": "success",
+      "gate_verdict": "pass",
+      "violations": [],
+      "event_type": "sdlc.accessibility_audit.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-a11y-016",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-data",
+      "app_id": "app-data-catalog",
+      "target_url": "https://staging.acme.com/datasets",
+      "component_paths": [
+        "src/components/app-data-catalog/dataset-browser/DataPreviewTable.tsx"
+      ],
+      "min_severity": "medium"
+    },
+    "expected": {
+      "status": "success",
+      "gate_verdict": "fail",
+      "violations": [
+        {
+          "rule": "table-duplicate-name",
+          "severity": "medium",
+          "element": "DataPreviewTable caption",
+          "description": "Table summary duplicates the caption text"
+        }
+      ],
+      "event_type": "sdlc.accessibility_audit.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-a11y-017",
+    "input": {
+      "tenant_id": "tenant-stark",
+      "workspace_id": "ws-fintech",
+      "app_id": "app-portfolio",
+      "target_url": "https://staging.stark.com/portfolio",
+      "component_paths": [
+        "src/components/app-portfolio/trade-history/PnLChart.tsx"
+      ],
+      "min_severity": "high"
+    },
+    "expected": {
+      "status": "success",
+      "gate_verdict": "fail",
+      "violations": [
+        {
+          "rule": "svg-img-alt",
+          "severity": "high",
+          "element": "PnLChart svg",
+          "description": "SVG chart is missing an accessible text alternative"
+        }
+      ],
+      "event_type": "sdlc.accessibility_audit.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-a11y-018",
+    "input": {
+      "tenant_id": "tenant-globex",
+      "workspace_id": "ws-admin",
+      "app_id": "app-user-mgmt",
+      "target_url": "https://staging.globex.com/users",
+      "component_paths": [
+        "src/components/app-user-mgmt/role-assignment/BulkImportUploader.tsx"
+      ],
+      "min_severity": "low"
+    },
+    "expected": {
+      "status": "success",
+      "gate_verdict": "pass",
+      "violations": [],
+      "event_type": "sdlc.accessibility_audit.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-a11y-019",
+    "input": {
+      "tenant_id": "tenant-initech",
+      "workspace_id": "ws-healthcare",
+      "app_id": "app-patient-portal",
+      "target_url": "https://staging.initech.com/appointments",
+      "component_paths": [
+        "src/components/app-patient-portal/appointment-booking/TimeSlotPicker.tsx"
+      ],
+      "min_severity": "medium"
+    },
+    "expected": {
+      "status": "success",
+      "gate_verdict": "fail",
+      "violations": [
+        {
+          "rule": "aria-required-children",
+          "severity": "medium",
+          "element": "TimeSlotPicker [role='grid']",
+          "description": "Grid role requires direct children with role 'row'"
+        }
+      ],
+      "event_type": "sdlc.accessibility_audit.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-a11y-020",
+    "input": {
+      "tenant_id": "tenant-wayne",
+      "workspace_id": "ws-manufacturing",
+      "app_id": "app-quality-control",
+      "target_url": null,
+      "component_paths": [
+        "src/components/app-quality-control/defect-reporter/DefectLogForm.tsx",
+        "src/components/app-quality-control/defect-reporter/SeveritySelector.tsx"
+      ],
+      "min_severity": "high"
+    },
+    "expected": {
+      "status": "success",
+      "gate_verdict": "pass",
+      "violations": [],
+      "event_type": "sdlc.accessibility_audit.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-a11y-021",
+    "input": {
+      "tenant_id": "tenant-umbrella",
+      "workspace_id": "ws-supply-chain",
+      "app_id": "app-procurement",
+      "target_url": "https://staging.umbrella.com/procurement",
+      "component_paths": [
+        "src/components/app-procurement/purchase-order/ApprovalWorkflow.tsx"
+      ],
+      "min_severity": "medium"
+    },
+    "expected": {
+      "status": "success",
+      "gate_verdict": "pass",
+      "violations": [],
+      "event_type": "sdlc.accessibility_audit.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-a11y-022",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-gamification",
+      "app_id": "app-loyalty",
+      "target_url": "https://staging.acme.com/rewards",
+      "component_paths": [
+        "src/components/app-loyalty/rewards-hub/TierStatusBadge.tsx"
+      ],
+      "min_severity": "low"
+    },
+    "expected": {
+      "status": "success",
+      "gate_verdict": "fail",
+      "violations": [
+        {
+          "rule": "color-contrast",
+          "severity": "low",
+          "element": "TierStatusBadge .badge-label",
+          "description": "Badge label has insufficient contrast for decorative gold tier color"
+        }
+      ],
+      "event_type": "sdlc.accessibility_audit.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-a11y-023",
+    "input": {
+      "tenant_id": "tenant-wayne",
+      "workspace_id": "ws-energy",
+      "app_id": "app-grid-monitor",
+      "target_url": "https://staging.wayne.com/energy",
+      "component_paths": [
+        "src/components/app-grid-monitor/energy-dashboard/ConsumptionChart.tsx"
+      ],
+      "min_severity": "high"
+    },
+    "expected": {
+      "status": "success",
+      "gate_verdict": "fail",
+      "violations": [
+        {
+          "rule": "svg-img-alt",
+          "severity": "high",
+          "element": "ConsumptionChart svg",
+          "description": "SVG consumption chart lacks an accessible text description"
+        }
+      ],
+      "event_type": "sdlc.accessibility_audit.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-a11y-024",
+    "input": {
+      "tenant_id": "tenant-stark",
+      "workspace_id": "ws-marketplace",
+      "app_id": "app-vendor-portal",
+      "target_url": null,
+      "component_paths": [
+        "src/components/app-vendor-portal/product-listing/ProductUploadForm.tsx"
+      ],
+      "min_severity": "medium"
+    },
+    "expected": {
+      "status": "success",
+      "gate_verdict": "pass",
+      "violations": [],
+      "event_type": "sdlc.accessibility_audit.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-a11y-025",
+    "input": {
+      "tenant_id": "tenant-globex",
+      "workspace_id": "ws-bi",
+      "app_id": "app-bi-suite",
+      "target_url": "https://staging.globex.com/charts",
+      "component_paths": [
+        "src/components/app-bi-suite/chart-builder/ChartTypeSelector.tsx",
+        "src/components/app-bi-suite/chart-builder/AxisConfigurator.tsx"
+      ],
+      "min_severity": "medium"
+    },
+    "expected": {
+      "status": "success",
+      "gate_verdict": "fail",
+      "violations": [
+        {
+          "rule": "aria-label",
+          "severity": "medium",
+          "element": "ChartTypeSelector button[data-chart='scatter']",
+          "description": "Button has an icon but no accessible label"
+        }
+      ],
+      "event_type": "sdlc.accessibility_audit.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-a11y-026",
+    "input": {
+      "tenant_id": "tenant-initech",
+      "workspace_id": "ws-realestate",
+      "app_id": "app-property-mgmt",
+      "target_url": null,
+      "component_paths": [
+        "src/components/app-property-mgmt/lease-manager/LeaseForm.tsx"
+      ],
+      "min_severity": "low"
+    },
+    "expected": {
+      "status": "success",
+      "gate_verdict": "pass",
+      "violations": [],
+      "event_type": "sdlc.accessibility_audit.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-a11y-027",
+    "input": {
+      "tenant_id": "tenant-umbrella",
+      "workspace_id": "ws-logistics",
+      "app_id": "app-shipment-tracker",
+      "target_url": "https://staging.umbrella.com/tracking",
+      "component_paths": [
+        "src/components/app-shipment-tracker/tracking-map/ShipmentMap.tsx"
+      ],
+      "min_severity": "medium"
+    },
+    "expected": {
+      "status": "success",
+      "gate_verdict": "fail",
+      "violations": [
+        {
+          "rule": "keyboard",
+          "severity": "high",
+          "element": "ShipmentMap .map-controls",
+          "description": "Map zoom controls are not keyboard accessible"
+        }
+      ],
+      "event_type": "sdlc.accessibility_audit.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-a11y-028",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-frontend",
+      "app_id": "app-ecommerce",
+      "target_url": "https://staging.acme.com/profile",
+      "component_paths": [
+        "src/components/app-ecommerce/user-profile/PaymentMethodList.tsx"
+      ],
+      "min_severity": "critical"
+    },
+    "expected": {
+      "status": "success",
+      "gate_verdict": "pass",
+      "violations": [],
+      "event_type": "sdlc.accessibility_audit.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-a11y-029",
+    "input": {
+      "tenant_id": "tenant-wayne",
+      "workspace_id": "ws-security",
+      "app_id": "app-access-control",
+      "target_url": null,
+      "component_paths": [
+        "src/components/app-access-control/door-controller/AccessGrantForm.tsx",
+        "src/components/app-access-control/door-controller/EntryLogTable.tsx"
+      ],
+      "min_severity": "high"
+    },
+    "expected": {
+      "status": "success",
+      "gate_verdict": "pass",
+      "violations": [],
+      "event_type": "sdlc.accessibility_audit.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-a11y-030",
+    "input": {
+      "tenant_id": "tenant-stark",
+      "workspace_id": "ws-saas",
+      "app_id": "app-project-mgmt",
+      "target_url": "https://staging.stark.com/projects",
+      "component_paths": [
+        "src/components/app-project-mgmt/kanban-board/TaskDetailDrawer.tsx"
+      ],
+      "min_severity": "medium"
+    },
+    "expected": {
+      "status": "success",
+      "gate_verdict": "pass",
+      "violations": [],
+      "event_type": "sdlc.accessibility_audit.completed.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "design-a11y-adv-001",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-frontend",
+      "app_id": "app-ecommerce",
+      "target_url": null,
+      "component_paths": [],
+      "min_severity": "medium"
+    },
+    "expected": {
+      "status": "error",
+      "error_code": "INVALID_INPUT",
+      "error_detail": "At least one of target_url or component_paths must be provided",
+      "event_type": "sdlc.accessibility_audit.completed.v1"
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "design-a11y-adv-002",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-frontend",
+      "app_id": "app-ecommerce",
+      "target_url": "https://unreachable.invalid/path",
+      "component_paths": [],
+      "min_severity": "high"
+    },
+    "expected": {
+      "status": "error",
+      "error_code": "TARGET_UNREACHABLE",
+      "error_detail": "Could not connect to target_url: connection refused",
+      "event_type": "sdlc.accessibility_audit.completed.v1"
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "design-a11y-adv-003",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-frontend",
+      "app_id": "app-ecommerce",
+      "target_url": null,
+      "component_paths": ["src/components/nonexistent/Component.tsx"],
+      "min_severity": "low"
+    },
+    "expected": {
+      "status": "error",
+      "error_code": "COMPONENT_NOT_FOUND",
+      "error_detail": "Component path src/components/nonexistent/Component.tsx does not exist",
+      "event_type": "sdlc.accessibility_audit.completed.v1"
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "design-a11y-adv-004",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-frontend",
+      "app_id": "app-ecommerce",
+      "target_url": "https://staging.acme.com/products",
+      "component_paths": [],
+      "min_severity": "invalid-level"
+    },
+    "expected": {
+      "status": "error",
+      "error_code": "INVALID_INPUT",
+      "error_detail": "min_severity must be one of: low, medium, high, critical",
+      "event_type": "sdlc.accessibility_audit.completed.v1"
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "design-a11y-adv-005",
+    "input": {
+      "tenant_id": "tenant-acme",
+      "workspace_id": "ws-frontend",
+      "app_id": "app-ecommerce",
+      "target_url": "https://staging.acme.com/products",
+      "component_paths": [
+        "src/components/app-ecommerce/product-catalog/ProductGrid.tsx",
+        "src/components/app-ecommerce/product-catalog/ProductCard.tsx",
+        "src/components/app-ecommerce/product-catalog/FilterSidebar.tsx",
+        "src/components/app-ecommerce/product-catalog/SearchBar.tsx",
+        "src/components/app-ecommerce/user-profile/ProfileEditForm.tsx",
+        "src/components/app-ecommerce/user-profile/AddressBook.tsx",
+        "src/components/app-ecommerce/user-profile/PaymentMethodList.tsx",
+        "src/components/app-ecommerce/user-profile/OrderHistoryTable.tsx"
+      ],
+      "min_severity": "low"
+    },
+    "expected": {
+      "status": "success",
+      "gate_verdict": "fail",
+      "violations": [
+        {
+          "rule": "color-contrast",
+          "severity": "medium",
+          "element": "FilterSidebar .filter-label.inactive",
+          "description": "Inactive filter label has insufficient contrast in light mode"
+        },
+        {
+          "rule": "image-alt",
+          "severity": "high",
+          "element": "ProductCard img.product-thumbnail",
+          "description": "Product thumbnail image is missing descriptive alt text"
+        }
+      ],
+      "event_type": "sdlc.accessibility_audit.completed.v1"
+    },
+    "weight": 2.0
+  }
+]

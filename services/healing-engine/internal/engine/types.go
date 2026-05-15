@@ -106,15 +106,16 @@ type HealingDecision struct {
 
 // IncidentInput is the minimal incident shape fed into the engine.
 type IncidentInput struct {
-	IncidentID  string `json:"incident_id"`
-	TenantID    string `json:"tenant_id"`
-	WorkspaceID string `json:"workspace_id"`
-	Service     string `json:"service"`
-	Environment string `json:"environment"`
-	Capability  string `json:"capability"`
-	Criticality string `json:"criticality"`
-	Synthetic   bool   `json:"synthetic"`
-	SignatureHash string `json:"signature_hash"`
+	IncidentID       string   `json:"incident_id"`
+	AppID            string   `json:"app_id"`
+	TenantID         string   `json:"tenant_id"`
+	WorkspaceID      string   `json:"workspace_id"`
+	Service          string   `json:"service"`
+	Environment      string   `json:"environment"`
+	Capability       string   `json:"capability"`
+	Criticality      string   `json:"criticality"`
+	Synthetic        bool     `json:"synthetic"`
+	SignatureHash    string   `json:"signature_hash"`
 	SuggestedActions []string `json:"suggested_actions"`
 }
 
@@ -133,6 +134,8 @@ type Store struct {
 	envelopes       map[string]*Envelope
 	actions         map[string]*Action
 	decisions       map[string]*HealingDecision
+	detections      map[string]*L1Detection
+	suggestions     map[string]*L2Suggestion
 	killGlobal      bool
 	killWorkspace   map[string]bool
 	rateBuckets     map[string][]time.Time
@@ -145,6 +148,8 @@ func NewStore() *Store {
 		envelopes:      map[string]*Envelope{},
 		actions:        map[string]*Action{},
 		decisions:      map[string]*HealingDecision{},
+		detections:     map[string]*L1Detection{},
+		suggestions:    map[string]*L2Suggestion{},
 		killWorkspace:  map[string]bool{},
 		rateBuckets:    map[string][]time.Time{},
 		promotionStats: map[string]PromotionMetrics{},
@@ -275,4 +280,62 @@ func (s *Store) GetPromotionStats(actionID, env string) PromotionMetrics {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.promotionStats[actionID+"/"+env]
+}
+
+// --- L1 Detection store methods ---
+
+// SaveDetection persists an L1Detection.
+func (s *Store) SaveDetection(d *L1Detection) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.detections[d.ID] = d
+}
+
+// GetDetection returns a detection by ID or nil.
+func (s *Store) GetDetection(id string) *L1Detection {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.detections[id]
+}
+
+// ListDetections returns all detections for a given appID.
+func (s *Store) ListDetections(appID string) []*L1Detection {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	var out []*L1Detection
+	for _, d := range s.detections {
+		if d.AppID == appID {
+			out = append(out, d)
+		}
+	}
+	return out
+}
+
+// --- L2 Suggestion store methods ---
+
+// SaveSuggestion persists an L2Suggestion.
+func (s *Store) SaveSuggestion(sg *L2Suggestion) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.suggestions[sg.ID] = sg
+}
+
+// GetSuggestion returns a suggestion by ID or nil.
+func (s *Store) GetSuggestion(id string) *L2Suggestion {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.suggestions[id]
+}
+
+// ListSuggestions returns all suggestions for a given appID.
+func (s *Store) ListSuggestions(appID string) []*L2Suggestion {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	var out []*L2Suggestion
+	for _, sg := range s.suggestions {
+		if sg.AppID == appID {
+			out = append(out, sg)
+		}
+	}
+	return out
 }

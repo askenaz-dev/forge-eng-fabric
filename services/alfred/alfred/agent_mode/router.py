@@ -20,6 +20,8 @@ from fastapi.responses import StreamingResponse
 from alfred.agent_mode.events import EventEmitter
 from alfred.agent_mode.executor import ExecutorDeps, cancel, execute_session, resume
 from alfred.agent_mode.models import (
+    ALLOWED_START_STEPS,
+    COMMITTED_LIFECYCLE_STATES,
     AgentModeSession,
     FollowUpRequest,
     StartSessionRequest,
@@ -83,6 +85,24 @@ def build_router(
                 detail="agent-mode is not enabled for this workspace",
             )
 
+        # alfred-console-redesign 7.1: validate start_step.
+        start_step = body.start_step
+        if start_step is not None and start_step not in ALLOWED_START_STEPS:
+            raise HTTPException(
+                status_code=422,
+                detail=f"unknown_start_step — allowed values: {sorted(ALLOWED_START_STEPS)}",
+            )
+
+        # alfred-console-redesign 7.2: enforce spec lifecycle gate.
+        if start_step == "architect":
+            spec = await executor_deps.openspec.get(body.openspec_id)
+            lifecycle = (spec or {}).get("lifecycle_state", "proposed")
+            if lifecycle not in COMMITTED_LIFECYCLE_STATES:
+                raise HTTPException(
+                    status_code=409,
+                    detail=f"spec_not_ready_for_architect — lifecycle_state={lifecycle}",
+                )
+
         correlation_id = body.correlation_id or request.state.correlation_id
         response.headers["X-Correlation-Id"] = correlation_id
 
@@ -90,6 +110,7 @@ def build_router(
         presets = preset_store.get_or_create(body.workspace_id)
         active_preset = next(iter(presets), {})
 
+        # alfred-console-redesign 7.3: build plan starting at start_step.
         plan = await build_initial_plan(
             workspace_id=body.workspace_id,
             openspec_id=body.openspec_id,
@@ -99,6 +120,7 @@ def build_router(
             rag=executor_deps.rag,
             openspec=executor_deps.openspec,
             model=settings.agent_mode_default_model,
+            start_step=start_step,
         )
 
         session = AgentModeSession(
@@ -114,6 +136,19 @@ def build_router(
         )
         await agent_store.create_session(session)
 
+        # alfred-console-redesign 7.4: emit session_started event with start_step.
+        await event_emitter.emit(
+            "alfred.agent_mode.session_started.v1",
+            {
+                "session_id": str(session.id),
+                "workspace_id": str(body.workspace_id),
+                "openspec_id": body.openspec_id,
+                "originator": principal.sub,
+                "start_step": start_step or "discovery",
+                "correlation_id": correlation_id,
+            },
+        )
+
         # Kick off execution. Fire-and-forget — the dock will subscribe via SSE.
         asyncio.create_task(_safe_execute(executor_deps, session))
 
@@ -122,6 +157,7 @@ def build_router(
             "status": session.status,
             "correlation_id": correlation_id,
             "plan_revision": session.plan_revision,
+            "start_step": start_step or "discovery",
         }
 
     @router.get("/sessions/{session_id}")

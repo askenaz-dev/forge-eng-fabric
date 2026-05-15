@@ -1,0 +1,5 @@
+asset_id: sdlc.design.generate-component-stubs.eval
+version: "1.0.0"
+description: "Graded fixtures for generate-component-stubs skill: React + Vue templates, design token resolution."
+trust_level: T1
+fixtures: fixtures.json

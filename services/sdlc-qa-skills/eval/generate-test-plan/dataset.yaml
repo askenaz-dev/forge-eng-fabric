@@ -1,0 +1,5 @@
+asset_id: sdlc.qa.generate-test-plan.eval
+version: "1.0.0"
+description: "Graded fixtures for generate-test-plan skill: API contract coverage, happy/error paths, perf when criticality>=high."
+trust_level: T1
+fixtures: fixtures.json

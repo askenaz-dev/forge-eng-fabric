@@ -1,0 +1,8 @@
+apiVersion: forge.platform/v1
+kind: ServiceManifest
+metadata:
+  name: mcp-gateway
+spec:
+  flavor: service-http
+  kubernetesBound: true
+  helmChart: infra/helm/mcp-gateway

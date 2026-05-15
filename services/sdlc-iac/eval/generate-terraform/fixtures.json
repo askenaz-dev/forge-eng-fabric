@@ -1,0 +1,599 @@
+[
+  {
+    "id": "iac-tf-001",
+    "input": {
+      "app_id": "app-payments-api",
+      "slug": "payments-api",
+      "provider": "aws",
+      "environments": ["dev", "staging", "prod"],
+      "correlation_id": "corr-tf-001",
+      "arch_decision": "Use RDS Aurora for relational storage, ElastiCache for sessions"
+    },
+    "expected": {
+      "module_path": "terraform/payments-api",
+      "provider_list": ["aws"],
+      "emitted_event": "sdlc.iac.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-tf-002",
+    "input": {
+      "app_id": "app-search-svc",
+      "slug": "search-svc",
+      "provider": "gcp",
+      "environments": ["dev", "prod"],
+      "correlation_id": "corr-tf-002",
+      "arch_decision": "Use Cloud Run for serverless deployment, Memorystore for caching"
+    },
+    "expected": {
+      "module_path": "terraform/search-svc",
+      "provider_list": ["google"],
+      "emitted_event": "sdlc.iac.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-tf-003",
+    "input": {
+      "app_id": "app-notification-svc",
+      "slug": "notification-svc",
+      "provider": "azure",
+      "environments": ["dev", "prod"],
+      "correlation_id": "corr-tf-003",
+      "arch_decision": "Use Azure Container Apps, Service Bus for messaging"
+    },
+    "expected": {
+      "module_path": "terraform/notification-svc",
+      "provider_list": ["azurerm"],
+      "emitted_event": "sdlc.iac.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-tf-004",
+    "input": {
+      "app_id": "app-user-profile",
+      "slug": "user-profile",
+      "provider": "aws",
+      "environments": ["dev", "staging", "prod"],
+      "correlation_id": "corr-tf-004",
+      "arch_decision": "DynamoDB for user data, S3 for avatars, CloudFront CDN"
+    },
+    "expected": {
+      "module_path": "terraform/user-profile",
+      "provider_list": ["aws"],
+      "emitted_event": "sdlc.iac.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-tf-005",
+    "input": {
+      "app_id": "app-inventory-svc",
+      "slug": "inventory-svc",
+      "provider": "gcp",
+      "environments": ["dev", "staging", "prod"],
+      "correlation_id": "corr-tf-005",
+      "arch_decision": "Cloud SQL Postgres, Cloud Storage, Pub/Sub for events"
+    },
+    "expected": {
+      "module_path": "terraform/inventory-svc",
+      "provider_list": ["google"],
+      "emitted_event": "sdlc.iac.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-tf-006",
+    "input": {
+      "app_id": "app-billing-svc",
+      "slug": "billing-svc",
+      "provider": "aws",
+      "environments": ["staging", "prod"],
+      "correlation_id": "corr-tf-006",
+      "arch_decision": "RDS Postgres for billing records, SQS for webhook queues, KMS for encryption"
+    },
+    "expected": {
+      "module_path": "terraform/billing-svc",
+      "provider_list": ["aws"],
+      "emitted_event": "sdlc.iac.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-tf-007",
+    "input": {
+      "app_id": "app-analytics-svc",
+      "slug": "analytics-svc",
+      "provider": "gcp",
+      "environments": ["dev", "prod"],
+      "correlation_id": "corr-tf-007",
+      "arch_decision": "BigQuery for analytics data, Dataflow for stream processing"
+    },
+    "expected": {
+      "module_path": "terraform/analytics-svc",
+      "provider_list": ["google"],
+      "emitted_event": "sdlc.iac.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-tf-008",
+    "input": {
+      "app_id": "app-auth-gateway",
+      "slug": "auth-gateway",
+      "provider": "azure",
+      "environments": ["dev", "staging", "prod"],
+      "correlation_id": "corr-tf-008",
+      "arch_decision": "Azure API Management, Key Vault for secrets, Redis Cache for sessions"
+    },
+    "expected": {
+      "module_path": "terraform/auth-gateway",
+      "provider_list": ["azurerm"],
+      "emitted_event": "sdlc.iac.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-tf-009",
+    "input": {
+      "app_id": "app-file-processor",
+      "slug": "file-processor",
+      "provider": "aws",
+      "environments": ["dev", "prod"],
+      "correlation_id": "corr-tf-009",
+      "arch_decision": "S3 trigger with Lambda processing, SQS DLQ for failures"
+    },
+    "expected": {
+      "module_path": "terraform/file-processor",
+      "provider_list": ["aws"],
+      "emitted_event": "sdlc.iac.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-tf-010",
+    "input": {
+      "app_id": "app-event-consumer",
+      "slug": "event-consumer",
+      "provider": "gcp",
+      "environments": ["dev", "staging", "prod"],
+      "correlation_id": "corr-tf-010",
+      "arch_decision": "Pub/Sub subscription, Cloud Run for consumer, Firestore for state"
+    },
+    "expected": {
+      "module_path": "terraform/event-consumer",
+      "provider_list": ["google"],
+      "emitted_event": "sdlc.iac.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-tf-011",
+    "input": {
+      "app_id": "app-stream-processor",
+      "slug": "stream-processor",
+      "provider": "aws",
+      "environments": ["dev", "staging", "prod"],
+      "correlation_id": "corr-tf-011",
+      "arch_decision": "Kinesis Data Streams, Lambda consumers, DynamoDB for checkpoints"
+    },
+    "expected": {
+      "module_path": "terraform/stream-processor",
+      "provider_list": ["aws"],
+      "emitted_event": "sdlc.iac.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-tf-012",
+    "input": {
+      "app_id": "app-cdn-purge",
+      "slug": "cdn-purge",
+      "provider": "azure",
+      "environments": ["prod"],
+      "correlation_id": "corr-tf-012",
+      "arch_decision": "Azure Front Door for CDN, Function App for purge logic"
+    },
+    "expected": {
+      "module_path": "terraform/cdn-purge",
+      "provider_list": ["azurerm"],
+      "emitted_event": "sdlc.iac.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-tf-013",
+    "input": {
+      "app_id": "app-report-gen",
+      "slug": "report-gen",
+      "provider": "aws",
+      "environments": ["dev", "staging", "prod"],
+      "correlation_id": "corr-tf-013",
+      "arch_decision": "Lambda for generation, S3 for storage, SES for email delivery"
+    },
+    "expected": {
+      "module_path": "terraform/report-gen",
+      "provider_list": ["aws"],
+      "emitted_event": "sdlc.iac.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-tf-014",
+    "input": {
+      "app_id": "app-config-server",
+      "slug": "config-server",
+      "provider": "gcp",
+      "environments": ["dev", "staging", "prod"],
+      "correlation_id": "corr-tf-014",
+      "arch_decision": "GKE workload, Secret Manager for config, Cloud Armor for protection"
+    },
+    "expected": {
+      "module_path": "terraform/config-server",
+      "provider_list": ["google"],
+      "emitted_event": "sdlc.iac.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-tf-015",
+    "input": {
+      "app_id": "app-job-scheduler",
+      "slug": "job-scheduler",
+      "provider": "aws",
+      "environments": ["prod"],
+      "correlation_id": "corr-tf-015",
+      "arch_decision": "EventBridge Scheduler, ECS tasks for job execution, DynamoDB for job state"
+    },
+    "expected": {
+      "module_path": "terraform/job-scheduler",
+      "provider_list": ["aws"],
+      "emitted_event": "sdlc.iac.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-tf-016",
+    "input": {
+      "app_id": "app-cache-proxy",
+      "slug": "cache-proxy",
+      "provider": "azure",
+      "environments": ["dev", "staging", "prod"],
+      "correlation_id": "corr-tf-016",
+      "arch_decision": "Azure Cache for Redis, Application Gateway for proxy, VNet peering"
+    },
+    "expected": {
+      "module_path": "terraform/cache-proxy",
+      "provider_list": ["azurerm"],
+      "emitted_event": "sdlc.iac.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-tf-017",
+    "input": {
+      "app_id": "app-grpc-server",
+      "slug": "grpc-server",
+      "provider": "gcp",
+      "environments": ["dev", "prod"],
+      "correlation_id": "corr-tf-017",
+      "arch_decision": "GKE with Anthos Service Mesh, Cloud Endpoints for gRPC transcoding"
+    },
+    "expected": {
+      "module_path": "terraform/grpc-server",
+      "provider_list": ["google"],
+      "emitted_event": "sdlc.iac.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-tf-018",
+    "input": {
+      "app_id": "app-upload-svc",
+      "slug": "upload-svc",
+      "provider": "aws",
+      "environments": ["dev", "staging", "prod"],
+      "correlation_id": "corr-tf-018",
+      "arch_decision": "S3 multipart uploads, API Gateway + Lambda for presigned URLs, CloudFront for download"
+    },
+    "expected": {
+      "module_path": "terraform/upload-svc",
+      "provider_list": ["aws"],
+      "emitted_event": "sdlc.iac.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-tf-019",
+    "input": {
+      "app_id": "app-audit-trail",
+      "slug": "audit-trail",
+      "provider": "aws",
+      "environments": ["staging", "prod"],
+      "correlation_id": "corr-tf-019",
+      "arch_decision": "CloudTrail + Kinesis Firehose, S3 immutable storage, Athena for queries"
+    },
+    "expected": {
+      "module_path": "terraform/audit-trail",
+      "provider_list": ["aws"],
+      "emitted_event": "sdlc.iac.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-tf-020",
+    "input": {
+      "app_id": "app-rbac-svc",
+      "slug": "rbac-svc",
+      "provider": "gcp",
+      "environments": ["dev", "staging", "prod"],
+      "correlation_id": "corr-tf-020",
+      "arch_decision": "GKE for OPA sidecar, Cloud Spanner for policy store"
+    },
+    "expected": {
+      "module_path": "terraform/rbac-svc",
+      "provider_list": ["google"],
+      "emitted_event": "sdlc.iac.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-tf-021",
+    "input": {
+      "app_id": "app-metrics-collector",
+      "slug": "metrics-collector",
+      "provider": "azure",
+      "environments": ["dev", "prod"],
+      "correlation_id": "corr-tf-021",
+      "arch_decision": "Azure Monitor, Log Analytics Workspace, Container Apps for collectors"
+    },
+    "expected": {
+      "module_path": "terraform/metrics-collector",
+      "provider_list": ["azurerm"],
+      "emitted_event": "sdlc.iac.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-tf-022",
+    "input": {
+      "app_id": "app-session-mgr",
+      "slug": "session-mgr",
+      "provider": "aws",
+      "environments": ["dev", "staging", "prod"],
+      "correlation_id": "corr-tf-022",
+      "arch_decision": "ElastiCache Redis cluster, NLB for sticky sessions, VPC private subnets"
+    },
+    "expected": {
+      "module_path": "terraform/session-mgr",
+      "provider_list": ["aws"],
+      "emitted_event": "sdlc.iac.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-tf-023",
+    "input": {
+      "app_id": "app-proxy-svc",
+      "slug": "proxy-svc",
+      "provider": "gcp",
+      "environments": ["dev", "prod"],
+      "correlation_id": "corr-tf-023",
+      "arch_decision": "Cloud Load Balancing, Cloud Armor WAF, NEG for container targets"
+    },
+    "expected": {
+      "module_path": "terraform/proxy-svc",
+      "provider_list": ["google"],
+      "emitted_event": "sdlc.iac.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-tf-024",
+    "input": {
+      "app_id": "app-feature-flags",
+      "slug": "feature-flags",
+      "provider": "azure",
+      "environments": ["dev", "staging", "prod"],
+      "correlation_id": "corr-tf-024",
+      "arch_decision": "Azure App Configuration, Container Apps for flag service, Cosmos DB for storage"
+    },
+    "expected": {
+      "module_path": "terraform/feature-flags",
+      "provider_list": ["azurerm"],
+      "emitted_event": "sdlc.iac.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-tf-025",
+    "input": {
+      "app_id": "app-email-renderer",
+      "slug": "email-renderer",
+      "provider": "aws",
+      "environments": ["dev", "prod"],
+      "correlation_id": "corr-tf-025",
+      "arch_decision": "Lambda for rendering, SES for delivery, S3 for template storage"
+    },
+    "expected": {
+      "module_path": "terraform/email-renderer",
+      "provider_list": ["aws"],
+      "emitted_event": "sdlc.iac.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-tf-026",
+    "input": {
+      "app_id": "app-log-aggregator",
+      "slug": "log-aggregator",
+      "provider": "gcp",
+      "environments": ["dev", "staging", "prod"],
+      "correlation_id": "corr-tf-026",
+      "arch_decision": "Cloud Logging sinks, Cloud Storage for long-term retention, BigQuery for querying"
+    },
+    "expected": {
+      "module_path": "terraform/log-aggregator",
+      "provider_list": ["google"],
+      "emitted_event": "sdlc.iac.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-tf-027",
+    "input": {
+      "app_id": "app-data-pipeline",
+      "slug": "data-pipeline",
+      "provider": "aws",
+      "environments": ["staging", "prod"],
+      "correlation_id": "corr-tf-027",
+      "arch_decision": "Glue for ETL, Redshift for warehouse, Step Functions for orchestration"
+    },
+    "expected": {
+      "module_path": "terraform/data-pipeline",
+      "provider_list": ["aws"],
+      "emitted_event": "sdlc.iac.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-tf-028",
+    "input": {
+      "app_id": "app-db-migrator",
+      "slug": "db-migrator",
+      "provider": "azure",
+      "environments": ["dev", "staging", "prod"],
+      "correlation_id": "corr-tf-028",
+      "arch_decision": "Azure Database for PostgreSQL flexible server, Container Instance for migration jobs"
+    },
+    "expected": {
+      "module_path": "terraform/db-migrator",
+      "provider_list": ["azurerm"],
+      "emitted_event": "sdlc.iac.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-tf-029",
+    "input": {
+      "app_id": "app-order-svc",
+      "slug": "order-svc",
+      "provider": "aws",
+      "environments": ["dev", "staging", "prod"],
+      "correlation_id": "corr-tf-029",
+      "arch_decision": "RDS Aurora Multi-AZ, SQS FIFO queues for order processing, ElastiCache for cart"
+    },
+    "expected": {
+      "module_path": "terraform/order-svc",
+      "provider_list": ["aws"],
+      "emitted_event": "sdlc.iac.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-tf-030",
+    "input": {
+      "app_id": "app-vault-proxy",
+      "slug": "vault-proxy",
+      "provider": "gcp",
+      "environments": ["staging", "prod"],
+      "correlation_id": "corr-tf-030",
+      "arch_decision": "GKE cluster, Secret Manager, Cloud KMS for encryption, VPC Service Controls"
+    },
+    "expected": {
+      "module_path": "terraform/vault-proxy",
+      "provider_list": ["google"],
+      "emitted_event": "sdlc.iac.generated.v1"
+    },
+    "weight": 1.0
+  },
+  {
+    "id": "iac-tf-adv-001",
+    "input": {
+      "app_id": "app-bad-provider",
+      "slug": "bad-provider-svc",
+      "provider": "digitalocean",
+      "environments": ["dev", "prod"],
+      "correlation_id": "corr-tf-adv-001",
+      "arch_decision": "DigitalOcean Kubernetes for deployment"
+    },
+    "expected": {
+      "status": "failed",
+      "error": "unsupported_provider",
+      "detail": "provider 'digitalocean' is not supported; must be one of: aws, gcp, azure"
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "iac-tf-adv-002",
+    "input": {
+      "app_id": "app-fmt-fail",
+      "slug": "fmt-fail-svc",
+      "provider": "aws",
+      "environments": ["dev"],
+      "correlation_id": "corr-tf-adv-002",
+      "arch_decision": "Standard ECS deployment"
+    },
+    "expected": {
+      "module_path": "terraform/FAIL_TF_FMT/fmt-fail-svc",
+      "provider_list": ["aws"],
+      "emitted_event": "sdlc.iac.generated.v1",
+      "validation_hint": "FAIL_TF_FMT sentinel present; downstream validate-iac will report terraform_fmt_passed=false"
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "iac-tf-adv-003",
+    "input": {
+      "app_id": "app-plan-fail",
+      "slug": "plan-fail-svc",
+      "provider": "gcp",
+      "environments": ["dev"],
+      "correlation_id": "corr-tf-adv-003",
+      "arch_decision": "Cloud Run with invalid resource references"
+    },
+    "expected": {
+      "module_path": "terraform/FAIL_TF_PLAN/plan-fail-svc",
+      "provider_list": ["google"],
+      "emitted_event": "sdlc.iac.generated.v1",
+      "validation_hint": "FAIL_TF_PLAN sentinel present; downstream validate-iac will report terraform_plan_passed=false"
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "iac-tf-adv-004",
+    "input": {
+      "app_id": "app-no-envs",
+      "slug": "no-envs-svc",
+      "provider": "azure",
+      "environments": [],
+      "correlation_id": "corr-tf-adv-004",
+      "arch_decision": "Standard container deployment"
+    },
+    "expected": {
+      "status": "failed",
+      "error": "empty_environments",
+      "detail": "environments list must contain at least one entry"
+    },
+    "weight": 2.0
+  },
+  {
+    "id": "iac-tf-adv-005",
+    "input": {
+      "app_id": "app-onprem",
+      "slug": "onprem-svc",
+      "provider": "vmware",
+      "environments": ["prod"],
+      "correlation_id": "corr-tf-adv-005",
+      "arch_decision": "On-premises vSphere deployment"
+    },
+    "expected": {
+      "status": "failed",
+      "error": "unsupported_provider",
+      "detail": "provider 'vmware' is not supported; must be one of: aws, gcp, azure"
+    },
+    "weight": 2.0
+  }
+]

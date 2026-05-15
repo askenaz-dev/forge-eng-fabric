@@ -31,9 +31,10 @@ func (d *DB) Ping(ctx context.Context) error { return d.pool.Ping(ctx) }
 // --- models ------------------------------------------------------------
 
 type Tenant struct {
-	ID        uuid.UUID `json:"id"`
-	Name      string    `json:"name"`
-	CreatedAt time.Time `json:"created_at"`
+	ID           uuid.UUID        `json:"id"`
+	Name         string           `json:"name"`
+	CreatedAt    time.Time        `json:"created_at"`
+	FeatureFlags map[string]bool  `json:"feature_flags,omitempty"`
 }
 
 type BusinessUnit struct {
@@ -96,12 +97,76 @@ func (d *DB) CreateTenant(ctx context.Context, name, createdBy string) (*Tenant,
 	return &t, nil
 }
 
+// GetTenantFeatureFlags returns the feature_flags map for the given tenant.
+func (d *DB) GetTenantFeatureFlags(ctx context.Context, tenantID uuid.UUID) (map[string]bool, error) {
+	var flags map[string]bool
+	err := d.pool.QueryRow(ctx,
+		`SELECT feature_flags FROM tenant WHERE id = $1`, tenantID).Scan(&flags)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, errors.New("tenant not found")
+		}
+		return nil, err
+	}
+	if flags == nil {
+		flags = map[string]bool{}
+	}
+	return flags, nil
+}
+
+// SetTenantFeatureFlags replaces the feature_flags map for the given tenant.
+func (d *DB) SetTenantFeatureFlags(ctx context.Context, tenantID uuid.UUID, flags map[string]bool) error {
+	_, err := d.pool.Exec(ctx,
+		`UPDATE tenant SET feature_flags = $2 WHERE id = $1`, tenantID, flags)
+	return err
+}
+
+// PatchTenantFeatureFlags merges patch into the existing feature_flags using
+// jsonb || and returns the resulting map.
+func (d *DB) PatchTenantFeatureFlags(ctx context.Context, tenantID uuid.UUID, patch map[string]bool) (map[string]bool, error) {
+	var flags map[string]bool
+	err := d.pool.QueryRow(ctx,
+		`UPDATE tenant SET feature_flags = feature_flags || $2 WHERE id = $1 RETURNING feature_flags`,
+		tenantID, patch).Scan(&flags)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, errors.New("tenant not found")
+		}
+		return nil, err
+	}
+	if flags == nil {
+		flags = map[string]bool{}
+	}
+	return flags, nil
+}
+
 // --- business units --------------------------------------------------
 
 func (d *DB) ListBUs(ctx context.Context, tenantID uuid.UUID) ([]BusinessUnit, error) {
 	rows, err := d.pool.Query(ctx,
 		`SELECT id,tenant_id,name,created_at FROM business_unit
 		 WHERE tenant_id=$1 AND archived_at IS NULL ORDER BY name`, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []BusinessUnit{}
+	for rows.Next() {
+		var b BusinessUnit
+		if err := rows.Scan(&b.ID, &b.TenantID, &b.Name, &b.CreatedAt); err != nil {
+			return nil, err
+		}
+		out = append(out, b)
+	}
+	return out, rows.Err()
+}
+
+// ListAllBUs returns every non-archived business unit, optionally including
+// the tenant name for display. Caller-side FGA scoping applies in the handler.
+func (d *DB) ListAllBUs(ctx context.Context) ([]BusinessUnit, error) {
+	rows, err := d.pool.Query(ctx,
+		`SELECT id, tenant_id, name, created_at
+		 FROM business_unit WHERE archived_at IS NULL ORDER BY name`)
 	if err != nil {
 		return nil, err
 	}
@@ -226,6 +291,74 @@ func (d *DB) CreateGitHubInstallation(ctx context.Context, workspaceID uuid.UUID
 		return nil, err
 	}
 	return &g, nil
+}
+
+// --- platform users --------------------------------------------------
+
+type PlatformUser struct {
+	Subject   string    `json:"subject"`
+	Username  string    `json:"username,omitempty"`
+	Email     string    `json:"email,omitempty"`
+	FirstSeen time.Time `json:"first_seen"`
+	LastSeen  time.Time `json:"last_seen"`
+}
+
+// UpsertPlatformUser records that the given identity touched the platform.
+// Safe to call on every authenticated request — keeps `last_seen` fresh and
+// fills in username/email when the IdP supplies them.
+func (d *DB) UpsertPlatformUser(ctx context.Context, subject, username, email string) error {
+	if subject == "" {
+		return nil
+	}
+	_, err := d.pool.Exec(ctx,
+		`INSERT INTO platform_user(subject, username, email)
+		 VALUES ($1, NULLIF($2,''), NULLIF($3,''))
+		 ON CONFLICT (subject) DO UPDATE SET
+		   username  = COALESCE(NULLIF(EXCLUDED.username,''),  platform_user.username),
+		   email     = COALESCE(NULLIF(EXCLUDED.email,''),     platform_user.email),
+		   last_seen = now()`,
+		subject, username, email)
+	return err
+}
+
+// ListPlatformUsers returns every identity ever observed by the auth
+// middleware, ordered by username/email/subject for predictable display.
+// `prefix`, when non-empty, narrows the result with a case-insensitive
+// "starts-with" match against username or email.
+func (d *DB) ListPlatformUsers(ctx context.Context, prefix string, limit int) ([]PlatformUser, error) {
+	if limit <= 0 || limit > 500 {
+		limit = 200
+	}
+	var rows pgx.Rows
+	var err error
+	if prefix == "" {
+		rows, err = d.pool.Query(ctx,
+			`SELECT subject, COALESCE(username,''), COALESCE(email,''), first_seen, last_seen
+			 FROM platform_user
+			 ORDER BY COALESCE(username, email, subject)
+			 LIMIT $1`, limit)
+	} else {
+		pat := prefix + "%"
+		rows, err = d.pool.Query(ctx,
+			`SELECT subject, COALESCE(username,''), COALESCE(email,''), first_seen, last_seen
+			 FROM platform_user
+			 WHERE username ILIKE $1 OR email ILIKE $1
+			 ORDER BY COALESCE(username, email, subject)
+			 LIMIT $2`, pat, limit)
+	}
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []PlatformUser{}
+	for rows.Next() {
+		var u PlatformUser
+		if err := rows.Scan(&u.Subject, &u.Username, &u.Email, &u.FirstSeen, &u.LastSeen); err != nil {
+			return nil, err
+		}
+		out = append(out, u)
+	}
+	return out, rows.Err()
 }
 
 func (d *DB) LatestGitHubInstallation(ctx context.Context, workspaceID uuid.UUID) (*GitHubInstallation, error) {

@@ -43,6 +43,30 @@ func (s *Service) CreateInitiative(_ context.Context, req CreateInitiativeReques
 	if criticality == "" {
 		criticality = "medium"
 	}
+
+	// Build effective targets: start from app-level defaults, apply spec override.
+	appTargets := req.Targets
+	if appTargets == nil {
+		appTargets = DefaultTargets()
+	}
+	var targets map[Phase]TargetPolicy
+	if req.TargetsOverride != nil {
+		var err error
+		targets, err = MergeTargets(appTargets, req.TargetsOverride)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		targets = appTargets
+	}
+
+	// Promote opt-in phases that are explicitly included.
+	for _, p := range req.Include {
+		if targets[p] == TargetOptIn {
+			targets[p] = TargetRequired
+		}
+	}
+
 	now := s.Now()
 	initiative := &Initiative{
 		WorkspaceID:  req.WorkspaceID,
@@ -50,17 +74,26 @@ func (s *Service) CreateInitiative(_ context.Context, req CreateInitiativeReques
 		JiraEpicKey:  req.JiraEpicKey,
 		Criticality:  criticality,
 		CurrentPhase: PhaseProduct,
+		Targets:      targets,
 		CreatedAt:    now,
 		UpdatedAt:    now,
 	}
 	initiative.PhaseStates = make([]PhaseState, 0, len(OrderedPhases))
+	ec := fromCreate(req)
 	for _, phase := range OrderedPhases {
+		policy := targets[phase]
 		status := StatusNotStarted
 		var enteredAt *time.Time
-		if phase == PhaseProduct {
+		switch {
+		case phase == PhaseProduct:
 			status = StatusInProgress
 			entered := now
 			enteredAt = &entered
+		case policy == TargetSkipped:
+			status = StatusSkipped
+		case policy == TargetOptIn:
+			// Opt-in phases not included remain skipped in plan.
+			status = StatusSkipped
 		}
 		initiative.PhaseStates = append(initiative.PhaseStates, PhaseState{
 			Phase:     phase,
@@ -73,11 +106,25 @@ func (s *Service) CreateInitiative(_ context.Context, req CreateInitiativeReques
 		initiative.PhaseStates[i].InitiativeID = initiative.ID
 	}
 	initiative = s.Store.Update(initiative)
-	_ = s.Sink.Emit(newEvent(initiative, fromCreate(req), EventPhaseEntered, map[string]any{
+	_ = s.Sink.Emit(newEvent(initiative, ec, EventPhaseEntered, map[string]any{
 		"initiative_id": initiative.ID,
 		"phase":         PhaseProduct,
 		"openspec_root": initiative.OpenSpecRoot,
 	}))
+	// Emit skipped events for all phases that won't run.
+	for _, phase := range OrderedPhases {
+		if phase == PhaseProduct {
+			continue
+		}
+		policy := targets[phase]
+		if policy == TargetSkipped || policy == TargetOptIn {
+			_ = s.Sink.Emit(newEvent(initiative, ec, EventPhaseSkipped, map[string]any{
+				"initiative_id": initiative.ID,
+				"phase":         phase,
+				"target":        string(policy),
+			}))
+		}
+	}
 	return initiative, nil
 }
 
@@ -132,29 +179,50 @@ func (s *Service) CompletePhase(ctx context.Context, id string, phase Phase, req
 
 	failed := failedGates(results)
 	overridden, overrideErr := validateOverride(req.Override)
+	ec := fromComplete(req)
+
+	// Determine the effective target policy for this phase.
+	policy := TargetRequired
+	if initiative.Targets != nil {
+		if p, ok := initiative.Targets[phase]; ok {
+			policy = p
+		}
+	}
+
 	if len(failed) > 0 && !overridden {
 		if overrideErr != nil {
 			return nil, overrideErr
 		}
-		now := s.Now()
-		state.Status = StatusBlocked
-		for _, result := range failed {
-			state.Blockers = append(state.Blockers, Blocker{
-				ID:           newID(),
-				InitiativeID: initiative.ID,
-				Phase:        phase,
-				Gate:         result.Gate,
-				Reason:       result.Reason,
-				CreatedAt:    now,
-			})
+		if policy == TargetOptional {
+			// Optional: warn and continue rather than block.
+			_ = s.Sink.Emit(newEvent(initiative, ec, EventPhaseWarning, map[string]any{
+				"initiative_id": initiative.ID,
+				"phase":         phase,
+				"failed_gates":  gateNames(failed),
+				"target":        string(policy),
+			}))
+		} else {
+			now := s.Now()
+			state.Status = StatusBlocked
+			for _, result := range failed {
+				state.Blockers = append(state.Blockers, Blocker{
+					ID:           newID(),
+					InitiativeID: initiative.ID,
+					Phase:        phase,
+					Gate:         result.Gate,
+					Reason:       result.Reason,
+					CreatedAt:    now,
+				})
+			}
+			initiative = s.Store.Update(initiative)
+			_ = s.Sink.Emit(newEvent(initiative, ec, EventPhaseBlocked, map[string]any{
+				"initiative_id": initiative.ID,
+				"phase":         phase,
+				"failed_gates":  gateNames(failed),
+				"target":        string(policy),
+			}))
+			return initiative, nil
 		}
-		initiative = s.Store.Update(initiative)
-		_ = s.Sink.Emit(newEvent(initiative, fromComplete(req), EventPhaseBlocked, map[string]any{
-			"initiative_id": initiative.ID,
-			"phase":         phase,
-			"failed_gates":  gateNames(failed),
-		}))
-		return initiative, nil
 	}
 
 	now := s.Now()
@@ -177,6 +245,28 @@ func (s *Service) CompletePhase(ctx context.Context, id string, phase Phase, req
 		return nil, ErrInvalidPhase
 	}
 	from := initiative.CurrentPhase
+
+	// Advance past any phases that are skipped in the targets plan.
+	for next != PhaseDone {
+		if initiative.Targets == nil {
+			break
+		}
+		p, exists := initiative.Targets[next]
+		if !exists || (p != TargetSkipped && p != TargetOptIn) {
+			break
+		}
+		// Emit skipped event for this auto-skipped phase.
+		_ = s.Sink.Emit(newEvent(initiative, ec, EventPhaseSkipped, map[string]any{
+			"initiative_id": initiative.ID,
+			"phase":         next,
+			"target":        string(p),
+		}))
+		next, ok = NextPhase(next)
+		if !ok {
+			break
+		}
+	}
+
 	initiative.CurrentPhase = next
 	if next != PhaseDone {
 		nextState := phaseState(initiative, next)
@@ -187,14 +277,14 @@ func (s *Service) CompletePhase(ctx context.Context, id string, phase Phase, req
 		}
 	}
 	initiative = s.Store.Update(initiative)
-	_ = s.Sink.Emit(newEvent(initiative, fromComplete(req), EventPhaseProgressed, map[string]any{
+	_ = s.Sink.Emit(newEvent(initiative, ec, EventPhaseProgressed, map[string]any{
 		"initiative_id": initiative.ID,
 		"from":          from,
 		"to":            next,
 		"override":      overridden,
 	}))
 	if next != PhaseDone {
-		_ = s.Sink.Emit(newEvent(initiative, fromComplete(req), EventPhaseEntered, map[string]any{
+		_ = s.Sink.Emit(newEvent(initiative, ec, EventPhaseEntered, map[string]any{
 			"initiative_id": initiative.ID,
 			"phase":         next,
 		}))

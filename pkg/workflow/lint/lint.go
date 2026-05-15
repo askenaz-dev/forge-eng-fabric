@@ -39,7 +39,20 @@ const (
 	CodeMissingRef         Code = "missing_ref"
 	CodeMissingTool        Code = "missing_tool"
 	CodeMissingApprover    Code = "missing_approver_role"
+	CodeInvalidTargetPhase Code = "invalid_target_phase"
+	CodeInvalidTargetValue Code = "invalid_target_value"
 )
+
+// knownTargetPhases mirrors the canonical set from the application service.
+var knownTargetPhases = map[string]struct{}{
+	"architect": {}, "design": {}, "development": {}, "qa": {},
+	"security": {}, "devops": {}, "iac": {}, "sre": {}, "finops": {}, "observability": {},
+}
+
+// knownTargetValues mirrors the allowed values from the application service.
+var knownTargetValues = map[string]struct{}{
+	"required": {}, "optional": {}, "opt-in": {}, "skipped": {},
+}
 
 // Finding is a single lint issue.
 type Finding struct {
@@ -81,7 +94,35 @@ func Lint(wf *ast.Workflow) Result {
 	r.add(checkRefs(wf)...)
 	r.add(checkStepShape(wf)...)
 	r.add(checkTypeWiring(wf)...)
+	r.add(checkTargets(wf)...)
 	return r
+}
+
+// checkTargets validates that any step-level `targets:` map uses only known
+// phase keys and allowed values.
+func checkTargets(wf *ast.Workflow) []Finding {
+	out := []Finding{}
+	for _, s := range allSteps(wf) {
+		for phase, val := range s.Targets {
+			if _, ok := knownTargetPhases[phase]; !ok {
+				out = append(out, Finding{
+					Code:     CodeInvalidTargetPhase,
+					Severity: SeverityError,
+					StepID:   s.ID,
+					Message:  fmt.Sprintf("step %q targets: unknown phase %q; allowed: architect design development qa security devops iac sre finops observability", s.ID, phase),
+				})
+			}
+			if _, ok := knownTargetValues[val]; !ok {
+				out = append(out, Finding{
+					Code:     CodeInvalidTargetValue,
+					Severity: SeverityError,
+					StepID:   s.ID,
+					Message:  fmt.Sprintf("step %q targets.%s: unknown value %q; allowed: required optional opt-in skipped", s.ID, phase, val),
+				})
+			}
+		}
+	}
+	return out
 }
 
 func (r *Result) add(f ...Finding) {

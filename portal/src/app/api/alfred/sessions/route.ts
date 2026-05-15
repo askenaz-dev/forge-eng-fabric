@@ -3,7 +3,7 @@ import { authToken, correlationId, endpoint, proxyJson } from "@/lib/api";
 
 export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => null)) as
-    | { workspace_id?: string; openspec_id?: string; intent?: string }
+    | { workspace_id?: string; openspec_id?: string; intent?: string; start_step?: string }
     | null;
   if (!body?.openspec_id || !body?.intent) {
     return NextResponse.json({ error: "openspec_id and intent are required" }, { status: 400 });
@@ -28,6 +28,7 @@ export async function POST(req: NextRequest) {
           workspace_id: workspaceId,
           openspec_id: body.openspec_id,
           intent: body.intent,
+          ...(body.start_step ? { start_step: body.start_step } : {}),
         }),
       },
     );

@@ -1,0 +1,85 @@
+# Feature flags introduced by design-system-catalog.
+# Format mirrors the existing `contracts/feature-flags/*.yaml` convention; the
+# rollout pipeline consumes this to seed the per-tenant flag service.
+
+apiVersion: forge.platform/v1
+kind: FeatureFlagSet
+metadata:
+  change: design-system-catalog
+spec:
+  flags:
+    - key: forge.design_system_catalog.enabled
+      description: |
+        Per-tenant master switch for the Design System catalog. When on:
+          * Wizard surfaces the Design System step on the "create a new App" branch.
+          * App Settings exposes the Design System panel.
+          * App service validates design_system_ref against the Registry on every write.
+          * Build-time merger resolves App.design_system_ref instead of falling back
+            to the hard-coded portal globals.css.
+        Default off so existing tenants retain the current Portal look until they
+        opt in. The platform tenant flips first (M0).
+      default: false
+      scope: tenant
+      owner: forge-platform-design
+      rollout_stages:
+        - M0: dark-launch — code shipped, flag off everywhere
+        - M1: platform tenant only
+        - M2: two pilot tenants
+        - M3: global default true
+
+    - key: forge.design_system_catalog.swap_ui.enabled
+      description: |
+        Independent toggle for the swap action in App Settings. When off the
+        panel renders the current `design_system_ref` and overrides list but
+        hides the "Open swap PR" button. Used to dark-launch the swap UX
+        before authorizing operators on a tenant.
+      default: false
+      scope: tenant
+      owner: portal-team
+
+    - key: forge.design_system_catalog.overrides.enabled
+      description: |
+        Independent toggle for per-component overrides. When off the API
+        rejects PATCH /v1/apps/{id}/design-system/overrides with 503 and the
+        App Settings panel hides the advanced override section.
+      default: false
+      scope: tenant
+      owner: forge-platform-design
+
+  dashboards:
+    - name: design-system-catalog-adoption
+      panels:
+        - title: Design System adoption per template
+          query: sum(count(app_design_system_ref) by (design_system_ref)) by (design_system_ref)
+        - title: Swap PRs opened per day
+          query: sum(rate(app_design_system_swap_requested_total[1d])) by (tenant_id)
+        - title: Swap PR merge rate
+          query: |
+            sum(rate(app_design_system_changed_total[1d])) by (tenant_id)
+            / clamp_min(sum(rate(app_design_system_swap_requested_total[1d])) by (tenant_id), 1)
+        - title: Per-component override usage
+          query: sum(count(app_design_system_override_component) by (component_name)) by (component_name)
+        - title: Sanity validator rejections per day
+          query: sum(rate(design_system_sanity_validator_rejections_total[1d])) by (code)
+
+  slos:
+    - name: swap_pr_open_latency_p95
+      target_seconds: 30
+      window: 5m
+      description: 95th percentile of swap PR open latency is ≤30s from API call
+      query: histogram_quantile(0.95, sum(rate(app_design_system_swap_pr_open_seconds_bucket[5m])) by (le))
+    - name: portal_build_merger_overhead_p95
+      target_ms: 500
+      window: 5m
+      description: 95th percentile of merger overhead per portal build is ≤500ms
+      query: histogram_quantile(0.95, sum(rate(portal_design_system_merger_seconds_bucket[5m])) by (le)) * 1000
+    - name: design_system_digest_mismatch_rate
+      target_percent: 0
+      window: 1h
+      description: zero tolerance for design_system_digest_mismatch errors in portal builds
+
+  runbooks:
+    - id: catalog-rollout
+      path: openspec/changes/design-system-catalog/runbook.md
+    - id: misbehaving-version-rollback
+      path: openspec/changes/design-system-catalog/runbook.md#rollback-a-misbehaving-design-system-version

@@ -1,0 +1,8 @@
+apiVersion: forge.platform/v1
+kind: ServiceManifest
+metadata:
+  name: application
+spec:
+  flavor: service-http
+  kubernetesBound: true
+  helmChart: infra/helm/application

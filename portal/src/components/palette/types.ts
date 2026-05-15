@@ -29,7 +29,9 @@ export type PaletteAction =
   | { type: "lang"; lang: "es" | "en" }
   | { type: "sidebar" }
   | { type: "sign-out" }
-  | { type: "workspace"; tenant: string; workspace: string };
+  | { type: "workspace"; tenant: string; workspace: string }
+  // alfred-console-redesign §8.1-8.3: forge command actions
+  | { type: "forge-command"; subcommand: string; deprecated?: boolean };
 
 export type PaletteSourceResponse = {
   source: PaletteSourceId;
