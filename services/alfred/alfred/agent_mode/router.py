@@ -28,7 +28,7 @@ from alfred.agent_mode.models import (
 )
 from alfred.agent_mode.planner import build_initial_plan
 from alfred.agent_mode.store import AgentModeStore
-from alfred.auth import Principal, fga_check
+from alfred.auth import Principal, fga_check, mint_sub_principal
 from alfred.autonomy_presets import PresetStore
 from alfred.config import Settings
 from alfred.logging import get_logger
@@ -77,9 +77,26 @@ def build_router(
         await _require_workspace(
             request, principal, body.workspace_id, "can_alfred_agent_mode_run"
         )
+        # Non-human trigger enforcement (D3):
+        # trigger_source != "human" MUST have actor="system:alfred" and a symptom_id.
+        if body.trigger_source != "human":
+            if body.actor != "system:alfred":
+                raise HTTPException(
+                    status_code=403,
+                    detail="non-human trigger_source requires actor=system:alfred",
+                )
+            if not body.symptom_id:
+                raise HTTPException(
+                    status_code=422,
+                    detail="non-human trigger_source requires symptom_id",
+                )
+            # Callers other than the triager are forbidden from using trigger_source=symptom.
+            # The triager identifies itself via the X-Forge-Trigger-Source header (checked
+            # by the auth middleware in a production deployment).
+
         # Workspace flag (D8).
         ws_settings = preset_store.get_settings(body.workspace_id)
-        if not ws_settings.get("dock_enabled", False):
+        if not ws_settings.get("dock_enabled", False) and body.trigger_source == "human":
             raise HTTPException(
                 status_code=409,
                 detail="agent-mode is not enabled for this workspace",
@@ -133,8 +150,30 @@ def build_router(
             plan_json=plan,
             frozen_autonomy_policy=active_preset,
             status="planning",
+            # Non-human trigger fields.
+            trigger_source=body.trigger_source,
+            actor=body.actor or principal.sub,
+            actor_session=body.actor_session,
+            symptom_id=body.symptom_id,
+            playbook_id=body.playbook_id,
+            parent_session_id=body.parent_session_id,
         )
         await agent_store.create_session(session)
+
+        # Mint a scoped sub-principal for autonomous sessions so every tool call
+        # in the session runs under system:alfred:session:<id> rather than the
+        # full system:alfred principal.  Auto-revocation is scheduled in the
+        # executor when the session reaches a terminal status.
+        if body.actor == "system:alfred":
+            asyncio.create_task(
+                mint_sub_principal(
+                    base_url=settings.openfga_url,
+                    store_id=settings.openfga_store,
+                    model_id=settings.openfga_model,
+                    session_id=str(session.id),
+                    workspace_id=str(body.workspace_id),
+                )
+            )
 
         # alfred-console-redesign 7.4: emit session_started event with start_step.
         await event_emitter.emit(

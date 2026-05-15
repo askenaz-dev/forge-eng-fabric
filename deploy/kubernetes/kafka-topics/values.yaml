@@ -1,0 +1,25 @@
+kafkaBrokers: "kafka:9092"
+
+topics:
+  - name: forge.events
+    partitions: 6
+    replicationFactor: 3
+    retentionMs: "604800000"   # 7 days
+
+  - name: forge.symptoms.v1
+    partitions: 12
+    replicationFactor: 3
+    retentionMs: "86400000"    # 24 h
+    cleanupPolicy: delete
+
+  - name: forge.symptoms.v1.dlq
+    partitions: 4
+    replicationFactor: 3
+    retentionMs: "604800000"   # 7 days
+
+image:
+  repository: apache/kafka
+  tag: "3.7.1"
+  pullPolicy: IfNotPresent
+
+backoffLimit: 4

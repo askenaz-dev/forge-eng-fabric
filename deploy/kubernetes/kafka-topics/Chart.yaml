@@ -1,0 +1,6 @@
+apiVersion: v2
+name: kafka-topics
+description: One-shot Job that provisions Kafka topics required by the Forge platform.
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

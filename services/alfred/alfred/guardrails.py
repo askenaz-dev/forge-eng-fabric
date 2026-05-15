@@ -12,6 +12,8 @@ Provides:
 from __future__ import annotations
 
 import re
+import time
+from collections import deque
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -22,6 +24,12 @@ import jsonschema
 
 # Patterns that frequently appear in adversarial / injected RAG content.
 # Conservative — flagged for trip but NOT auto-stripped (we still want to surface them).
+# Mirrors the `protected_targets` set in policies/alfred/self-protection.rego.
+# Evaluated locally (no OPA round-trip) to avoid latency on every tool dispatch.
+_SELF_PROTECTED_PREFIXES: frozenset[str] = frozenset(
+    {"alfred", "symptom-triager", "platform-ops", "opa", "keycloak", "openfga"}
+)
+
 INJECTION_PATTERNS: tuple[re.Pattern[str], ...] = tuple(
     re.compile(p, re.IGNORECASE)
     for p in (
@@ -65,13 +73,26 @@ class GuardrailTrip:
         }
 
 
+_INJECTION_PAGE_THRESHOLD = 10  # auto-page security when exceeded within one hour
+
+
 @dataclass
 class GuardrailMetrics:
     counts: dict[tuple[str, str, str], int] = field(default_factory=dict)
+    # Sliding window of injection-trip timestamps for the >10/hour page trigger.
+    _injection_window: deque[float] = field(default_factory=deque)
 
     def record(self, trip: GuardrailTrip) -> None:
         key = (trip.severity, trip.pattern, trip.source)
         self.counts[key] = self.counts.get(key, 0) + 1
+        if trip.pattern in {p.pattern for p in INJECTION_PATTERNS}:
+            self._injection_window.append(time.monotonic())
+
+    def injection_trips_last_hour(self) -> int:
+        cutoff = time.monotonic() - 3600
+        while self._injection_window and self._injection_window[0] < cutoff:
+            self._injection_window.popleft()
+        return len(self._injection_window)
 
     def prometheus_text(self) -> str:
         lines = [
@@ -82,10 +103,17 @@ class GuardrailMetrics:
             lines.append(
                 f'forge_guardrail_trips_total{{severity="{severity}",pattern="{_escape(pattern)}",source="{_escape(source)}"}} {count}'
             )
+        trips_hour = self.injection_trips_last_hour()
+        lines.append("")
+        lines.append("# HELP forge_guardrail_injection_trips_last_hour Injection-pattern trips in the last 60 minutes.")
+        lines.append("# TYPE forge_guardrail_injection_trips_last_hour gauge")
+        lines.append(f"forge_guardrail_injection_trips_last_hour {trips_hour}")
         return "\n".join(lines) + "\n"
 
 
 GuardrailEmitter = Callable[[GuardrailTrip], None]
+
+_MAX_REVIEW_QUEUE = 500
 
 
 @dataclass
@@ -93,8 +121,15 @@ class Guardrails:
     emit_trip: GuardrailEmitter = field(default=lambda _: None)
     metrics: GuardrailMetrics = field(default_factory=GuardrailMetrics)
     trust_allowlists: dict[str, set[str]] = field(default_factory=dict)
+    # Injection review queue: holds the most recent injection trips for the
+    # admin review endpoint. Bounded to prevent unbounded memory growth.
+    _review_queue: deque[GuardrailTrip] = field(default_factory=lambda: deque(maxlen=_MAX_REVIEW_QUEUE))
     # trust_allowlists maps tool_id -> set of allowed (trust_level, data_classification, env)
     # in the form "T1:public:dev". The simplest enforcement, sufficient for Phase 1.
+
+    def review_queue_snapshot(self) -> list[GuardrailTrip]:
+        """Return a copy of the injection review queue (newest-last)."""
+        return list(self._review_queue)
 
     def detect_injection(self, text: str, *, source: str) -> list[GuardrailTrip]:
         trips: list[GuardrailTrip] = []
@@ -110,6 +145,21 @@ class Guardrails:
                 self._emit(trip)
                 trips.append(trip)
         return trips
+
+    @staticmethod
+    def wrap_evidence_fenced(text: str, *, lang: str = "") -> str:
+        """Ensure ``text`` is wrapped in a fenced code block for the LLM boundary.
+
+        Evidence passed to the planner or executor MUST go through this helper
+        so the model always sees evidence as data, never as instructions.
+        If the text is already wrapped in a triple-backtick fence, it is
+        returned unchanged to avoid double-fencing.
+        """
+        stripped = text.strip()
+        if stripped.startswith("```"):
+            return stripped
+        fence = f"```{lang}" if lang else "```"
+        return f"{fence}\n{stripped}\n```"
 
     def sanitize_rag_chunk(self, chunk: dict[str, Any]) -> dict[str, Any]:
         """Wrap retrieved chunk text with explicit untrusted-context markers.
@@ -160,6 +210,34 @@ class Guardrails:
             },
         ]
 
+    def check_self_protection(self, target: str, *, source: str) -> GuardrailTrip | None:
+        """Return a trip if ``target`` matches the self-protection denylist.
+
+        Mirrors ``policies/alfred/self-protection.rego`` — exact match or
+        prefix match on any protected service name.  Returns None if allowed.
+
+        Reason taxonomy (``detail.reason``):
+          - ``exact_match``: target IS a protected service name
+          - ``prefix_match``: target starts with a protected name (e.g. "alfred-agent-mode")
+        """
+        t = target.lower()
+        for protected in _SELF_PROTECTED_PREFIXES:
+            if t == protected:
+                reason = "exact_match"
+            elif t.startswith(protected):
+                reason = "prefix_match"
+            else:
+                continue
+            trip = GuardrailTrip(
+                severity="high",
+                pattern="self-protection-denied",
+                source=source,
+                detail={"target": target, "protected": protected, "reason": reason},
+            )
+            self._emit(trip)
+            return trip
+        return None
+
     def is_tool_allowed(
         self,
         *,
@@ -203,7 +281,27 @@ class Guardrails:
 
     def _emit(self, trip: GuardrailTrip) -> None:
         self.metrics.record(trip)
+        # Enqueue injection trips for admin review.
+        is_injection = any(trip.pattern == p.pattern for p in INJECTION_PATTERNS)
+        if is_injection:
+            self._review_queue.append(trip)
         self.emit_trip(trip)
+        # Auto-page security when injection rate exceeds threshold.
+        if is_injection:
+            hourly = self.metrics.injection_trips_last_hour()
+            if hourly > _INJECTION_PAGE_THRESHOLD:
+                page_trip = GuardrailTrip(
+                    severity="high",
+                    pattern="injection-rate-exceeded",
+                    source="guardrail-monitor",
+                    detail={
+                        "trips_last_hour": hourly,
+                        "threshold": _INJECTION_PAGE_THRESHOLD,
+                        "message": f"Injection rate {hourly}/hr exceeds threshold — security page required",
+                    },
+                )
+                self.metrics.record(page_trip)
+                self.emit_trip(page_trip)
 
 
 def _escape(value: str) -> str:

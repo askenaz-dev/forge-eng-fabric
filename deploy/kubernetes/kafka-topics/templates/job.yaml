@@ -1,0 +1,35 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "kafka-topics.fullname" . }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  backoffLimit: {{ .Values.backoffLimit }}
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: kafka-topics
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -e
+              BROKER="{{ .Values.kafkaBrokers }}"
+              {{- range .Values.topics }}
+              /opt/kafka/bin/kafka-topics.sh --bootstrap-server "$BROKER" \
+                --create --if-not-exists \
+                --topic {{ .name }} \
+                --partitions {{ .partitions }} \
+                --replication-factor {{ .replicationFactor }} \
+                {{- if .retentionMs }}
+                --config retention.ms={{ .retentionMs }} \
+                {{- end }}
+                {{- if .cleanupPolicy }}
+                --config cleanup.policy={{ .cleanupPolicy }} \
+                {{- end }}
+                && echo "topic {{ .name }} ready"
+              {{- end }}

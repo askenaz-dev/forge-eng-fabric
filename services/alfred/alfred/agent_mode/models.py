@@ -55,6 +55,9 @@ class AgentModeStep(BaseModel):
     summary: str = ""
 
 
+TriggerSource = Literal["human", "symptom", "playbook", "replan"]
+
+
 class AgentModeSession(BaseModel):
     """One agent-mode supervisory session. Persists to `alfred_agent_session`."""
 
@@ -77,6 +80,14 @@ class AgentModeSession(BaseModel):
     aborted_reason: str | None = None
     workflow_run_id: str | None = None
 
+    # Non-human trigger fields (iter 2+)
+    trigger_source: TriggerSource = "human"
+    actor: str = ""
+    actor_session: str | None = None
+    symptom_id: str | None = None
+    playbook_id: str | None = None
+    parent_session_id: uuid.UUID | None = None
+
 
 class PlanRevision(BaseModel):
     """A historical snapshot of a session's plan. Replanning increments revision."""
@@ -97,12 +108,22 @@ COMMITTED_LIFECYCLE_STATES = frozenset({"approved", "committed"})
 
 class StartSessionRequest(BaseModel):
     workspace_id: uuid.UUID
-    openspec_id: str
-    intent: str
+    openspec_id: str | None = None
+    intent: str | None = None
     correlation_id: str | None = None
     metadata: dict[str, Any] = Field(default_factory=dict)
     # alfred-console-redesign 7.1: optional jump to a specific SDLC step.
     start_step: str | None = None
+
+    # Non-human trigger fields (iter 2+).
+    # trigger_source != "human" MUST have actor="system:alfred" and a non-null symptom_id.
+    trigger_source: TriggerSource = "human"
+    actor: str = ""
+    actor_session: str | None = None
+    symptom_id: str | None = None
+    playbook_id: str | None = None
+    parent_session_id: uuid.UUID | None = None
+    autonomy_preset: str | None = None  # overrides workspace preset when actor=system:alfred
 
 
 class FollowUpRequest(BaseModel):

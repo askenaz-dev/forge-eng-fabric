@@ -1,0 +1,92 @@
+{
+  "__inputs": [],
+  "__requires": [
+    { "type": "panel", "id": "timeseries", "name": "Time series", "version": "" },
+    { "type": "panel", "id": "table",      "name": "Table",       "version": "" }
+  ],
+  "annotations": { "list": [] },
+  "description": "Autonomous Symptom Bus — events/sec, DLQ rate, fingerprint top-N.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "panels": [
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": { "unit": "reqps" },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "id": 1,
+      "title": "Symptom Events / sec by Emitter",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate(symptom_emitter_events_total[1m])) by (emitter)",
+          "legendFormat": "{{emitter}}"
+        }
+      ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": { "unit": "reqps" },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "id": 2,
+      "title": "DLQ Rate (validation failures)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate(symptom_triager_dlq_total[1m]))",
+          "legendFormat": "DLQ events/s"
+        }
+      ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": { "unit": "short" },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "id": 3,
+      "title": "Local Buffer Drops (emitter-logs)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "increase(symptom_emitter_logs_dropped_total[5m])",
+          "legendFormat": "drops / 5m"
+        }
+      ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": { "unit": "short" },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "id": 4,
+      "title": "Top-N Fingerprints (last 1h)",
+      "type": "table",
+      "targets": [
+        {
+          "expr": "topk(10, sum(increase(symptom_triager_events_total[1h])) by (fingerprint))",
+          "legendFormat": "{{fingerprint}}",
+          "instant": true
+        }
+      ]
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["alfred", "autonomous", "symptoms"],
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "title": "Autonomous Symptom Bus",
+  "uid": "autonomous-symptom-bus",
+  "version": 1
+}

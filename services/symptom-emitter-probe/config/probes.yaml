@@ -1,0 +1,43 @@
+# Probe registry for symptom-emitter-probe.
+# Each entry is checked every `cadence` (default 30s).
+# On state-change (up→down or down→up) a symptom event is emitted.
+
+cadence: 30s
+debounce: 2   # consecutive failures before emitting probe-failed
+
+probes:
+  - name: workflow-registry
+    kind: http
+    url: "http://workflow-registry:8094/healthz"
+    service: workflow-registry
+    severity: high
+
+  - name: workflow-runtime
+    kind: http
+    url: "http://workflow-runtime:8093/healthz"
+    service: workflow-runtime
+    severity: high
+
+  - name: alfred
+    kind: http
+    url: "http://alfred:8090/health"
+    service: alfred
+    severity: critical
+
+  - name: control-plane
+    kind: http
+    url: "http://control-plane:8081/healthz"
+    service: control-plane
+    severity: critical
+
+  - name: postgres
+    kind: tcp
+    addr: "postgres:5432"
+    service: postgres
+    severity: critical
+
+  - name: kafka
+    kind: tcp
+    addr: "kafka:9092"
+    service: kafka
+    severity: critical

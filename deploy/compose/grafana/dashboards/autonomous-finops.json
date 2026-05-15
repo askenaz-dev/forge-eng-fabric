@@ -1,0 +1,175 @@
+{
+  "__inputs": [],
+  "__requires": [
+    { "type": "panel", "id": "timeseries", "name": "Time series", "version": "" },
+    { "type": "panel", "id": "bargauge",   "name": "Bar gauge",   "version": "" },
+    { "type": "panel", "id": "stat",       "name": "Stat",        "version": "" },
+    { "type": "panel", "id": "table",      "name": "Table",       "version": "" }
+  ],
+  "annotations": { "list": [] },
+  "description": "Autonomous FinOps — sandbox spend by tier/tenant, LLM spend by triager, circuit breaker open-time per fingerprint.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "panels": [
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": { "unit": "short", "color": { "mode": "palette-classic" } },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "id": 1,
+      "title": "Sandbox Spawns by Tier",
+      "description": "Number of sandbox spawn operations per tier (L0–L3) over time.",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(increase(platform_ops_sandbox_spawns_total[1h])) by (tier)",
+          "legendFormat": "Tier {{tier}}"
+        }
+      ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": { "unit": "short" },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "id": 2,
+      "title": "Sandbox Spawns by Tenant (top 10)",
+      "description": "Top tenants by sandbox usage.",
+      "type": "bargauge",
+      "options": { "orientation": "horizontal", "reduceOptions": { "calcs": ["sum"] } },
+      "targets": [
+        {
+          "expr": "topk(10, sum(increase(platform_ops_sandbox_spawns_total[24h])) by (tenant_id))",
+          "legendFormat": "{{tenant_id}}"
+        }
+      ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": { "unit": "currencyUSD" },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "id": 3,
+      "title": "LLM Spend by Actor (Triager Sessions)",
+      "description": "Estimated LLM cost for sessions spawned by system:alfred. Uses token counts from alfred_budget_usage_total.",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate(alfred_budget_usage_total{actor=\"system:alfred\"}[1h])) by (workspace_id) * 0.000003",
+          "legendFormat": "{{workspace_id}}"
+        }
+      ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": { "unit": "currencyUSD" },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 8 },
+      "id": 4,
+      "title": "Total Autonomous LLM Spend (24h)",
+      "type": "stat",
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [
+        {
+          "expr": "sum(increase(alfred_budget_usage_total{actor=\"system:alfred\"}[24h])) * 0.000003",
+          "legendFormat": "USD"
+        }
+      ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": { "unit": "short" },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 8 },
+      "id": 5,
+      "title": "Open Circuit Breakers",
+      "description": "Number of fingerprints with an open circuit breaker right now.",
+      "type": "stat",
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [
+        {
+          "expr": "count(symptom_triager_circuit_breaker_open == 1)",
+          "legendFormat": "open"
+        }
+      ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": { "unit": "s" },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
+      "id": 6,
+      "title": "Circuit Breaker Open-Time per Fingerprint (top 10)",
+      "description": "Total seconds each fingerprint has spent with an open circuit breaker in the last 24h.",
+      "type": "bargauge",
+      "options": { "orientation": "horizontal", "reduceOptions": { "calcs": ["sum"] } },
+      "targets": [
+        {
+          "expr": "topk(10, sum_over_time(symptom_triager_circuit_breaker_open[24h]))",
+          "legendFormat": "{{fingerprint}}"
+        }
+      ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": { "unit": "short" },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "id": 7,
+      "title": "Autonomous Actions by Type",
+      "description": "Platform-ops endpoint invocations by action class.",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate(platform_ops_actions_total[5m])) by (action_class)",
+          "legendFormat": "{{action_class}}"
+        }
+      ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": { "unit": "short" },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+      "id": 8,
+      "title": "OPA Denial Rate",
+      "description": "Actions denied by OPA risk-classifier or self-protection policy.",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate(platform_ops_opa_decisions_total{decision=\"deny\"}[5m]))",
+          "legendFormat": "denied/s"
+        }
+      ]
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 37,
+  "style": "dark",
+  "tags": ["alfred", "autonomous", "finops"],
+  "templating": { "list": [] },
+  "time": { "from": "now-24h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Autonomous FinOps",
+  "uid": "autonomous-finops-v1",
+  "version": 1
+}

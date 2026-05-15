@@ -1,0 +1,30 @@
+loki_url: "http://loki:3100"
+
+rules:
+  - name: connection-refused
+    service: "{{ .service }}"
+    loki_query: '{job="forge"} |= "ECONNREFUSED"'
+    signal: log-pattern
+    severity: high
+    error_class: ECONNREFUSED
+
+  - name: oom-killed
+    service: "{{ .service }}"
+    loki_query: '{job="forge"} |= "OOMKilled"'
+    signal: log-pattern
+    severity: critical
+    error_class: OOMKilled
+
+  - name: panic-detected
+    service: "{{ .service }}"
+    loki_query: '{job="forge"} |= "panic:"'
+    signal: log-pattern
+    severity: critical
+    error_class: Panic
+
+  - name: migration-failed
+    service: "{{ .service }}"
+    loki_query: '{job="forge"} |= "migration failed"'
+    signal: log-pattern
+    severity: high
+    error_class: MigrationFailed

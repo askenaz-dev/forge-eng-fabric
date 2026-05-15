@@ -17,12 +17,12 @@ from alfred.agent_mode.executor import ExecutorDeps as AgentExecutorDeps
 from alfred.agent_mode.router import build_router as build_agent_mode_router
 from alfred.agent_mode.store import AgentModeStore
 from alfred.agent_mode.workflow_client import WorkflowRuntimeClient
-from alfred.auth import Principal, fga_check, verify_jwt
+from alfred.auth import Principal, fga_check, revoke_sub_principal, verify_jwt
 from alfred.autonomy_presets import PresetStore
 from alfred.config import Settings, load_settings
 from alfred.dialogue import generate_followup
 from alfred.gateways import ApprovalsClient, OpenSpecClient, PermissionsClient, PolicyClient, RAGClient
-from alfred.guardrails import Guardrails, GuardrailTrip
+from alfred.guardrails import Guardrails, GuardrailTrip, _INJECTION_PAGE_THRESHOLD
 from alfred.llm import LiteLLMClient
 from alfred.logging import configure_logging, get_logger
 from alfred.loop import LoopDeps, run_intent
@@ -406,6 +406,28 @@ def create_app(
             raise HTTPException(status_code=400, detail="draft not commit-ready")
         return {"openspec": document}
 
+    @app.get("/v1/guardrails/injection-review")
+    async def guardrail_injection_review(
+        request: Request,
+        principal: Annotated[Principal, Depends(_principal)],
+    ) -> dict[str, Any]:
+        """Admin endpoint: recent injection-pattern trips for manual review."""
+        if "platform-admin" not in principal.roles and request.app.state.auth_required:
+            raise HTTPException(status_code=403, detail="platform-admin role required")
+        guardrails_obj: Guardrails = deps.guardrails
+        queue = guardrails_obj.review_queue_snapshot()
+        return {
+            "trips": [t.cloud_event() for t in queue],
+            "trips_last_hour": guardrails_obj.metrics.injection_trips_last_hour(),
+            "page_threshold": _INJECTION_PAGE_THRESHOLD,
+        }
+
+    @app.get("/v1/guardrails/metrics")
+    async def guardrail_metrics() -> Any:
+        """Prometheus text exposition for guardrail counters."""
+        from fastapi.responses import PlainTextResponse
+        return PlainTextResponse(deps.guardrails.metrics.prometheus_text(), media_type="text/plain")
+
     @app.post("/v1/intent/match_dismissed")
     async def intent_match_dismissed(
         request: Request,
@@ -436,11 +458,25 @@ def create_app(
     if getattr(settings, "alfred_agent_mode_enabled", False):
         agent_store = AgentModeStore(owned_store)
         workflow_client = WorkflowRuntimeClient(settings.workflow_runtime_url)
-        budget_probe = AgentBudgetProbe(settings.litellm_url, settings.litellm_key)
+        budget_probe = AgentBudgetProbe(
+            settings.litellm_url,
+            settings.litellm_key,
+            default_budget_usd=settings.alfred_default_llm_budget_usd,
+            budget_window_hours=settings.alfred_budget_window_hours,
+        )
         event_emitter = AgentEventEmitter(LogSink())
         from pathlib import Path
 
         preset_store = PresetStore(root=Path(settings.agent_mode_preset_dir))
+        async def _revoke_sub(session_id: str, workspace_id: str) -> None:
+            await revoke_sub_principal(
+                base_url=settings.openfga_url,
+                store_id=settings.openfga_store,
+                model_id=settings.openfga_model,
+                session_id=session_id,
+                workspace_id=workspace_id,
+            )
+
         agent_deps = AgentExecutorDeps(
             store=owned_store,
             agent_store=agent_store,
@@ -455,6 +491,8 @@ def create_app(
             budget_probe=budget_probe.probe,
             emit_event=event_emitter.emit,
             ai_observer=deps.ai_observer,
+            revoke_sub_principal=_revoke_sub,
+            guardrails=deps.guardrails,
         )
         app.state.agent_mode = {
             "store": agent_store,

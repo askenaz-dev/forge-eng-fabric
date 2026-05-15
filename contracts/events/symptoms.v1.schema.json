@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://forge.local/contracts/events/symptoms.v1.schema.json",
+  "title": "symptoms.v1",
+  "description": "Normalised symptom event published to forge.symptoms.v1 by symptom emitters.",
+  "type": "object",
+  "required": [
+    "symptom_id",
+    "fingerprint",
+    "signal",
+    "service",
+    "severity",
+    "emitter",
+    "observed_at",
+    "evidence_excerpt"
+  ],
+  "properties": {
+    "symptom_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Globally unique ID for this symptom event."
+    },
+    "fingerprint": {
+      "type": "string",
+      "description": "Canonical dedup key: '<dim>:<val>' pairs joined by '|', alphabetically sorted. E.g. 'error_class:ECONNREFUSED|port:8094|service:workflow-registry|signal:probe-failed'.",
+      "pattern": "^([a-z_]+:[^|]+)(\\|[a-z_]+:[^|]+)*$"
+    },
+    "signal": {
+      "type": "string",
+      "enum": [
+        "probe-failed",
+        "probe-recovered",
+        "log-pattern",
+        "metric-threshold",
+        "ci-failure",
+        "webhook"
+      ],
+      "description": "The class of signal that produced this symptom."
+    },
+    "service": {
+      "type": "string",
+      "description": "Name of the platform or app service affected."
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["low", "medium", "high", "critical"],
+      "description": "Severity level assessed by the emitter."
+    },
+    "emitter": {
+      "type": "string",
+      "enum": [
+        "symptom-emitter-logs",
+        "symptom-emitter-probe",
+        "symptom-emitter-metrics",
+        "symptom-emitter-ci",
+        "symptom-emitter-webhook"
+      ],
+      "description": "The emitter service that produced this event."
+    },
+    "tenant_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Optional tenant scope. Absent for platform-wide symptoms."
+    },
+    "workspace_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Optional workspace scope."
+    },
+    "error_class": {
+      "type": "string",
+      "description": "Optional error class used as a fingerprint dimension (e.g. 'ECONNREFUSED', 'OOMKilled')."
+    },
+    "port": {
+      "type": "integer",
+      "description": "Optional port relevant to the symptom."
+    },
+    "route": {
+      "type": "string",
+      "description": "Optional HTTP route relevant to the symptom."
+    },
+    "evidence_excerpt": {
+      "type": "string",
+      "maxLength": 1024,
+      "description": "Sanitised, fenced excerpt of the raw signal (ANSI-stripped, <> escaped, max 1 KB)."
+    },
+    "evidence_ref": {
+      "type": "string",
+      "format": "uri",
+      "description": "URI pointing to the full evidence payload (Loki query URL, S3 key, etc.)."
+    },
+    "observed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "RFC3339 timestamp when the signal was first observed by the emitter."
+    },
+    "schema_version": {
+      "type": "string",
+      "const": "v1",
+      "default": "v1"
+    }
+  },
+  "additionalProperties": false
+}

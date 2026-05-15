@@ -248,6 +248,199 @@ services:
     depends_on: [milvus-etcd, milvus-minio]
     networks: [forge]
 
+  kafka-init:
+    image: apache/kafka:3.7.1
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks: [forge]
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 \
+          --create --if-not-exists \
+          --topic forge.symptoms.v1 \
+          --partitions 12 \
+          --replication-factor 1 \
+          --config retention.ms=86400000 \
+          --config cleanup.policy=delete \
+          --config message.key.format=string
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 \
+          --create --if-not-exists \
+          --topic forge.symptoms.v1.dlq \
+          --partitions 4 \
+          --replication-factor 1 \
+          --config retention.ms=604800000
+        echo "Kafka topics ready."
+
+  symptom-emitter-logs:
+    image: golang:1.22-alpine
+    working_dir: /workspace/services/symptom-emitter-logs
+    command: ["go", "run", "./cmd/server"]
+    volumes:
+      - ../..:/workspace:cached
+    environment:
+      KAFKA_BROKERS: "kafka:9092"
+      SYMPTOMS_TOPIC: "forge.symptoms.v1"
+      RULES_CONFIG: "config/rules.yaml"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "otel-collector:4317"
+      ENV: "local"
+    depends_on:
+      kafka:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+    networks: [forge]
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f symptom-emitter-logs || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  symptom-emitter-probe:
+    image: golang:1.22-alpine
+    working_dir: /workspace/services/symptom-emitter-probe
+    command: ["go", "run", "./cmd/server"]
+    volumes:
+      - ../..:/workspace:cached
+    environment:
+      KAFKA_BROKERS: "kafka:9092"
+      SYMPTOMS_TOPIC: "forge.symptoms.v1"
+      PROBES_CONFIG: "config/probes.yaml"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "otel-collector:4317"
+      ENV: "local"
+    depends_on:
+      kafka:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+    networks: [forge]
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f symptom-emitter-probe || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  symptom-triager:
+    image: golang:1.22-alpine
+    working_dir: /workspace/services/symptom-triager
+    command: ["go", "run", "./cmd/server"]
+    volumes:
+      - ../..:/workspace:cached
+    environment:
+      KAFKA_BROKERS: "kafka:9092"
+      SYMPTOMS_TOPIC: "forge.symptoms.v1"
+      DLQ_TOPIC: "forge.symptoms.v1.dlq"
+      POSTGRES_URL: "postgres://forge:forge@postgres:5432/forge_triager?sslmode=disable"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "otel-collector:4317"
+      ENV: "local"
+      SESSION_SPAWNING_ENABLED: "false"
+    depends_on:
+      kafka:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+    networks: [forge]
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f symptom-triager || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  platform-ops:
+    image: golang:1.22-alpine
+    working_dir: /workspace/services/platform-ops
+    command: ["go", "run", "./cmd/server"]
+    volumes:
+      - ../..:/workspace:cached
+    environment:
+      ADDR: ":8130"
+      POSTGRES_URL: "postgres://forge:forge@postgres:5432/forge?sslmode=disable"
+      POLICY_DIR: "/workspace/policies/alfred"
+      ALFRED_URL: "http://host.docker.internal:8090"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "otel-collector:4317"
+      ENV: "local"
+    ports: ["8130:8130"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks: [forge]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8130/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  symptom-emitter-metrics:
+    image: golang:1.22-alpine
+    working_dir: /workspace/services/symptom-emitter-metrics
+    command: ["go", "run", "./cmd/server"]
+    volumes:
+      - ../..:/workspace:cached
+    environment:
+      KAFKA_BROKERS: "kafka:9092"
+      PROMETHEUS_URL: "http://prometheus:9090"
+      CONFIG_PATH: "config/thresholds.yaml"
+    depends_on:
+      kafka:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+    networks: [forge]
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f symptom-emitter-metrics || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  symptom-emitter-webhook:
+    image: golang:1.22-alpine
+    working_dir: /workspace/services/symptom-emitter-webhook
+    command: ["go", "run", "./cmd/server"]
+    volumes:
+      - ../..:/workspace:cached
+    environment:
+      ADDR: ":9095"
+      KAFKA_BROKERS: "kafka:9092"
+    ports: ["9095:9095"]
+    depends_on:
+      kafka:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+    networks: [forge]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9095/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  symptom-emitter-ci:
+    image: golang:1.22-alpine
+    working_dir: /workspace/services/symptom-emitter-ci
+    command: ["go", "run", "./cmd/server"]
+    volumes:
+      - ../..:/workspace:cached
+    environment:
+      ADDR: ":9092"
+      KAFKA_BROKERS: "kafka:9092"
+      GITHUB_WEBHOOK_SECRET: "${GITHUB_WEBHOOK_SECRET:-}"
+    depends_on:
+      kafka:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+    networks: [forge]
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f symptom-emitter-ci || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   runtime-registry:
     image: golang:1.22-alpine
     working_dir: /workspace/services/runtime-registry

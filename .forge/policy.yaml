@@ -1,0 +1,18 @@
+# .forge/policy.yaml — repo-level Alfred policy overrides.
+#
+# Values here are merged through the policy lattice:
+#   repo_overrides < workspace_overrides < tenant_overrides
+#
+# Overrides can only NARROW (make stricter) — they cannot relax the global policy.
+# Attempting to set `autonomy: "autonomous"` when the global policy says
+# "requires_approval" has no effect (lattice check in CI will warn).
+
+alfred:
+  # Set to false to prevent Alfred from autonomously fixing anything in this repo.
+  # Alfred can still diagnose and propose, but all mutating actions require approval.
+  auto_fix.enabled: true
+
+  # Override the minimum autonomy level for this repo.
+  # Valid: "requires_approval" | "requires_dual_control"
+  # Omit to inherit from workspace/tenant policy.
+  # autonomy: "requires_approval"

@@ -18,10 +18,17 @@ jobs:
           - services/audit
           - services/scaffolder
           - services/app-onboarding
+          - services/platform-ops
           - services/policy-engine
           - services/sdlc-orchestrator
           - services/sdlc-iac
           - services/healing-engine
+          - services/symptom-emitter-logs
+          - services/symptom-emitter-probe
+          - services/symptom-emitter-ci
+          - services/symptom-emitter-metrics
+          - services/symptom-emitter-webhook
+          - services/symptom-triager
           - pkg/artifact-store-adapter
           - pkg/workflow
     steps:
@@ -96,6 +103,26 @@ jobs:
           for f in contracts/events/*.json; do python -m json.tool "$f" >/dev/null; done
       - name: Check OpenSpec change status
         run: npx -y @fission-ai/openspec status --change phase-0-foundations --json
+
+  opa-policy:
+    name: OPA alfred policy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install OPA
+        run: |
+          curl -sL https://openpolicyagent.org/downloads/latest/opa_linux_amd64 -o /usr/local/bin/opa
+          chmod +x /usr/local/bin/opa
+      - name: OPA check (compile)
+        run: opa check policies/alfred --strict
+      - name: OPA test
+        run: opa test policies/alfred -v
+      - name: Lattice check (override narrowing)
+        run: bash tools/policy/lattice-check.sh policies/alfred
+      - name: Build alfred bundle
+        run: bash tools/policy/build-alfred-bundle.sh
+      - name: Record bundle hash
+        run: cat .bundle-hash
 
   reference-flow-smoke:
     name: reference flow smoke

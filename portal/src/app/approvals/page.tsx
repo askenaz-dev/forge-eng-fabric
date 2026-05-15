@@ -13,6 +13,8 @@ type Approval = {
   openspec_id?: string;
   rationale: string;
   required_approvers: string[];
+  approval_mode?: "any" | "dual";
+  approvals_given?: string[];
   criticality: string;
   correlation_id: string;
   status: string;
@@ -20,6 +22,8 @@ type Approval = {
   expires_at: string;
   decided_by?: string;
   decision_comment?: string;
+  triggered_by_symptom_id?: string;
+  triggered_by_session_id?: string;
   workflow_context?: {
     workflow_id?: string;
     workflow_version?: string;
@@ -157,6 +161,9 @@ export default async function ApprovalsPage({ searchParams }: { searchParams: Se
                 </span>
               </div>
               {approval.workflow_context && <WorkflowContext context={approval.workflow_context} />}
+              {(approval.triggered_by_symptom_id || approval.approval_mode === "dual") && (
+                <AutonomousContext approval={approval} />
+              )}
               {approval.status === "pending" && (
                 <form action={decideApproval} style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   <input type="hidden" name="approval_id" value={approval.id} />
@@ -194,6 +201,85 @@ function required(formData: FormData, key: string) {
   const value = String(formData.get(key) ?? "").trim();
   if (!value) throw new Error(`${key} is required`);
   return value;
+}
+
+function AutonomousContext({ approval }: { approval: Approval }) {
+  const isDual = approval.approval_mode === "dual";
+  const given = approval.approvals_given ?? [];
+  const required = approval.required_approvers ?? [];
+  const missing = required.filter((r) => !given.includes(r));
+
+  return (
+    <div
+      style={{
+        background: "color-mix(in oklch, var(--warn), transparent 92%)",
+        border: "1px solid color-mix(in oklch, var(--warn), transparent 70%)",
+        borderRadius: "var(--r-3)",
+        padding: "12px 14px",
+        fontSize: 13,
+        display: "grid",
+        gap: 6,
+      }}
+    >
+      <p style={{ margin: 0, fontWeight: 500 }}>
+        Autonomous action context
+        {isDual && (
+          <span
+            style={{
+              marginLeft: 8,
+              fontSize: 11,
+              fontFamily: "var(--f-mono)",
+              background: "var(--warn)",
+              color: "#fff",
+              borderRadius: 4,
+              padding: "1px 6px",
+            }}
+          >
+            dual-approval
+          </span>
+        )}
+      </p>
+      {approval.triggered_by_symptom_id && (
+        <p style={{ margin: 0, fontFamily: "var(--f-mono)", fontSize: 11.5, color: "var(--fg-3)" }}>
+          symptom:{" "}
+          <a
+            href={`/alfred/autonomous-activity?symptom=${approval.triggered_by_symptom_id}`}
+            style={{ color: "var(--thread)" }}
+          >
+            {approval.triggered_by_symptom_id}
+          </a>
+        </p>
+      )}
+      {approval.triggered_by_session_id && (
+        <p style={{ margin: 0, fontFamily: "var(--f-mono)", fontSize: 11.5, color: "var(--fg-3)" }}>
+          session:{" "}
+          <a
+            href={`/alfred/sessions/${approval.triggered_by_session_id}`}
+            style={{ color: "var(--thread)" }}
+          >
+            {approval.triggered_by_session_id}
+          </a>
+        </p>
+      )}
+      {isDual && required.length > 0 && (
+        <div style={{ marginTop: 4 }}>
+          <div className="h-eyebrow" style={{ margin: 0 }}>Approval progress</div>
+          <ul style={{ fontFamily: "var(--f-mono)", fontSize: 11.5, margin: "4px 0", paddingLeft: 18 }}>
+            {required.map((r) => (
+              <li key={r} style={{ color: given.includes(r) ? "var(--ok)" : "var(--fg-3)" }}>
+                {given.includes(r) ? "✓" : "○"} {r}
+              </li>
+            ))}
+          </ul>
+          {missing.length > 0 && (
+            <p style={{ margin: "4px 0 0", color: "var(--fg-3)", fontSize: 11 }}>
+              Awaiting: {missing.join(", ")}
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 function WorkflowContext({ context }: { context: NonNullable<Approval["workflow_context"]> }) {

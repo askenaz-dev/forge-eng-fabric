@@ -84,3 +84,78 @@ async def fga_check(
         if r.status_code != 200:
             return False
         return bool(r.json().get("allowed"))
+
+
+async def _fga_write(
+    *,
+    base_url: str,
+    store_id: str,
+    model_id: str,
+    writes: list[dict[str, Any]] | None = None,
+    deletes: list[dict[str, Any]] | None = None,
+) -> None:
+    if not store_id:
+        return
+    payload: dict[str, Any] = {}
+    if model_id:
+        payload["authorization_model_id"] = model_id
+    if writes:
+        payload["writes"] = {"tuple_keys": writes}
+    if deletes:
+        payload["deletes"] = {"tuple_keys": deletes}
+    async with httpx.AsyncClient(timeout=5.0) as client:
+        await client.post(f"{base_url.rstrip('/')}/stores/{store_id}/write", json=payload)
+
+
+async def mint_sub_principal(
+    *,
+    base_url: str,
+    store_id: str,
+    model_id: str,
+    session_id: str,
+    workspace_id: str,
+) -> str:
+    """Mint a sub-principal `system:alfred:session:<uuid>` scoped to platform-readonly.
+
+    Returns the sub-principal name. No-ops when FGA is not provisioned (empty store_id).
+    The intersection with system:alfred's capabilities is enforced by the FGA model:
+    a session sub-principal can only exercise relations its parent already holds.
+    """
+    sub = f"system:alfred:session:{session_id}"
+    await _fga_write(
+        base_url=base_url,
+        store_id=store_id,
+        model_id=model_id,
+        writes=[
+            {
+                "user": f"user:{sub}",
+                "relation": "platform-readonly",
+                "object": f"workspace:{workspace_id}",
+            }
+        ],
+    )
+    return sub
+
+
+async def revoke_sub_principal(
+    *,
+    base_url: str,
+    store_id: str,
+    model_id: str,
+    session_id: str,
+    workspace_id: str,
+) -> None:
+    """Revoke all FGA tuples for a session sub-principal."""
+    sub = f"system:alfred:session:{session_id}"
+    await _fga_write(
+        base_url=base_url,
+        store_id=store_id,
+        model_id=model_id,
+        deletes=[
+            {
+                "user": f"user:{sub}",
+                "relation": "platform-readonly",
+                "object": f"workspace:{workspace_id}",
+            }
+        ],
+    )

@@ -76,6 +76,16 @@ class Settings(BaseSettings):
     # Flip ALFRED_CONSOLE_V2_ENABLED=true to enable the Friendly/Advanced views.
     alfred_console_v2_enabled: bool = Field(default=False, alias="ALFRED_CONSOLE_V2_ENABLED")
 
+    # Per-tenant LLM budget caps.
+    # ALFRED_DEFAULT_LLM_BUDGET_USD — default USD budget per workspace per period.
+    #   Override per-tenant via LiteLLM's /budget/new endpoint using
+    #   workspace_id as the team_id; this config is the fallback when no
+    #   tenant-specific budget row exists in LiteLLM.
+    # ALFRED_BUDGET_WINDOW_HOURS — rolling window for the budget evaluation.
+    #   Set to 24 for daily budgets, 168 for weekly.
+    alfred_default_llm_budget_usd: float = Field(default=10.0, alias="ALFRED_DEFAULT_LLM_BUDGET_USD")
+    alfred_budget_window_hours: int = Field(default=24, alias="ALFRED_BUDGET_WINDOW_HOURS")
+
     # Spec dedup threshold. Configurable per tenant; hard floor enforced at write.
     spec_match_threshold_default: float = Field(default=0.80, alias="SPEC_MATCH_THRESHOLD_DEFAULT")
     spec_match_threshold_floor: float = Field(default=0.65, alias="SPEC_MATCH_THRESHOLD_FLOOR")

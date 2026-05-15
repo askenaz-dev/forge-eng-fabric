@@ -24,6 +24,7 @@ use (
 	./services/incident-detection
 	./services/marketplace
 	./services/mcp-gateway
+	./services/platform-ops
 	./services/policy-engine
 	./services/registry
 	./services/runtime-registry

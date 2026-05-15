@@ -82,3 +82,31 @@ scrape_configs:
   - job_name: finops-advisor
     static_configs:
       - targets: ["host.docker.internal:8107"]
+
+  - job_name: symptom-emitter-logs
+    static_configs:
+      - targets: ["symptom-emitter-logs:9090"]
+
+  - job_name: symptom-emitter-probe
+    static_configs:
+      - targets: ["symptom-emitter-probe:9090"]
+
+  - job_name: symptom-triager
+    static_configs:
+      - targets: ["symptom-triager:9090"]
+
+  - job_name: symptom-emitter-webhook
+    static_configs:
+      - targets: ["symptom-emitter-webhook:9095"]
+
+  - job_name: symptom-emitter-metrics
+    static_configs:
+      - targets: ["symptom-emitter-metrics:9090"]
+
+  - job_name: symptom-emitter-ci
+    static_configs:
+      - targets: ["symptom-emitter-ci:9092"]
+
+  - job_name: platform-ops
+    static_configs:
+      - targets: ["host.docker.internal:8130"]

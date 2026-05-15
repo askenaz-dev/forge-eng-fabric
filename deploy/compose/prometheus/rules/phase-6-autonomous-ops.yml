@@ -80,6 +80,44 @@ groups:
           summary: Critical incident count spiking
           description: More than 5 critical incidents in the last hour — escalate to incident commander.
 
+      # Alfred autonomous-ops alerts
+
+      - alert: AlfredBundleHashDangling
+        # Fires when the platform-ops service reports a policy_bundle_hash that
+        # does not match the hash of the currently loaded bundle. Indicates
+        # bundle GC drift — the hash on audit rows cannot be re-validated.
+        expr: |
+          platform_ops_policy_bundle_hash_mismatch_total > 0
+        for: 5m
+        labels:
+          severity: warning
+          phase: phase-6
+        annotations:
+          summary: Dangling policy bundle hash in audit rows
+          description: One or more audit rows carry a policy_bundle_hash that does not resolve in the bundle registry. This indicates bundle GC drift.
+
+      - alert: AlfredInjectionRateHigh
+        # forge_guardrail_injection_trips_last_hour is exported by Alfred's
+        # /v1/guardrails/metrics endpoint (scraped as alfred job in prometheus.yml).
+        expr: forge_guardrail_injection_trips_last_hour > 10
+        for: 5m
+        labels:
+          severity: critical
+          phase: phase-6
+        annotations:
+          summary: Alfred injection-pattern trip rate > 10/hr
+          description: More than 10 prompt-injection trips detected in the last hour — page security.
+
+      - alert: AlfredCircuitBreakerOpen
+        expr: count(symptom_triager_circuit_breaker_open == 1) > 5
+        for: 15m
+        labels:
+          severity: warning
+          phase: phase-6
+        annotations:
+          summary: More than 5 circuit breakers open simultaneously
+          description: Multiple fingerprints have open circuit breakers — check for systemic platform issues.
+
       - alert: EvolutionInboxStalled
         expr: |
           sum(evolution_proposal_status{status="inbox"})

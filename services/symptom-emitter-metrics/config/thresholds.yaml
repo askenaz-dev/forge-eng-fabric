@@ -1,0 +1,42 @@
+# Prometheus threshold rules for symptom-emitter-metrics.
+# Each rule queries Prometheus and emits a symptom event when the threshold is crossed.
+# The emitter debounces: only emits on state change (crossing threshold, not every poll).
+
+cadence: 60s
+debounce: 120s
+
+rules:
+  - name: error_rate_high
+    service: api
+    signal: error-rate-threshold
+    severity: warning
+    promql: 'rate(http_requests_total{status=~"5..",service="api"}[5m]) > 0.01'
+    description: "API error rate > 1% over 5 minutes"
+
+  - name: error_rate_critical
+    service: api
+    signal: error-rate-threshold
+    severity: critical
+    promql: 'rate(http_requests_total{status=~"5..",service="api"}[5m]) > 0.05'
+    description: "API error rate > 5% over 5 minutes"
+
+  - name: latency_p99_high
+    service: alfred
+    signal: latency-threshold
+    severity: warning
+    promql: 'histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service="alfred"}[5m])) > 2'
+    description: "Alfred p99 latency > 2s"
+
+  - name: kafka_consumer_lag
+    service: symptom-triager
+    signal: kafka-consumer-lag
+    severity: warning
+    promql: 'kafka_consumer_group_lag{group="forge-symptom-triager"} > 1000'
+    description: "Symptom triager consumer lag > 1000 messages"
+
+  - name: oom_killed
+    service: platform-ops
+    signal: oom-killed
+    severity: critical
+    promql: 'kube_pod_container_status_last_terminated_reason{reason="OOMKilled",pod=~"platform-ops.*"} == 1'
+    description: "platform-ops pod OOMKilled"

@@ -9,10 +9,11 @@ preset enforcement layered on top.
 
 from __future__ import annotations
 
+import asyncio
 import time
 import uuid
 from collections.abc import Awaitable, Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
@@ -26,6 +27,7 @@ from alfred.agent_mode.models import (
 from alfred.agent_mode.planner import replan
 from alfred.agent_mode.store import AgentModeStore
 from alfred.gateways import ApprovalsClient, OpenSpecClient, PermissionsClient, PolicyClient, RAGClient
+from alfred.guardrails import Guardrails
 from alfred.llm import LiteLLMClient
 from alfred.logging import get_logger
 from alfred.loop import _action_class_for
@@ -47,6 +49,11 @@ BudgetProbe = Callable[[uuid.UUID], Awaitable[dict[str, Any]]]
 EventEmitter = Callable[[str, dict[str, Any]], Awaitable[None]]
 """Emit a CloudEvent with (event_type, payload)."""
 
+SubPrincipalRevoker = Callable[[str, str], Awaitable[None]]
+"""Revoke a session sub-principal. Args: session_id, workspace_id."""
+
+_SUBPRINCIPAL_REVOKE_DELAY_SECS = 60
+
 
 @dataclass
 class ExecutorDeps:
@@ -63,6 +70,8 @@ class ExecutorDeps:
     budget_probe: BudgetProbe | None
     emit_event: EventEmitter | None
     ai_observer: AIObserver | None = None
+    revoke_sub_principal: SubPrincipalRevoker | None = None
+    guardrails: Guardrails | None = None
 
 
 class StepOutcome(BaseException):
@@ -153,6 +162,7 @@ async def execute_session(
                 completed_at=datetime.utcnow(),
             )
             await _emit(deps, session, "alfred.agent_mode.aborted.v1", {"reason": abort.reason, **abort.payload})
+            _schedule_revoke(deps, session)
             return (await deps.agent_store.get_session(session.id)) or session
         except Exception as exc:
             # Recoverable: replan and continue
@@ -196,6 +206,7 @@ async def execute_session(
         session.id, status="completed", completed_at=datetime.utcnow()
     )
     await _emit(deps, session, "alfred.agent_mode.completed.v1", {})
+    _schedule_revoke(deps, session)
     return (await deps.agent_store.get_session(session.id)) or session
 
 
@@ -234,6 +245,7 @@ async def cancel(deps: ExecutorDeps, session_id: uuid.UUID, reason: str) -> Agen
     )
     session = (await deps.agent_store.get_session(session_id)) or session
     await _emit(deps, session, "alfred.agent_mode.aborted.v1", {"reason": reason})
+    _schedule_revoke(deps, session)
     return session
 
 
@@ -253,6 +265,57 @@ async def _dispatch_step(
     if kind == "final":
         step.outcome = {"summary": raw.get("summary", "")}
         return
+
+    # Self-protection guardrail (D10): block any tool call targeting a
+    # protected service before reaching the policy gate.
+    if deps.guardrails is not None and step.tool_id:
+        target = step.params.get("service") or step.params.get("target") or step.tool_id
+        trip = deps.guardrails.check_self_protection(str(target), source=f"session:{session.id}")
+        if trip is not None:
+            await _emit(
+                deps, session, "guardrail.trip.v1",
+                {
+                    "step_idx": step.idx,
+                    "tool_id": step.tool_id,
+                    "severity": trip.severity,
+                    "pattern": trip.pattern,
+                    "detail": trip.detail,
+                },
+            )
+            raise AbortSession(
+                reason="self_protection_denied",
+                payload={"tool_id": step.tool_id, "target": target, "detail": trip.detail},
+            )
+
+    # Per-step expected_outcome enforcement (D8, iter 3+):
+    # Non-human-triggered sessions MUST declare expected_outcome on mutating steps.
+    is_non_human = getattr(session, "trigger_source", "human") != "human"
+    is_mutating_kind = kind in ("tool", "workflow")
+    if is_non_human and is_mutating_kind:
+        expected_outcome = raw.get("expected_outcome") or params.get("expected_outcome")
+        if not expected_outcome:
+            log.warning(
+                "step missing expected_outcome for non-human session",
+                session_id=str(session.id),
+                step_idx=step.idx,
+                tool_id=step.tool_id,
+            )
+            if deps.emit_event is not None:
+                await deps.emit_event(
+                    "alfred.agent_mode.step_missing_probe.v1",
+                    {
+                        "session_id": str(session.id),
+                        "step_idx": step.idx,
+                        "tool_id": step.tool_id or "",
+                        "trigger_source": session.trigger_source,
+                    },
+                )
+            # Pause for HITL to provide the expected_outcome.
+            raise PauseFor("missing_expected_outcome", {
+                "step_idx": step.idx,
+                "tool_id": step.tool_id,
+                "message": "Non-human session step must declare expected_outcome. Pausing for human review.",
+            })
 
     # Budget probe before any LLM-bound dispatch.
     if deps.budget_probe is not None and kind in ("tool", "agent", "workflow"):
@@ -430,6 +493,28 @@ async def _record_decision(
     except Exception as exc:
         log.warning("decision_persist_failed", error=str(exc))
     return rec
+
+
+def _schedule_revoke(deps: ExecutorDeps, session: AgentModeSession) -> None:
+    """Schedule sub-principal revocation after the mandatory delay.
+
+    Only fires for autonomous sessions (actor=system:alfred). The 60s window
+    gives in-flight audit writes and downstream consumers time to read the
+    sub-principal before it disappears from FGA.
+    """
+    if deps.revoke_sub_principal is None:
+        return
+    if getattr(session, "actor", "") != "system:alfred":
+        return
+
+    async def _revoke_after_delay() -> None:
+        await asyncio.sleep(_SUBPRINCIPAL_REVOKE_DELAY_SECS)
+        try:
+            await deps.revoke_sub_principal(str(session.id), str(session.workspace_id))  # type: ignore[misc]
+        except Exception as exc:
+            log.warning("sub_principal_revoke_failed", session_id=str(session.id), error=str(exc))
+
+    asyncio.create_task(_revoke_after_delay())
 
 
 async def _emit(
