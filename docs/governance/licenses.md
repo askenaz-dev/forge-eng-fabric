@@ -2,8 +2,8 @@
 title: Third-Party License Inventory
 owner: platform-architecture
 reviewers: [security, legal]
-last-reviewed: 2026-05-09
-next-review: 2026-11-09
+last-reviewed: 2026-05-16
+next-review: 2026-11-16
 ---
 
 # Third-Party License Inventory
@@ -14,7 +14,7 @@ This document tracks every third-party component embedded in or distributed with
 
 | Component | License | Version | Where used | Notes |
 |---|---|---|---|---|
-| Flowise | LGPL-2.1-or-later | TBD (pinned in `portal/package.json` when integrated) | Visual workflow editor | Modifications to Flowise itself MUST be contributed upstream or made available; our adapter (`portal/src/lib/flowise-adapter/`) is host code, not a Flowise modification |
+| @xyflow/react | MIT | 12.3.5 (pinned in `portal/package.json`) | AI-Flow visual editor canvas (`portal/src/components/flow/`) | None. Adopted by [ADR-0002](./adrs/0002-canvas-react-flow.md), supersedes Flowise entry. |
 | Next.js | MIT | per `portal/package.json` | Portal | None |
 | FastAPI | MIT | per `services/*/pyproject.toml` | Python services | None |
 | OpenFGA | Apache-2.0 | per compose | Authorization | None |

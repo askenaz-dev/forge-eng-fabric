@@ -33,8 +33,20 @@ func TestCreate_HappyPath(t *testing.T) {
 	if app.Lifecycle != LifecycleActive {
 		t.Fatalf("expected lifecycle active, got %s", app.Lifecycle)
 	}
-	if got := events.Events(); len(got) != 1 || got[0].Type != EventAppCreated {
-		t.Fatalf("expected one app.created.v1, got %+v", got)
+	// alfred-design-system-picker (D3): when the caller omits
+	// `design_system_chosen_explicitly`, the service emits the standard
+	// `app.created.v1` AND the sibling `app.design_system.user_skipped.v1`
+	// so observability can measure catalog discoverability.
+	got := events.Events()
+	if len(got) != 2 {
+		t.Fatalf("expected app.created.v1 + app.design_system.user_skipped.v1, got %+v", got)
+	}
+	if got[0].Type != EventAppCreated || got[1].Type != EventDesignSystemUserSkipped {
+		t.Fatalf("wrong event order/types: %+v", got)
+	}
+	if got[0].CorrelationID != got[1].CorrelationID {
+		t.Fatalf("create and skip events MUST share correlation_id; got %s vs %s",
+			got[0].CorrelationID, got[1].CorrelationID)
 	}
 	if got := audit.Records(); len(got) != 1 || got[0].Action != "created" {
 		t.Fatalf("expected one created audit, got %+v", got)
@@ -255,4 +267,163 @@ func hasEvent(events []EventType, want EventType) bool {
 		}
 	}
 	return false
+}
+
+// --- alfred-design-system-picker (D3, D4) atomic create tests ---
+
+// approvedResolver returns a static StaticDesignSystemResolver pre-populated
+// with `ds-forge-default`, `desing-system-1`, `desing-system-3` as approved
+// tenant_global entries plus one tenant-private entry for tenant-other.
+func approvedResolver() StaticDesignSystemResolver {
+	return StaticDesignSystemResolver{
+		DesignSystemDefaultRef: {AssetID: "desing-system-1", Version: "1.0.0", LifecycleState: "approved", Visibility: "tenant_global", BuiltInTemplate: true},
+		"desing-system-1":      {AssetID: "desing-system-1", Version: "1.0.0", LifecycleState: "approved", Visibility: "tenant_global", BuiltInTemplate: true},
+		"desing-system-3":      {AssetID: "desing-system-3", Version: "2.0.0", LifecycleState: "approved", Visibility: "tenant_global", BuiltInTemplate: true},
+		"ds-proposed":          {AssetID: "ds-proposed", Version: "0.1.0", LifecycleState: "proposed", Visibility: "tenant_global"},
+		"ds-other-tenant":      {AssetID: "ds-other-tenant", Version: "1.0.0", LifecycleState: "approved", Visibility: "tenant", TenantID: "tenant-other"},
+	}
+}
+
+func TestCreate_AtomicWithExplicitDesignSystem(t *testing.T) {
+	svc, _, events, audit := testSetup(t)
+	svc.DesignSystem = approvedResolver()
+	caller := Caller{Principal: "alice", CorrelationID: "corr-explicit"}
+	app, err := svc.Create(context.Background(), caller, "ws-1", CreateInput{
+		Slug:                         "hr-portal",
+		Name:                         "HR Portal",
+		Owners:                       []string{"alice"},
+		DesignSystemRef:              "desing-system-3@2.0.0",
+		DesignSystemChosenExplicitly: true,
+	})
+	if err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	if app.DesignSystemRef != "desing-system-3@2.0.0" {
+		t.Fatalf("expected explicit ref persisted, got %s", app.DesignSystemRef)
+	}
+	got := events.Events()
+	if len(got) != 1 {
+		t.Fatalf("expected single app.created.v1 (no skip), got %d events: %+v", len(got), got)
+	}
+	if got[0].Type != EventAppCreated {
+		t.Fatalf("expected app.created.v1, got %s", got[0].Type)
+	}
+	if got[0].Extra["design_system_chosen_explicitly"] != true {
+		t.Fatalf("create event MUST carry chosen_explicitly=true, got %+v", got[0].Extra)
+	}
+	if got[0].Extra["design_system_ref"] != "desing-system-3@2.0.0" {
+		t.Fatalf("create event MUST carry resolved ref, got %+v", got[0].Extra)
+	}
+	if rec := audit.Records(); len(rec) != 1 || rec[0].Evidence["design_system_chosen_explicitly"] != true {
+		t.Fatalf("audit MUST carry chosen_explicitly=true evidence, got %+v", rec)
+	}
+}
+
+func TestCreate_AtomicOmittingDesignSystemEmitsSkip(t *testing.T) {
+	svc, _, events, _ := testSetup(t)
+	svc.DesignSystem = approvedResolver()
+	caller := Caller{Principal: "alice", CorrelationID: "corr-skip"}
+	app, err := svc.Create(context.Background(), caller, "ws-1", CreateInput{
+		Slug:   "hr-portal",
+		Name:   "HR Portal",
+		Owners: []string{"alice"},
+		// no DesignSystemRef, no DesignSystemChosenExplicitly
+	})
+	if err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	if app.DesignSystemRef != DesignSystemDefaultRef {
+		t.Fatalf("expected alias-resolved default, got %s", app.DesignSystemRef)
+	}
+	got := events.Events()
+	if len(got) != 2 {
+		t.Fatalf("expected app.created.v1 + app.design_system.user_skipped.v1, got %d: %+v", len(got), got)
+	}
+	if got[1].Type != EventDesignSystemUserSkipped {
+		t.Fatalf("expected second event to be user_skipped, got %s", got[1].Type)
+	}
+	if got[1].CorrelationID != "corr-skip" {
+		t.Fatalf("skip event MUST share correlation_id, got %s", got[1].CorrelationID)
+	}
+	if got[1].Extra["resolved_ref"] != DesignSystemDefaultRef {
+		t.Fatalf("skip event MUST carry resolved_ref, got %+v", got[1].Extra)
+	}
+}
+
+func TestCreate_ChosenExplicitlyFalseWithExplicitRefStillEmitsSkip(t *testing.T) {
+	// D3 edge case: explicit false wins. Ref is persisted, skip event fires.
+	svc, _, events, _ := testSetup(t)
+	svc.DesignSystem = approvedResolver()
+	app, err := svc.Create(context.Background(), Caller{Principal: "alice"}, "ws-1", CreateInput{
+		Slug:                         "hr-portal",
+		Name:                         "HR Portal",
+		Owners:                       []string{"alice"},
+		DesignSystemRef:              "desing-system-3@2.0.0",
+		DesignSystemChosenExplicitly: false,
+	})
+	if err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	if app.DesignSystemRef != "desing-system-3@2.0.0" {
+		t.Fatalf("explicit ref MUST persist even when chosen_explicitly=false, got %s", app.DesignSystemRef)
+	}
+	got := events.Events()
+	if len(got) != 2 || got[1].Type != EventDesignSystemUserSkipped {
+		t.Fatalf("expected skip event despite explicit ref, got %+v", got)
+	}
+	if got[1].Extra["resolved_ref"] != "desing-system-3@2.0.0" {
+		t.Fatalf("skip event resolved_ref MUST be the explicit ref, got %+v", got[1].Extra)
+	}
+}
+
+func TestCreate_RejectsProposedDesignSystem(t *testing.T) {
+	svc, _, events, _ := testSetup(t)
+	svc.DesignSystem = approvedResolver()
+	_, err := svc.Create(context.Background(), Caller{Principal: "alice"}, "ws-1", CreateInput{
+		Slug: "hr-portal", Name: "n", Owners: []string{"alice"},
+		DesignSystemRef:              "ds-proposed",
+		DesignSystemChosenExplicitly: true,
+	})
+	if !errors.Is(err, ErrDesignSystemNotApproved) {
+		t.Fatalf("expected ErrDesignSystemNotApproved, got %v", err)
+	}
+	if len(events.Events()) != 0 {
+		t.Fatalf("expected no events on rejected create, got %+v", events.Events())
+	}
+}
+
+func TestCreate_RejectsInvisibleDesignSystem(t *testing.T) {
+	svc, _, events, _ := testSetup(t)
+	svc.DesignSystem = approvedResolver()
+	_, err := svc.Create(context.Background(), Caller{Principal: "alice"}, "ws-1", CreateInput{
+		Slug: "hr-portal", Name: "n", Owners: []string{"alice"},
+		DesignSystemRef:              "ds-other-tenant",
+		DesignSystemChosenExplicitly: true,
+	})
+	if !errors.Is(err, ErrDesignSystemNotVisible) {
+		t.Fatalf("expected ErrDesignSystemNotVisible, got %v", err)
+	}
+	if len(events.Events()) != 0 {
+		t.Fatalf("expected no events on rejected create, got %+v", events.Events())
+	}
+}
+
+func TestCreate_AuditEvidenceMatchesEvent(t *testing.T) {
+	svc, _, events, audit := testSetup(t)
+	svc.DesignSystem = approvedResolver()
+	caller := Caller{Principal: "alice", CorrelationID: "corr-match"}
+	_, err := svc.Create(context.Background(), caller, "ws-1", CreateInput{
+		Slug: "hr-portal", Name: "n", Owners: []string{"alice"},
+		DesignSystemRef:              "desing-system-3@2.0.0",
+		DesignSystemChosenExplicitly: true,
+	})
+	if err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	ev := events.Events()[0]
+	rec := audit.Records()[0]
+	if rec.Evidence["design_system_chosen_explicitly"] != ev.Extra["design_system_chosen_explicitly"] {
+		t.Fatalf("audit evidence MUST match create event extra, audit=%v event=%v",
+			rec.Evidence, ev.Extra)
+	}
 }

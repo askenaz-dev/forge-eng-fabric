@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from alfred.llm import LiteLLMClient
+from alfred.llm import LiteLLMClient, RequestContext
 
 MAX_DIALOGUE_TURNS = 12
 
@@ -75,15 +75,20 @@ async def generate_followup(
     last_answer: str,
     correlation_id: str | None,
     llm: LiteLLMClient | None,
+    context: RequestContext | None = None,
 ) -> tuple[str | None, str | None]:
     """Wrapper around `next_question` that calls LiteLLM only when the cached
     template path is exhausted. The LLM path is intentionally a thin override:
     if the gateway is unavailable, we return the cached question.
 
+    `context` carries the tenant/workspace/correlation/classification headers
+    required by alfred-litellm-header-injection. When omitted, the LLM path
+    is skipped (templated fallback) — same behavior as when `llm is None`.
+
     Returns (section, question).
     """
     section, question = next_question(completeness, turn_count)
-    if question is not None or llm is None:
+    if question is not None or llm is None or context is None:
         return section, question
 
     # Cached templates exhausted — ask the LLM for a closing/clarifying question.
@@ -103,6 +108,7 @@ async def generate_followup(
                 },
                 {"role": "user", "content": last_answer or ""},
             ],
+            context=context,
             metadata={"correlation_id": correlation_id, "purpose": "wizard_followup"},
             max_tokens=120,
         )

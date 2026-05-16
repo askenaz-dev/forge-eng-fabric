@@ -145,6 +145,12 @@ type CreateInput struct {
 	Description         string   `json:"description"`
 	Owners              []string `json:"owners"`
 	DesignSystemRef     string   `json:"design_system_ref,omitempty"`
+	// alfred-design-system-picker (D3): true when the user explicitly picked
+	// a Design System in the picker; false (or omitted) when the user skipped
+	// or the caller is not the picker. Skip semantics: a `false` value triggers
+	// `app.design_system.user_skipped.v1` alongside `app.created.v1` so we can
+	// measure catalog discoverability separately from "picked the default".
+	DesignSystemChosenExplicitly bool     `json:"design_system_chosen_explicitly,omitempty"`
 	DefaultEnvironments []string `json:"default_environments,omitempty"`
 	RepoLinks           []string `json:"repo_links,omitempty"`
 	RuntimeLinks        []string `json:"runtime_links,omitempty"`

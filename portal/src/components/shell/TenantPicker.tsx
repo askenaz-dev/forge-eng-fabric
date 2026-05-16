@@ -4,6 +4,7 @@ import * as Popover from "@radix-ui/react-popover";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Check, Diamond, Globe } from "../icons";
 import { useLang } from "../providers/LangProvider";
 import { useToast } from "../providers/ToastProvider";
@@ -12,15 +13,23 @@ import { cx } from "../primitives/cx";
 type Tenant = { id: string; name: string };
 type Workspace = { id: string; name: string; tenant_id: string };
 
-export function TenantPicker({ activeSlug }: { activeSlug: string }) {
+export function TenantPicker({
+  activeSlug,
+  activeName,
+}: {
+  activeSlug: string;
+  activeName?: string;
+}) {
   const { t } = useLang();
   const toast = useToast();
   const router = useRouter();
+  const { update } = useSession();
   const [open, setOpen] = useState(false);
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [activeTenant, setActiveTenant] = useState<string>(activeSlug);
   const [loading, setLoading] = useState(false);
+  const [picking, setPicking] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -56,15 +65,21 @@ export function TenantPicker({ activeSlug }: { activeSlug: string }) {
   }, [open]);
 
   async function pickWorkspace(workspace: Workspace) {
-    await fetch("/api/workspace/active", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ tenant: workspace.tenant_id, workspace: workspace.id }),
-    }).catch(() => undefined);
-    setActiveTenant(workspace.tenant_id);
-    toast.success(t("toast_workspace"));
-    setOpen(false);
-    router.refresh();
+    setPicking(workspace.id);
+    try {
+      await update({ tenantSlug: workspace.tenant_id, workspaceSlug: workspace.id });
+      await fetch("/api/workspace/active", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ tenant: workspace.tenant_id, workspace: workspace.id }),
+      }).catch(() => undefined);
+      setActiveTenant(workspace.tenant_id);
+      toast.success(t("toast_workspace"));
+      setOpen(false);
+      router.refresh();
+    } finally {
+      setPicking(null);
+    }
   }
 
   // Order: active tenant first, then the rest alphabetically.
@@ -74,12 +89,16 @@ export function TenantPicker({ activeSlug }: { activeSlug: string }) {
     return a.name.localeCompare(b.name);
   });
   const activeTenantInfo = tenants.find((tn) => tn.id === activeTenant);
+  // The trigger label is held stable (no flicker when the popover fetches
+  // and discovers a different casing in the API response).
+  const triggerLabel = activeName ?? activeTenant;
 
   return (
     <Popover.Root open={open} onOpenChange={setOpen}>
       <Popover.Trigger asChild>
-        <button className="tenant" type="button" title={t("nav_workspaces")}>
-          <Diamond /> {activeTenant}
+        <button className="tenant-pill" type="button" aria-label={t("tenant_active")}>
+          <Diamond className="tenant-pill__icon" />
+          <span className="tenant-pill__label">{triggerLabel}</span>
         </button>
       </Popover.Trigger>
       <Popover.Portal>
@@ -118,15 +137,18 @@ export function TenantPicker({ activeSlug }: { activeSlug: string }) {
                         key={`${workspace.tenant_id}.${workspace.id}`}
                         type="button"
                         className={cx("pop-item", active && "active")}
-                        onClick={() => pickWorkspace(workspace)}
+                        onClick={() => void pickWorkspace(workspace)}
+                        disabled={picking !== null}
                       >
                         <Globe className="lead" />
                         <span>{workspace.name}</span>
-                        {active && (
-                          <span className="check">
-                            <Check style={{ width: 13, height: 13 }} />
-                          </span>
-                        )}
+                        {picking === workspace.id
+                          ? <span className="spinner" style={{ marginLeft: "auto" }} />
+                          : active && (
+                            <span className="check">
+                              <Check style={{ width: 13, height: 13 }} />
+                            </span>
+                          )}
                       </button>
                     );
                   })

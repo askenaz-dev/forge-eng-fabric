@@ -1,7 +1,51 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { authToken, correlationId, emitAudit, endpoint } from "@/lib/api";
-import { cookies } from "next/headers";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/auth";
+import { authToken, correlationId, emitAudit } from "@/lib/api";
 
+const applicationUrl = () => process.env.APPLICATION_URL ?? "http://localhost:8095";
+
+/**
+ * GET /api/workspace/active
+ *
+ * Returns the workspace currently scoped to the user's next-auth session
+ * along with the list of Apps in that workspace. The active workspace lives
+ * in the signed JWT (see `auth.ts`), not in a separate cookie — switches go
+ * through `session.update()` on the client + the POST below (audit only).
+ */
+export async function GET() {
+  const session = await getServerSession(authOptions);
+  const workspaceId = session?.workspaceSlug ?? "";
+  if (!workspaceId) {
+    return NextResponse.json({ workspace_id: null, apps: [] });
+  }
+  const token = session?.accessToken;
+  let apps: { id: string; name: string; slug: string }[] = [];
+  try {
+    const r = await fetch(`${applicationUrl()}/v1/workspaces/${workspaceId}/apps`, {
+      headers: {
+        ...(token ? { authorization: `Bearer ${token}` } : {}),
+        "cache-control": "no-store",
+      },
+      cache: "no-store",
+    });
+    if (r.ok) {
+      const body = await r.json();
+      apps = Array.isArray(body) ? body : (body.apps ?? []);
+    }
+  } catch {
+    // Non-fatal — the workspace id is still returned for the caller.
+  }
+  return NextResponse.json({ workspace_id: workspaceId, apps });
+}
+
+/**
+ * POST /api/workspace/active
+ *
+ * Side-effect for a workspace switch: emit an audit event. The JWT is updated
+ * client-side via `session.update()` (next-auth's signed-cookie mechanism) —
+ * this endpoint does not write cookies and does not call the control-plane.
+ */
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   const tenant = String(body.tenant ?? "").trim();
@@ -9,39 +53,12 @@ export async function POST(req: NextRequest) {
   if (!tenant || !workspace) {
     return NextResponse.json({ error: "tenant and workspace required" }, { status: 400 });
   }
-  const { token, actor } = await authToken();
+  const { actor } = await authToken();
   const correlation = correlationId();
 
-  if (token) {
-    fetch(`${endpoint("CONTROL_PLANE_URL")}/v1/users/me/active-workspace`, {
-      method: "PUT",
-      headers: {
-        "content-type": "application/json",
-        authorization: `Bearer ${token}`,
-        "x-correlation-id": correlation,
-      },
-      body: JSON.stringify({ tenant_id: tenant, workspace_id: workspace }),
-    }).catch(() => undefined);
-  }
-
-  const jar = cookies();
-  const prev = jar.get("forge_prefs")?.value;
-  let merged: Record<string, unknown> = { tenant, workspace };
-  if (prev) {
-    try {
-      merged = { ...JSON.parse(prev), ...merged };
-    } catch {
-      // ignored
-    }
-  }
-  const res = NextResponse.json({ ok: true });
-  res.cookies.set("forge_prefs", JSON.stringify(merged), {
-    path: "/",
-    httpOnly: false,
-    sameSite: "lax",
-    maxAge: 60 * 60 * 24 * 365,
-  });
-
+  // The signed JWT (next-auth) is the source of truth for the active workspace;
+  // session.update() on the client re-signs it. We only emit an audit event
+  // here for traceability — there's no server-side persistence to sync.
   await emitAudit({
     type: "portal.workspace.switched",
     principal: actor,
@@ -49,5 +66,5 @@ export async function POST(req: NextRequest) {
     correlation,
   });
 
-  return res;
+  return NextResponse.json({ ok: true });
 }

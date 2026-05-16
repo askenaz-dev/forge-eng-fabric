@@ -10,12 +10,20 @@ import { findNavItem } from "./nav";
 import { ThemeMenu } from "./ThemeMenu";
 import { LangPill } from "./LangPill";
 import { NotificationsButton } from "./NotificationsButton";
+import { TenantPicker } from "./TenantPicker";
+import { WorkspacePicker } from "./WorkspacePicker";
 
 export function TopBar({
-  workspaceLabel,
+  tenantSlug,
+  tenantName,
+  workspaceSlug,
+  workspaceName,
   githubHref,
 }: {
-  workspaceLabel: string;
+  tenantSlug: string;
+  tenantName: string;
+  workspaceSlug: string;
+  workspaceName: string;
   githubHref?: string;
 }) {
   const { t } = useLang();
@@ -37,7 +45,15 @@ export function TopBar({
   return (
     <header className="top" role="banner">
       <nav className="top-crumb" aria-label="Breadcrumb">
-        <Link href="/" className="crumb-link">{workspaceLabel}</Link>
+        <div className="top-scope" role="group" aria-label={t("scope_group_aria")}>
+          <TenantPicker activeSlug={tenantSlug} activeName={tenantName} />
+          <span className="top-scope__sep" aria-hidden>/</span>
+          <WorkspacePicker
+            activeSlug={workspaceSlug}
+            activeName={workspaceName}
+            tenantSlug={tenantSlug}
+          />
+        </div>
         <Chev className="sep" style={{ width: 12, height: 12 }} />
         {active ? (
           onSection ? (

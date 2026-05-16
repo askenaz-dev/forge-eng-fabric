@@ -7,6 +7,7 @@
  */
 export type FriendlyErrorKey =
   | "alfred_err_missing_app_editor"
+  | "alfred_err_feature_disabled"
   | "alfred_err_generic";
 
 const ERROR_MAP: Record<string, FriendlyErrorKey> = {
@@ -15,6 +16,7 @@ const ERROR_MAP: Record<string, FriendlyErrorKey> = {
   forbidden: "alfred_err_missing_app_editor",
   missing_app_scope: "alfred_err_generic",
   workspace_can_edit_required: "alfred_err_generic",
+  "dialogue api disabled": "alfred_err_feature_disabled",
 };
 
 export function mapErrorCode(rawDetail: string): FriendlyErrorKey {

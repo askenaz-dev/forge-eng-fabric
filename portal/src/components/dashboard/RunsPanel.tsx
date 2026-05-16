@@ -22,13 +22,16 @@ export function RunsPanel({ onOpen }: { onOpen?: (run: Run) => void }) {
   const [runs, setRuns] = useState<Run[] | null>(null);
   const [filter, setFilter] = useState<FilterId>("all");
   const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
-  function load() {
+  function load(manual = false) {
+    if (manual) setRefreshing(true);
     setError(null);
     fetch("/api/sdlc/runs?limit=50&order=desc", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`status ${r.status}`))))
       .then((data: { runs: Run[] }) => setRuns(data.runs ?? []))
-      .catch((err) => setError((err as Error).message));
+      .catch((err) => { setError((err as Error).message); setRuns([]); })
+      .finally(() => setRefreshing(false));
   }
 
   useEffect(load, []);
@@ -68,8 +71,8 @@ export function RunsPanel({ onOpen }: { onOpen?: (run: Run) => void }) {
             <span className="live-now">
               <span className="lvd" /> {t("h_live")}
             </span>
-            <Button variant="ghost" size="xs" onClick={load} aria-label={t("refresh")}>
-              <Refresh />
+            <Button variant="ghost" size="xs" onClick={() => load(true)} aria-label={t("refresh")} disabled={refreshing}>
+              {refreshing ? <span className="spinner" /> : <Refresh />}
             </Button>
           </>
         }

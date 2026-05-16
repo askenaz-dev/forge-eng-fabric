@@ -65,7 +65,11 @@ var defaultServices = []knownService{
 	{ID: "openfga", Kind: "authz", Probe: "localhost:8088"},
 	{ID: "registry", Kind: "registry", Probe: "localhost:8089"},
 	{ID: "audit", Kind: "audit", Probe: "localhost:8083"},
-	{ID: "context-eng", Kind: "context", Probe: "localhost:8084"},
+	{ID: "workflow-runtime", Kind: "runtime", Probe: "localhost:8093"},
+	// context-eng is a logical architectural node (RAG / context engine) with
+	// no dedicated process in dev — reported as a logical node so the mesh
+	// reflects intent without lying about a missing service being "down".
+	{ID: "context-eng", Kind: "context", Probe: ""},
 	{ID: "spec-engine", Kind: "spec", Probe: "localhost:8094"},
 	{ID: "pgvector", Kind: "data", Probe: "localhost:15432"},
 }

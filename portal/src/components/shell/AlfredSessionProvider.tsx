@@ -52,7 +52,7 @@ type AlfredSessionContextValue = {
   activeSessionId: string | null;
   status: AlfredSessionStatus | null;
   steps: AlfredStepEvent[];
-  start: (input: { workspaceId: string; openspecId: string; intent: string }) => Promise<string | null>;
+  start: (input: { workspaceId: string; intent: string }) => Promise<string | null>;
   sendFollowUp: (intent: string) => Promise<void>;
   cancel: () => Promise<void>;
 };
@@ -126,21 +126,20 @@ export function AlfredSessionProvider({ children }: { children: ReactNode }) {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         workspace_id: input.workspaceId,
-        openspec_id: input.openspecId,
         intent: input.intent,
       }),
     });
-    if (!r.ok) return null;
+    if (!r.ok) {
+      const err = await r.json().catch(() => null) as { error?: string } | null;
+      throw new Error(err?.error ?? `server error ${r.status}`);
+    }
     const body = (await r.json()) as { session_id?: string; status?: AlfredSessionStatus };
     if (!body.session_id) return null;
     setActiveSessionId(body.session_id);
     setStatus(body.status ?? "planning");
     setSteps([]);
     setOpen(true);
-    void emitTelemetry("portal.alfred.dock_session_started.v1", {
-      session_id: body.session_id,
-      openspec_id: input.openspecId,
-    });
+    void emitTelemetry("portal.alfred.dock_session_started.v1", { session_id: body.session_id });
     return body.session_id;
   }, []);
 

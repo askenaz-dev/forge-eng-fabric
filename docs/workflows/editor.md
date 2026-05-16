@@ -1,48 +1,79 @@
-# Visual editor
+# AI-Flow visual editor
 
-The Portal "Workflows" module is the visual surface over the canonical
-[workflow AST](dsl.md). It lives at `/workflows` and consumes the workflow
-registry (`WORKFLOW_REGISTRY_URL`) and runtime (`WORKFLOW_RUNTIME_URL`) at
-runtime.
+The Portal "AI Flows" module is the visual surface over the canonical
+[workflow AST](dsl.md). It lives at `/workflows/editor` and consumes the
+workflow registry (`WORKFLOW_REGISTRY_URL`) and runtime
+(`WORKFLOW_RUNTIME_URL`) at runtime. The library + version-history surface
+lives at `/workflows`.
+
+> **Heritage:** ADR-0001 picked Flowise but the embed never landed. The
+> editor is now built on `@xyflow/react` (MIT) per
+> [ADR-0002](../governance/adrs/0002-canvas-react-flow.md). See the
+> [ai-flow-authoring](../../openspec/changes/ai-flow-authoring/) change
+> for the full reconciliation.
 
 ## What the editor gives you
 
-- **Sidebar** lists workflows scoped to a Tenant + Workspace. New workflows
-  can be created from the sidebar form.
-- **DSL pane** is the source of truth. Edit YAML directly; the canonical AST
-  is what gets persisted on save. Import/export YAML files via the buttons
-  next to the publish action.
-- **Graph preview** renders steps + dependencies live as you edit. The full
-  React Flow diagram lights up when the `reactflow` package is installed in
-  the portal — the lightweight preview always works.
-- **Lint feedback** reports errors inline (duplicate ids, floating
-  references, dangling deps). Server-side validation is authoritative; this
-  surface is just for fast feedback.
-- **Dry-run** posts to the runtime with `dry_run=true`, mocking I/O so no
-  real Skills or MCPs are called.
-- **Diff viewer** compares any two versions and renders the bump
-  classification (major/minor/patch) returned by the registry.
-- **Catalog** — the sidebar consumes the asset registry to suggest Skills,
-  MCPs and Prompts at the right pin-version. Refs to non-approved assets are
-  rejected at publish time.
+- **Canvas (default tab)** — `@xyflow/react`-powered drag-and-drop with
+  pan, zoom, minimap, keyboard navigation, edge routing.
+- **Palette** with four sections — Triggers / AI / Actions / Logic (+
+  Custom when custom nodes are registered). Drag onto the canvas or press
+  Enter on a focused palette item to add.
+- **Trigger band** above the canvas — shows the firing source. A flow
+  with zero triggers renders `Triggered by: Manual invoke`.
+- **Property panel** opens on node selection. For LLM nodes it surfaces
+  prompt-template picker, model picker (workspace whitelist applied),
+  per-override fields, tools multi-select, output schema editor,
+  `max_tool_calls`, and an estimated cost-per-execution preview.
+- **Code view tab** — renders the current AST as canonical JSON for
+  direct editing. Invalid JSON disables save.
+- **Dry-run drawer** — runs the current canvas state through
+  workflow-runtime in `dry_run=true` mode and shows per-step inputs +
+  outputs. No real Skill / MCP / LLM call is made.
+- **Library at /workflows** — list of flows, version history per flow,
+  diff viewer. Edits happen exclusively in the canvas.
+
+## Authoring a flow
+
+1. Navigate to `/workflows/editor?workspace_id=<ws>`. The page loads
+   with the palette on the left and an empty canvas.
+2. Drag a Trigger from the palette into the trigger band. Configure
+   `mailbox_ref`, `expression`, etc. in the property panel.
+3. Drag step nodes from AI / Actions / Logic. Connect by dragging from
+   the source handle to the target handle — the edge becomes a
+   `depends_on` entry on save.
+4. Select an LLM node and pick a prompt template + model + tools in the
+   right-rail property panel.
+5. Click **Dry run**. The drawer shows the trace.
+6. Click **Save**. The registry creates a new immutable version
+   classified by `services/workflow-registry/internal/registry/diff.go`.
 
 ## Publish flow
 
-1. Edit YAML; lint should be clean.
-2. Click `Publish version`. The request goes to
-   `POST /v1/workflows/{id}/versions` (workflow-registry).
-3. The registry runs schema + lint, then classifies the diff:
+1. Edit on canvas (and/or in code view); save promotes the current
+   state to a new version.
+2. The registry runs schema + lint, then classifies the diff:
    - Removed/required input → MAJOR
    - Removed step or step type changed → MAJOR
+   - Trigger added → MINOR; removed → MAJOR; type changed → MAJOR
+   - LLM `outputs_schema` field removed → MAJOR; added → MINOR
    - Added optional input/output, new step → MINOR
+   - `prompt → prompt-template` alias → PATCH (`migrate_prompt_to_prompt_template`)
+   - `event-trigger` step → triggers block → PATCH (`migrate_event_trigger_to_triggers_block`)
    - Description/owners only → PATCH
-4. Either provide a version that satisfies the classification, or check
+3. Either provide a version that satisfies the classification, or check
    `Auto-bump version`.
-5. Forge-certified status additionally requires a passing eval run and a
-   recorded security review (see [Marketplace](../marketplace/index.md)).
+
+## Feature flag
+
+The canvas is gated on `AI_FLOWS_CANVAS_ENABLED=true`. When the flag is
+off, `/workflows/editor` renders a fallback notice and the existing
+YAML editor at `/workflows` remains the authoring surface for that
+tenant.
 
 ## E2E tests
 
-The Playwright suite at `portal/tests/e2e/workflows.spec.ts` validates the
-editor module renders. Add cases there as the editor grows; the existing
-patterns in `initiatives.spec.ts` are good references.
+The Playwright suite at `portal/tests/e2e/ai-email-triage.spec.ts`
+drag-builds the AI Email Triage reference flow and runs a dry-run.
+Gated on `AI_FLOWS_CANVAS_ENABLED=true` so it skips during the rollout
+window.

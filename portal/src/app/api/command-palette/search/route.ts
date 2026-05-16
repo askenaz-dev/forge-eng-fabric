@@ -67,8 +67,10 @@ async function doSearch(q: string, token: string | undefined, actor: string, cor
   type RunResp = { runs?: Array<{ id: string; agent: string; purpose: string; repo: string }> };
   type ApprovalResp = { approvals?: Array<{ id: string; title?: string; rationale?: string; action?: string }> };
   type SpecResp = { items?: Array<{ id: string; title: string }>; specs?: Array<{ id: string; title: string }> };
-  type WorkspaceResp = { workspaces?: Array<{ id: string; name: string; tenant_id: string }> };
-  type TenantResp = { tenants?: Array<{ id: string; name: string }> };
+  // Control-plane returns raw arrays for /v1/tenants and /v1/workspaces (not
+  // wrapped in an envelope). IDs are UUIDs; slugs are derived from `name`.
+  type TenantRow = { id: string; name: string };
+  type WorkspaceRow = { id: string; name: string; tenant_id: string };
 
   const queryParam = q ? `&q=${encodeURIComponent(q)}` : "";
 
@@ -80,9 +82,21 @@ async function doSearch(q: string, token: string | undefined, actor: string, cor
     withTimeout(fetchJson<RunResp>(`${endpoint("SDLC_URL")}/v1/runs?limit=20&order=desc${queryParam}`, token, correlation)),
     withTimeout(fetchJson<ApprovalResp>(`${endpoint("APPROVALS_URL")}/v1/approvals?status=pending&approver=${encodeURIComponent(actor)}&limit=20`, token, correlation)),
     withTimeout(fetchJson<SpecResp>(`${endpoint("OPENSPEC_URL")}/v1/openspecs?limit=15${queryParam}`, token, correlation)),
-    withTimeout(fetchJson<WorkspaceResp>(`${endpoint("CONTROL_PLANE_URL")}/v1/workspaces?limit=20`, token, correlation)),
-    withTimeout(fetchJson<TenantResp>(`${endpoint("CONTROL_PLANE_URL")}/v1/tenants/me`, token, correlation)),
+    withTimeout(fetchJson<WorkspaceRow[]>(`${endpoint("CONTROL_PLANE_URL")}/v1/workspaces?limit=20`, token, correlation)),
+    withTimeout(fetchJson<TenantRow[]>(`${endpoint("CONTROL_PLANE_URL")}/v1/tenants`, token, correlation)),
   ]);
+
+  // The portal session keys workspaces/tenants by human-readable slug (e.g.
+  // "acme"/"engineering"), not UUID — build a UUID→slug map so we can return
+  // slugs in `subtitle` and the picker can pass them straight to next-auth.
+  const slugify = (s: string) =>
+    s.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  const tenantSlugByUuid: Record<string, string> = {};
+  if (tenants.status === "ok") {
+    for (const t of tenants.value ?? []) {
+      tenantSlugByUuid[t.id] = slugify(t.name);
+    }
+  }
 
   function emptyOrResults<T>(
     source: PaletteSourceId,
@@ -152,23 +166,30 @@ async function doSearch(q: string, token: string | undefined, actor: string, cor
         hrefOrAction: { kind: "navigate", href: `/openspecs?id=${s.id}` },
       }));
     }),
-    emptyOrResults<WorkspaceResp>("workspaces", workspaces, (v) =>
-      (v.workspaces ?? []).map((w) => ({
-        id: `workspace.${w.id}`,
-        source: "workspaces",
-        title: w.name,
-        subtitle: `${w.tenant_id} · ${w.id}`,
-        hrefOrAction: { kind: "action", action: { type: "workspace", tenant: w.tenant_id, workspace: w.id } },
-      })),
+    emptyOrResults<WorkspaceRow[]>("workspaces", workspaces, (v) =>
+      (v ?? []).map((w) => {
+        const tenantSlug = tenantSlugByUuid[w.tenant_id] ?? slugify(w.tenant_id);
+        const wsSlug = slugify(w.name);
+        return {
+          id: `workspace.${wsSlug}`,
+          source: "workspaces",
+          title: w.name,
+          subtitle: `${tenantSlug} · ${wsSlug}`,
+          hrefOrAction: { kind: "action", action: { type: "workspace", tenant: tenantSlug, workspace: wsSlug } },
+        };
+      }),
     ),
-    emptyOrResults<TenantResp>("tenants", tenants, (v) =>
-      (v.tenants ?? []).map((tn) => ({
-        id: `tenant.${tn.id}`,
-        source: "tenants",
-        title: tn.name,
-        subtitle: tn.id,
-        hrefOrAction: { kind: "navigate", href: `/?tenant=${tn.id}` },
-      })),
+    emptyOrResults<TenantRow[]>("tenants", tenants, (v) =>
+      (v ?? []).map((tn) => {
+        const tenantSlug = slugify(tn.name);
+        return {
+          id: `tenant.${tenantSlug}`,
+          source: "tenants",
+          title: tn.name,
+          subtitle: tenantSlug,
+          hrefOrAction: { kind: "navigate", href: `/?tenant=${tenantSlug}` },
+        };
+      }),
     ),
   ];
 

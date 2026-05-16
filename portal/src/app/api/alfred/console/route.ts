@@ -4,7 +4,9 @@
  * (alfred-console-redesign §2.3 — wire view=advanced into every Alfred call)
  */
 import { NextRequest, NextResponse } from "next/server";
-import { authToken, correlationId, endpoint, emitAudit } from "@/lib/api";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/auth";
+import { correlationId, endpoint, emitAudit } from "@/lib/api";
 import { randomUUID } from "crypto";
 
 const openspecUrl = () => process.env.OPENSPEC_URL ?? "http://localhost:8083";
@@ -17,13 +19,15 @@ export async function POST(req: NextRequest) {
     view?: string;
   } | null;
 
-  const workspaceId = body?.workspace_id || req.cookies.get("forge_workspace")?.value || "";
+  const session = await getServerSession(authOptions);
+  const workspaceId = body?.workspace_id || session?.workspaceSlug || "";
   const text = (body?.message ?? "").trim();
   if (!workspaceId || !text) {
     return NextResponse.json({ error: "workspace_id and message are required" }, { status: 400 });
   }
 
-  const { token, actor } = await authToken();
+  const token = session?.accessToken;
+  const actor = session?.user?.email ?? session?.user?.name ?? "anonymous";
   const correlation = correlationId();
   const view = body?.view ?? "advanced";
   const appId = body?.app_id;

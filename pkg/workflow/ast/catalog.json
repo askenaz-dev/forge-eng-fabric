@@ -1,0 +1,32 @@
+{
+  "$comment": "Canonical AI-Flow node and trigger catalog. Source of truth shared by the Go AST enum and the Portal TS CanonicalStepType union. Drift is caught by pkg/workflow/ast/parity_test.go and the TS portal/src/lib/ast-canvas-adapter parity test (see ai-flow-authoring change).",
+  "step_types": [
+    "skill",
+    "mcp",
+    "llm",
+    "agent",
+    "prompt-template",
+    "branch",
+    "loop",
+    "human-in-the-loop",
+    "sub-workflow",
+    "webhook",
+    "github-action",
+    "deploy-action",
+    "approval-action",
+    "notification-action",
+    "eval",
+    "custom"
+  ],
+  "deprecated_step_types": {
+    "prompt": "prompt-template",
+    "event-trigger": ""
+  },
+  "trigger_types": [
+    "manual",
+    "cron",
+    "webhook-in",
+    "event-bus",
+    "email-inbound"
+  ]
+}

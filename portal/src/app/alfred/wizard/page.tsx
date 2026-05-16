@@ -8,6 +8,7 @@ import { authOptions } from "@/auth";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { randomUUID } from "crypto";
+import { DesignSystemPickerForm } from "@/components/alfred/DesignSystemPickerForm";
 
 type SearchParams = {
   wizard?: string;
@@ -24,6 +25,12 @@ type SearchParams = {
   // creates the App but before business-intent capture starts. The step is
   // skipped on the "extend existing" and "decide later" branches.
   design_system_step?: string;
+  // alfred-design-system-picker (D4): when the "create new App" branch is
+  // active and the user has not yet picked a Design System, these carry
+  // the App parameters forward so the design-system step's Continue can
+  // issue a single atomic POST that creates the App with the picked ref.
+  new_name?: string;
+  new_slug?: string;
   result?: string;
   error?: string;
 };
@@ -104,28 +111,18 @@ async function selectAppScope(formData: FormData) {
     if (!slug || !name) {
       redirect(`/alfred/wizard?wizard=1&workspace_id=${workspaceId}&app_scope_step=1&error=${encodeURIComponent("slug and name are required")}`);
     }
-    try {
-      const r = await fetch(`${applicationUrl()}/v1/workspaces/${workspaceId}/apps`, {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          ...(token ? { authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ slug, name, owners: ["self"] }),
-      });
-      if (!r.ok) {
-        const text = await r.text();
-        redirect(`/alfred/wizard?wizard=1&workspace_id=${workspaceId}&app_scope_step=1&error=${encodeURIComponent(`create app ${r.status}: ${text}`)}`);
-      }
-      const app = await r.json();
-      // design-system-catalog (6.1): only the "create new App" branch lands
-      // on the Design System step. The "extend existing" branch keeps the
-      // App's existing ref; "decide later" parks under _unassigned where the
-      // ref is irrelevant.
-      redirect(`/alfred/wizard?wizard=1&workspace_id=${workspaceId}&app_id=${app.id}&design_system_step=1`);
-    } catch (e: any) {
-      redirect(`/alfred/wizard?wizard=1&workspace_id=${workspaceId}&app_scope_step=1&error=${encodeURIComponent(e?.message ?? "fetch failed")}`);
-    }
+    // alfred-design-system-picker (D4): do NOT create the App yet. Defer
+    // creation to selectDesignSystem so it can issue a single atomic POST
+    // carrying both the App params and the chosen design_system_ref. The
+    // app params travel through the URL between steps.
+    const qp = new URLSearchParams({
+      wizard: "1",
+      workspace_id: workspaceId,
+      design_system_step: "1",
+      new_slug: slug,
+      new_name: name,
+    });
+    redirect(`/alfred/wizard?${qp.toString()}`);
   }
   // branch === "later" — park the draft under _unassigned for the workspace.
   // The picker lookup returns the system-managed App id so the rest of the
@@ -134,34 +131,72 @@ async function selectAppScope(formData: FormData) {
   redirect(`/alfred/wizard?wizard=1&workspace_id=${workspaceId}&app_id=${unassignedId}`);
 }
 
-// selectDesignSystem is the server action for the design-system step. It
-// PATCHes the App's design_system_ref via the application service and
-// continues to the business-intent capture step.
+// selectDesignSystem is the server action for the design-system step.
+//
+// alfred-design-system-picker (D4): issues a single atomic
+// `POST /v1/workspaces/{ws}/apps` carrying the App params (stashed in the
+// URL by selectAppScope) AND the picker's design_system_ref +
+// design_system_chosen_explicitly. Replaces the previous POST-then-PATCH
+// flow so audit log shows one `app.created.v1` per App (plus, when skipped,
+// the sibling `app.design_system.user_skipped.v1`).
 async function selectDesignSystem(formData: FormData) {
   "use server";
   const token = await getToken();
   const workspaceId = formData.get("workspace_id") as string;
-  const appId = formData.get("app_id") as string;
-  const ref = (formData.get("design_system_ref") as string) || "ds-forge-default";
-  if (!workspaceId || !appId) {
-    redirect(`/alfred/wizard?wizard=1&app_scope_step=1&error=${encodeURIComponent("missing workspace or app")}`);
+  const slug = formData.get("new_slug") as string;
+  const name = formData.get("new_name") as string;
+  // Two outcomes: explicit "continue" with a selected ref, or "skip" which
+  // omits the ref entirely (lets the service alias-resolve ds-forge-default).
+  const action = (formData.get("action") as string) || "continue";
+  const ref = (formData.get("design_system_ref") as string) || "";
+  if (!workspaceId || !slug || !name) {
+    redirect(`/alfred/wizard?wizard=1&app_scope_step=1&error=${encodeURIComponent("missing workspace or app params")}`);
+  }
+  const body: Record<string, unknown> = {
+    slug,
+    name,
+    owners: ["self"],
+  };
+  if (action === "skip") {
+    body.design_system_chosen_explicitly = false;
+    // omit design_system_ref — service resolves ds-forge-default.
+  } else {
+    body.design_system_chosen_explicitly = true;
+    if (ref) body.design_system_ref = ref;
   }
   try {
-    const r = await fetch(`${applicationUrl()}/v1/apps/${appId}`, {
-      method: "PATCH",
+    const r = await fetch(`${applicationUrl()}/v1/workspaces/${workspaceId}/apps`, {
+      method: "POST",
       headers: {
         "content-type": "application/json",
         ...(token ? { authorization: `Bearer ${token}` } : {}),
       },
-      body: JSON.stringify({ design_system_ref: ref }),
+      body: JSON.stringify(body),
     });
     if (!r.ok) {
       const text = await r.text();
-      redirect(`/alfred/wizard?wizard=1&workspace_id=${workspaceId}&app_id=${appId}&design_system_step=1&error=${encodeURIComponent(`patch ${r.status}: ${text}`)}`);
+      const qp = new URLSearchParams({
+        wizard: "1",
+        workspace_id: workspaceId,
+        design_system_step: "1",
+        new_slug: slug,
+        new_name: name,
+        error: `create ${r.status}: ${text}`,
+      });
+      redirect(`/alfred/wizard?${qp.toString()}`);
     }
-    redirect(`/alfred/wizard?wizard=1&workspace_id=${workspaceId}&app_id=${appId}`);
+    const app = await r.json();
+    redirect(`/alfred/wizard?wizard=1&workspace_id=${workspaceId}&app_id=${app.id}`);
   } catch (e: any) {
-    redirect(`/alfred/wizard?wizard=1&workspace_id=${workspaceId}&app_id=${appId}&design_system_step=1&error=${encodeURIComponent(e?.message ?? "fetch failed")}`);
+    const qp = new URLSearchParams({
+      wizard: "1",
+      workspace_id: workspaceId,
+      design_system_step: "1",
+      new_slug: slug,
+      new_name: name,
+      error: e?.message ?? "fetch failed",
+    });
+    redirect(`/alfred/wizard?${qp.toString()}`);
   }
 }
 
@@ -401,87 +436,36 @@ export default async function AlfredWizardPage({ searchParams }: { searchParams:
     );
   }
 
-  if (searchParams.design_system_step === "1" && appId && appId !== "_unassigned") {
+  if (searchParams.design_system_step === "1" && searchParams.new_slug && searchParams.new_name) {
     const { catalog } = await fetchDesignSystemCatalog(token);
+    const newSlug = searchParams.new_slug;
+    const newName = searchParams.new_name;
     return (
       <>
-        <h1 className="page-title">Pick a Design System</h1>
-        <p className="page-sub" style={{ marginBottom: 16 }}>
-          Choose the look-and-feel for this App. You can swap it later from the Settings tab.
-          Default: <code style={{ background: "var(--bg-hover)", padding: "1px 6px", borderRadius: 4 }}>ds-forge-default</code> (the Portal's own look).
-        </p>
         {error && (
           <div className="rounded border border-red-300 bg-red-50 p-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200">
             {error}
           </div>
         )}
-        {catalog.length === 0 && (
-          <div className="rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">
-            Could not load the Design System catalog. Continuing will use <code>ds-forge-default</code>.
-          </div>
-        )}
-        <form action={selectDesignSystem} className="space-y-4">
-          <input type="hidden" name="workspace_id" value={workspaceId} />
-          <input type="hidden" name="app_id" value={appId} />
-          <div className="grid gap-4 sm:grid-cols-2">
-            {catalog.map((entry, idx) => {
-              const builtIn = entry.built_in_template === true;
-              const accessibility = entry.eval_scores?.accessibility;
-              const isDefault = idx === 0 && builtIn; // first built-in (catalog_position=1) is the forge default
-              const id = `ds-${entry.asset_id}`;
-              return (
-                <label key={entry.asset_id} htmlFor={id} className="rounded border border-neutral-200 bg-white p-3 dark:border-neutral-800 dark:bg-neutral-900" data-design-system-card>
-                  <div className="flex items-start gap-3">
-                    <input
-                      type="radio"
-                      id={id}
-                      name="design_system_ref"
-                      value={builtIn && isDefault ? "ds-forge-default" : `${entry.asset_id}@${entry.version}`}
-                      defaultChecked={isDefault}
-                      className="mt-1"
-                    />
-                    <div className="flex-1">
-                      <div className="font-medium">{entry.name}</div>
-                      <div className="text-xs" style={{ color: "var(--fg-3)" }}>
-                        {entry.asset_id}@{entry.version}
-                        {accessibility != null && <span className="ml-2 inline-flex items-center gap-1 rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">A11y {Math.round(accessibility * 100)}</span>}
-                      </div>
-                      {entry.manifest?.use_case && (
-                        <p className="mt-2 text-sm" style={{ color: "var(--fg-2)" }}>{entry.manifest.use_case}</p>
-                      )}
-                      <div className="mt-3 grid grid-cols-2 gap-2" data-design-system-preview>
-                        {entry.manifest?.screenshots?.light && (
-                          <figure className="space-y-1">
-                            <img src={entry.manifest.screenshots.light} alt="" className="rounded border border-neutral-200 dark:border-neutral-800" />
-                            <figcaption className="text-[10px]" style={{ color: "var(--fg-3)" }}>Light</figcaption>
-                          </figure>
-                        )}
-                        {entry.manifest?.screenshots?.dark && (
-                          <figure className="space-y-1">
-                            <img src={entry.manifest.screenshots.dark} alt="" className="rounded border border-neutral-200 dark:border-neutral-800" />
-                            <figcaption className="text-[10px]" style={{ color: "var(--fg-3)" }}>Dark</figcaption>
-                          </figure>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </label>
-              );
-            })}
-            {catalog.length === 0 && (
-              <label className="rounded border border-neutral-200 bg-white p-3 dark:border-neutral-800 dark:bg-neutral-900">
-                <input type="radio" name="design_system_ref" value="ds-forge-default" defaultChecked />
-                <span className="ml-2 font-medium">Forge default</span>
-              </label>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <a className="text-sm" style={{ color: "var(--primary)" }} href={`/alfred/wizard?wizard=1&workspace_id=${workspaceId}`}>Back</a>
-            <button className="rounded bg-neutral-900 px-4 py-2 text-sm font-medium text-white dark:bg-neutral-100 dark:text-neutral-900">
-              Continue
-            </button>
-          </div>
-        </form>
+        {/* alfred-design-system-picker (6.4): the wizard renders the shared
+            DesignSystemPicker via DesignSystemPickerForm, which adapts the
+            client-side picker (callbacks) to the wizard's server action
+            (`<form action>`). Same component as the Friendly view path —
+            single source of truth for layout, screenshots, copy and Skip
+            semantics. The server action issues the atomic POST per D4. */}
+        <DesignSystemPickerForm
+          catalog={catalog}
+          hiddenFields={{
+            workspace_id: workspaceId,
+            new_slug: newSlug,
+            new_name: newName,
+          }}
+          formAction={selectDesignSystem}
+          loadError={catalog.length === 0}
+        />
+        <p className="mt-3 text-sm">
+          <a style={{ color: "var(--primary)" }} href={`/alfred/wizard?wizard=1&workspace_id=${workspaceId}&app_scope_step=1`}>← Back</a>
+        </p>
       </>
     );
   }

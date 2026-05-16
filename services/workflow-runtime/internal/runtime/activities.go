@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/forge-eng-fabric/pkg/workflow/ast"
+	"github.com/google/uuid"
 )
 
 // MCPGatewayClient is the seam the MCP activity uses to reach the
@@ -42,6 +44,14 @@ type RegistryOptions struct {
 	MCP      MCPGatewayClient
 	A2A      A2AGatewayClient
 	Enforced bool // when true, non-dry-run calls without a gateway client fail closed
+	// LLM wires the executor's prompt-template-service + model-gateway +
+	// LLMProvider collaborators. When unset the LLMActivity falls back
+	// to the dry-run-only behavior (returns step_type_not_yet_implemented
+	// in non-dry mode) so existing tests continue to pass.
+	LLM LLMOptions
+	// EventSink lets the LLM executor emit workflow.llm.*.v1 events.
+	// Defaults to a noop when nil.
+	EventSink Sink
 }
 
 // NewActivityRegistry builds a registry pre-populated with the default
@@ -58,10 +68,30 @@ func NewActivityRegistryWithOptions(opts RegistryOptions) *ActivityRegistry {
 	r.Register(ast.StepSkill, &SkillActivity{MCP: opts.MCP, Enforced: opts.Enforced})
 	r.Register(ast.StepMCP, &MCPActivity{Client: opts.MCP, Enforced: opts.Enforced})
 	r.Register(ast.StepPrompt, &PromptActivity{})
+	r.Register(ast.StepPromptTemplate, &PromptTemplateActivity{})
 	r.Register(ast.StepBranch, &BranchActivity{})
 	r.Register(ast.StepLoop, &LoopActivity{})
 	r.Register(ast.StepSubWorkflow, &SubWorkflowActivity{A2A: opts.A2A, Enforced: opts.Enforced})
 	r.Register(ast.StepEventTrigger, &EventTriggerActivity{})
+
+	// AI-Flow primitives added by the ai-flow-authoring change.
+	r.Register(ast.StepLLM, &LLMActivity{Opts: opts.LLM, Sink: opts.EventSink})
+	r.Register(ast.StepAgent, &AgentActivity{A2A: opts.A2A, Enforced: opts.Enforced})
+
+	// Action / logic / extensibility types whose executors are scheduled
+	// for follow-up changes per design.md §D8. Stubs return dry-run mocks
+	// in dry mode and step_type_not_yet_implemented otherwise. Surfacing
+	// them in the registry keeps the canvas/library experience honest:
+	// authors can drag them and dry-run, and the runtime will tell them
+	// honestly that production execution isn't wired yet.
+	r.Register(ast.StepWebhookOut, &stubActivity{StepType: string(ast.StepWebhookOut)})
+	r.Register(ast.StepGithubAction, &stubActivity{StepType: string(ast.StepGithubAction)})
+	r.Register(ast.StepDeployAction, &stubActivity{StepType: string(ast.StepDeployAction)})
+	r.Register(ast.StepApprovalAction, &stubActivity{StepType: string(ast.StepApprovalAction)})
+	r.Register(ast.StepNotificationAction, &stubActivity{StepType: string(ast.StepNotificationAction)})
+	r.Register(ast.StepEval, &stubActivity{StepType: string(ast.StepEval)})
+	r.Register(ast.StepCustom, &stubActivity{StepType: string(ast.StepCustom)})
+
 	human := opts.Human
 	if human == nil {
 		human = NoopHumanActivity{}
@@ -163,6 +193,10 @@ func parseGatewayResponse(body []byte, ref string) map[string]any {
 }
 
 // PromptActivity renders and runs a Prompt template.
+//
+// Deprecated: the canonical name is prompt-template. PromptActivity is
+// retained for legacy ASTs that still carry the `prompt` step type. New
+// step types should register PromptTemplateActivity (alias).
 type PromptActivity struct{}
 
 func (p *PromptActivity) Execute(_ context.Context, in ActivityInput) (ActivityOutput, error) {
@@ -170,6 +204,122 @@ func (p *PromptActivity) Execute(_ context.Context, in ActivityInput) (ActivityO
 		return ActivityOutput{Outputs: dryRunOutputs(in.Step.ID)}, nil
 	}
 	return ActivityOutput{Outputs: map[string]any{"prompt_ref": in.Step.Ref}}, nil
+}
+
+// PromptTemplateActivity is the canonical name for the legacy prompt step.
+// Currently a thin alias around PromptActivity; once prompt-template-service
+// exposes the render API (task 6.2) this activity will call it.
+type PromptTemplateActivity struct{}
+
+func (p *PromptTemplateActivity) Execute(ctx context.Context, in ActivityInput) (ActivityOutput, error) {
+	return (&PromptActivity{}).Execute(ctx, in)
+}
+
+// LLMActivity runs an LLM step.
+//
+// When RegistryOptions.LLM is wired (renderer + resolver + provider),
+// the executor resolves the prompt template, the model, surfaces tools,
+// makes the provider call, enforces max_tool_calls (emitting
+// workflow.llm.budget_exhausted.v1 when exceeded), and validates the
+// response against the step's declared outputs_schema.
+//
+// In dry-run mode it returns mock outputs derived from the step id so
+// downstream nodes have payloads to flow against.
+//
+// When LLM is unwired the activity falls back to step_type_not_yet_
+// implemented in non-dry mode (preserves the legacy stub for tests
+// that don't care about the LLM path).
+type LLMActivity struct {
+	Opts LLMOptions
+	Sink Sink
+}
+
+func (l *LLMActivity) Execute(ctx context.Context, in ActivityInput) (ActivityOutput, error) {
+	if in.DryRun {
+		return ActivityOutput{Outputs: dryRunOutputs(in.Step.ID)}, nil
+	}
+	if l.Opts.Provider == nil {
+		return ActivityOutput{}, fmt.Errorf("%w: llm executor wires model-gateway + prompt-template-service in a follow-up task", ErrStepTypeNotYetImplemented)
+	}
+	step := llmStepFromActivityInput(in)
+	emit := func(eventType string, data map[string]any) {
+		if l.Sink == nil {
+			return
+		}
+		_ = l.Sink.Emit(newLLMEvent(in, eventType, data))
+	}
+	return executeLLMStep(ctx, in, step, l.Opts, emit)
+}
+
+// newLLMEvent is a thin wrapper that builds a CloudEvent from an
+// ActivityInput. Distinct from newEvent (which takes an *Execution) so
+// activities don't need to hold a back-reference to the engine.
+func newLLMEvent(in ActivityInput, eventType string, data map[string]any) CloudEvent {
+	return CloudEvent{
+		SpecVersion:      "1.0",
+		ID:               uuid.NewString(),
+		Source:           "forge://service/workflow-runtime",
+		Type:             eventType,
+		Subject:          "workflow-execution/" + in.ExecutionID,
+		Time:             time.Now().UTC(),
+		DataContentType:  "application/json",
+		ForgeTenantID:    in.TenantID,
+		ForgeWorkspaceID: in.WorkspaceID,
+		Data:             data,
+	}
+}
+
+// llmStepFromActivityInput rebuilds the LLM-specific fields from the
+// generic ActivityInput. The runtime engine flattens steps through
+// StepRuntimeInfo (which is the minimum activities need); the LLM
+// executor needs the typed extras (PromptTemplate, Model, Tools,
+// MaxToolCalls, StepOutputs) so we look the step up from the input's
+// transit context. For now we round-trip the known fields back into
+// an ast.Step shape — the engine will eventually carry the typed
+// fields directly.
+func llmStepFromActivityInput(in ActivityInput) ast.Step {
+	return ast.Step{
+		ID:             in.Step.ID,
+		Type:           ast.StepLLM,
+		Ref:            in.Step.Ref,
+		Tool:           in.Step.Tool,
+		PromptTemplate: in.LLMPromptTemplate,
+		Model:          in.LLMModel,
+		Tools:          in.LLMTools,
+		MaxToolCalls:   in.LLMMaxToolCalls,
+		StepOutputs:    in.LLMOutputsSchema,
+	}
+}
+
+// AgentActivity invokes an A2A agent through the a2a-gateway.
+// Implementation rides on the existing SubWorkflowActivity routing.
+type AgentActivity struct {
+	A2A      A2AGatewayClient
+	Enforced bool
+}
+
+func (a *AgentActivity) Execute(ctx context.Context, in ActivityInput) (ActivityOutput, error) {
+	// Reuse the SubWorkflowActivity dispatch — same upstream gateway,
+	// same shape. Distinct registration keeps the canonical step type
+	// visible to the editor and the version-classifier.
+	return (&SubWorkflowActivity{A2A: a.A2A, Enforced: a.Enforced}).Execute(ctx, in)
+}
+
+// stubActivity returns dry-run outputs in dry mode and
+// step_type_not_yet_implemented otherwise. Used for the step types added
+// in the catalog reconciliation that do not yet have a dedicated executor
+// (webhook out, github-action, deploy-action, approval-action,
+// notification-action, eval, custom). The runtime emits
+// workflow.step.unimplemented.v1 with the step id so adoption is observable.
+type stubActivity struct {
+	StepType string
+}
+
+func (s *stubActivity) Execute(_ context.Context, in ActivityInput) (ActivityOutput, error) {
+	if in.DryRun {
+		return ActivityOutput{Outputs: dryRunOutputs(in.Step.ID)}, nil
+	}
+	return ActivityOutput{}, fmt.Errorf("%w: step type %q has no production executor yet", ErrStepTypeNotYetImplemented, s.StepType)
 }
 
 // BranchActivity is a no-op; the engine handles branching directly.

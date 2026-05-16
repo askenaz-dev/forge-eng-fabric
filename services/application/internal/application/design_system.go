@@ -25,6 +25,11 @@ type DesignSystemRecord struct {
 	Version         string
 	LifecycleState  string
 	Visibility      string // workspace | tenant | tenant_global
+	// TenantID identifies the tenant that owns this Design System when
+	// Visibility is `tenant` or `workspace`. Tenant-global templates carry an
+	// empty TenantID. Used by the atomic create path to reject refs that are
+	// visible to other tenants but not to the caller's tenant.
+	TenantID        string
 	BuiltInTemplate bool
 }
 
@@ -193,6 +198,11 @@ func (m *MemoryDesignSystemPRStore) GetByPRURL(_ context.Context, prURL string) 
 var (
 	ErrDesignSystemNotFound      = errors.New("design_system_not_found")
 	ErrDesignSystemNotApproved   = errors.New("design_system_not_approved")
+	// alfred-design-system-picker: returned by atomic create when the supplied
+	// design_system_ref resolves to a Design System that is not visible to the
+	// caller's tenant (e.g. another tenant's private template). Distinct from
+	// `design_system_not_found` so the HTTP layer can return 404 vs 409.
+	ErrDesignSystemNotVisible    = errors.New("design_system_not_visible")
 	ErrSwapPRNotFound            = errors.New("swap_pr_not_found")
 	ErrLayoutTokenOverride       = errors.New("layout_token_override_forbidden")
 	ErrUnknownComponent          = errors.New("unknown_component")

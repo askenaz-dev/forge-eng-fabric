@@ -23,7 +23,7 @@ from alfred.config import Settings, load_settings
 from alfred.dialogue import generate_followup
 from alfred.gateways import ApprovalsClient, OpenSpecClient, PermissionsClient, PolicyClient, RAGClient
 from alfred.guardrails import Guardrails, GuardrailTrip, _INJECTION_PAGE_THRESHOLD
-from alfred.llm import LiteLLMClient
+from alfred.llm import LiteLLMClient, RequestContext
 from alfred.logging import configure_logging, get_logger
 from alfred.loop import LoopDeps, run_intent
 from alfred.models import IntentRequest, MessageIn
@@ -94,6 +94,7 @@ def create_app(
         await _require_workspace(request, principal, body.workspace_id, "can_edit")
         correlation_id = body.correlation_id or request.state.correlation_id
         response.headers["X-Correlation-Id"] = correlation_id
+        tenant_id = _resolve_tenant_id(principal, body.tenant_id, request)
         return await run_intent(
             request.app.state.loop_deps,
             actor=principal.sub,
@@ -102,6 +103,7 @@ def create_app(
             correlation_id=correlation_id,
             openspec_id=body.openspec_id,
             metadata=body.metadata,
+            tenant_id=tenant_id,
         )
 
     @app.get("/v1/sessions/{session_id}")
@@ -320,6 +322,11 @@ def create_app(
             last_answer="",
             correlation_id=draft.get("correlation_id"),
             llm=deps.llm,
+            context=RequestContext(
+                tenant_id=_resolve_tenant_id(principal, body.get("tenant_id"), request),
+                workspace_id=ws_id,
+                correlation_id=draft.get("correlation_id") or body["correlation_id"],
+            ),
         )
         return {
             "draft": draft,
@@ -372,12 +379,20 @@ def create_app(
         if not updated:
             raise HTTPException(status_code=404, detail="draft not found or rejected")
         completeness = await deps.openspec.completeness(draft_id)
+        ws_id_str = str(updated.get("workspace_id") or body.get("workspace_id") or "")
         section, question = await generate_followup(
             completeness=completeness,
             turn_count=updated.get("turn_count", 0),
             last_answer=body.get("answer", ""),
             correlation_id=updated.get("correlation_id"),
             llm=deps.llm,
+            context=RequestContext(
+                tenant_id=_resolve_tenant_id(principal, body.get("tenant_id"), request),
+                workspace_id=ws_id_str,
+                correlation_id=updated.get("correlation_id") or request.state.correlation_id,
+            )
+            if ws_id_str
+            else None,
         )
         return {
             "draft": updated,
@@ -537,6 +552,32 @@ async def _principal(
         raise HTTPException(status_code=401, detail=f"invalid bearer token: {exc}") from exc
 
 
+def _resolve_tenant_id(
+    principal: Principal,
+    body_tenant_id: str | None,
+    request: Request,
+) -> str:
+    """Resolve the tenant_id Alfred attaches to every LiteLLM call.
+
+    alfred-litellm-header-injection (G1) requires a non-empty tenant on
+    every outbound request. Order of resolution:
+    1. explicit body field (`tenant_id`),
+    2. JWT custom claim (`forge_tenant_id` or `tenant_id`),
+    3. dev fallback `"dev-tenant"` when auth is not required.
+    Returns `""` only in misconfigured prod, which causes LiteLLMClient
+    to fail closed at call time with a clear error.
+    """
+
+    if body_tenant_id:
+        return body_tenant_id
+    claim = principal.raw.get("forge_tenant_id") or principal.raw.get("tenant_id")
+    if isinstance(claim, str) and claim:
+        return claim
+    if not request.app.state.auth_required:
+        return "dev-tenant"
+    return ""
+
+
 async def _require_workspace(
     request: Request,
     principal: Principal,
@@ -573,7 +614,10 @@ def _build_loop_deps(settings: Settings, store: Store) -> LoopDeps:
             "openspec": settings.mcp_openspec_url,
         },
         skill_endpoint=settings.skill_runner_url,
-        prompt_endpoint=settings.prompt_registry_url,
+        # alfred-litellm-header-injection (G2): canonical prompt service.
+        # `prompt:<id>:render` tools dispatch to prompt-template-service;
+        # legacy prompt-registry is no longer wired here.
+        prompt_template_service_url=settings.prompt_template_service_url,
     )
     return LoopDeps(
         store=store,

@@ -1,8 +1,11 @@
 import { authOptions } from "@/auth";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import { WorkflowEditor } from "./editor";
+// WorkflowEditor inline rendering removed per ai-flow-authoring §9.3.
+// Authoring lives at /workflows/editor (visual canvas) and the Code view
+// tab inside it. /workflows is now the library + version history.
 import { CreateWorkflowForm } from "./CreateWorkflowForm";
+import { ConsolidationBanner } from "./ConsolidationBanner";
 import { PageHead } from "@/components/page/PageHead";
 import { Button, Card, CardHeader } from "@/components/primitives";
 
@@ -37,7 +40,6 @@ type SearchParams = {
 };
 
 const registryUrl = () => process.env.WORKFLOW_REGISTRY_URL ?? "http://localhost:8094";
-const runtimeUrl = () => process.env.WORKFLOW_RUNTIME_URL ?? "http://localhost:8093";
 
 async function getToken() {
   const session = await getServerSession(authOptions);
@@ -86,57 +88,11 @@ async function createWorkflow(formData: FormData) {
   redirect(`/workflows?tenant_id=${payload.tenant_id}&workspace_id=${payload.workspace_id}&workflow_id=${payload.id}&saved=1`);
 }
 
-async function publishVersion(formData: FormData) {
-  "use server";
-  const token = await getToken();
-  const tenantId = required(formData, "tenant_id");
-  const workspaceId = required(formData, "workspace_id");
-  const workflowId = required(formData, "workflow_id");
-  const yaml = required(formData, "workflow_yaml");
-  const autoBump = optional(formData, "auto_bump") === "1";
-  const response = await fetch(`${registryUrl()}/v1/workflows/${encodeURIComponent(workflowId)}/versions`, {
-    method: "POST",
-    headers: { "content-type": "application/json", ...(token ? { authorization: `Bearer ${token}` } : {}) },
-    body: JSON.stringify({ workflow_id: workflowId, workflow_yaml: yaml, auto_bump: autoBump, actor: "portal" }),
-  });
-  if (!response.ok) {
-    const text = await response.text();
-    redirect(`/workflows?tenant_id=${tenantId}&workspace_id=${workspaceId}&workflow_id=${workflowId}&error=${encodeURIComponent(text)}`);
-  }
-  redirect(`/workflows?tenant_id=${tenantId}&workspace_id=${workspaceId}&workflow_id=${workflowId}&saved=1`);
-}
-
-async function dryRun(formData: FormData) {
-  "use server";
-  const token = await getToken();
-  const tenantId = required(formData, "tenant_id");
-  const workspaceId = required(formData, "workspace_id");
-  const yaml = required(formData, "workflow_yaml");
-  const inputsRaw = optional(formData, "inputs_json") || "{}";
-  let inputs: Record<string, unknown> = {};
-  try {
-    inputs = JSON.parse(inputsRaw);
-  } catch {
-    redirect(`/workflows?tenant_id=${tenantId}&workspace_id=${workspaceId}&error=${encodeURIComponent("invalid_inputs_json")}`);
-  }
-  const response = await fetch(`${runtimeUrl()}/v1/executions`, {
-    method: "POST",
-    headers: { "content-type": "application/json", ...(token ? { authorization: `Bearer ${token}` } : {}) },
-    body: JSON.stringify({
-      tenant_id: tenantId,
-      workspace_id: workspaceId,
-      workflow_yaml: yaml,
-      inputs,
-      dry_run: true,
-      correlation_id: `portal-dryrun-${Date.now()}`,
-    }),
-  });
-  if (!response.ok) {
-    const text = await response.text();
-    redirect(`/workflows?tenant_id=${tenantId}&workspace_id=${workspaceId}&error=${encodeURIComponent(text)}`);
-  }
-  redirect(`/workflows?tenant_id=${tenantId}&workspace_id=${workspaceId}&saved=1`);
-}
+// publishVersion / dryRun server actions removed per ai-flow-authoring §9.3.
+// Publish lives on the canvas's Save button (POSTing the canonical AST via
+// /api/workflows). Dry-run lives on the canvas's Dry-run drawer. Both call
+// workflow-registry / workflow-runtime through the same paths formerly used
+// by these actions.
 
 export default async function WorkflowsPage({ searchParams }: { searchParams: SearchParams }) {
   const token = await getToken();
@@ -174,10 +130,10 @@ export default async function WorkflowsPage({ searchParams }: { searchParams: Se
   return (
     <>
       <PageHead
-        eyebrow="Platform · Workflows"
-        title="Workflows &"
+        eyebrow="Platform · AI Flows"
+        title="AI Flows &"
         titleEm="versions"
-        sub="Compose Skills, MCPs, Prompts, gates, branches and human-in-the-loop steps. Versioned with SemVer + immutability; dry-run before publish."
+        sub="Author visually. Triggered by webhooks, cron, email, event bus, or manual. LLM steps orchestrate skills + MCPs + agents with full audit. Versioned with SemVer + immutability; dry-run before publish."
         actions={
           <form method="get" style={{ display: "flex", gap: 8 }}>
             <input
@@ -199,6 +155,7 @@ export default async function WorkflowsPage({ searchParams }: { searchParams: Se
         }
       />
 
+      <ConsolidationBanner />
       {searchParams.saved && (
         <div className="notice notice--ok" style={{ marginBottom: 16 }} role="status">
           <span className="body">Saved.</span>
@@ -265,29 +222,101 @@ export default async function WorkflowsPage({ searchParams }: { searchParams: Se
         <div style={{ display: "grid", gap: 20 }}>
           {selected ? (
             <>
-              <WorkflowEditor
-                tenantId={tenantId}
-                workspaceId={workspaceId}
-                workflow={selected}
-                versions={versions}
-                publishAction={publishVersion}
-                dryRunAction={dryRun}
-              />
+              <FlowSummary workflow={selected} versions={versions} tenantId={tenantId} workspaceId={workspaceId} />
               <DiffViewer base={baseVersion} compare={compareVersion} versions={versions} workflow={selected} tenantId={tenantId} workspaceId={workspaceId} />
             </>
           ) : (
             <div className="empty-state">
-              <span className="title">No workflow selected</span>
+              <span className="title">No AI Flow selected</span>
               <span className="sub">
                 {tenantId && workspaceId
-                  ? "Pick a workflow from the list, or create a new one to start composing steps."
-                  : "Set a Tenant + Workspace using the Load form above. You can also type IDs directly in the New workflow form to create one without loading first."}
+                  ? "Pick a flow from the list, or create a new one. Authoring happens in the visual canvas at /workflows/editor."
+                  : "Set a Tenant + Workspace using the Load form above. You can also type IDs directly in the New flow form to create one without loading first."}
               </span>
             </div>
           )}
         </div>
       </div>
     </>
+  );
+}
+
+function FlowSummary({
+  workflow,
+  versions,
+  tenantId,
+  workspaceId,
+}: {
+  workflow: Workflow;
+  versions: Version[];
+  tenantId: string;
+  workspaceId: string;
+}) {
+  const latest = versions[0];
+  const editorHref =
+    `/workflows/editor?` +
+    new URLSearchParams({
+      workspace_id: workspaceId,
+      workflow_id: workflow.id,
+    }).toString();
+  const historyHref =
+    `/workflows/${encodeURIComponent(workflow.id)}/history?` +
+    new URLSearchParams({ tenant_id: tenantId, workspace_id: workspaceId }).toString();
+  return (
+    <Card>
+      <CardHeader
+        title={workflow.name}
+        sub={`${workflow.id} · ${workflow.visibility}`}
+      />
+      <div style={{ padding: 16, display: "grid", gap: 12 }}>
+        <p className="body" style={{ margin: 0 }}>
+          Latest version: <strong>{latest?.version ?? "—"}</strong>
+          {latest?.published_at ? ` · published ${new Date(latest.published_at).toLocaleString()}` : ""}
+        </p>
+        <p className="body" style={{ margin: 0, color: "var(--fg-3)" }}>
+          {versions.length} version{versions.length === 1 ? "" : "s"} on file.
+        </p>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <a
+            className="btn btn-primary"
+            href={editorHref}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "8px 14px",
+              borderRadius: "var(--r-2)",
+              background: "var(--primary)",
+              color: "var(--bg)",
+              textDecoration: "none",
+              fontSize: 13,
+              fontWeight: 500,
+            }}
+          >
+            Open in canvas →
+          </a>
+          <a
+            href={historyHref}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "8px 14px",
+              borderRadius: "var(--r-2)",
+              border: "1px solid var(--border)",
+              color: "var(--fg)",
+              textDecoration: "none",
+              fontSize: 13,
+            }}
+          >
+            Version history
+          </a>
+        </div>
+        <p className="body" style={{ margin: 0, fontSize: 11, color: "var(--fg-3)" }}>
+          Authoring moved to <code>/workflows/editor</code>. Use the canvas tab for visual editing or the Code view tab for YAML.
+        </p>
+      </div>
+    </Card>
   );
 }
 

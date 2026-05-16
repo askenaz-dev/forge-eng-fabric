@@ -18,6 +18,11 @@ class IntentRequest(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
     openspec_id: str | None = None
     correlation_id: str | None = None
+    # alfred-litellm-header-injection (G1): the tenant id is required so
+    # LiteLLM calls can be attributed correctly. Optional on the wire only to
+    # preserve existing fixtures; the HTTP layer derives it from the JWT
+    # when omitted (and ultimately the LiteLLM client fails closed if empty).
+    tenant_id: str | None = None
 
 
 class MessageIn(BaseModel):
@@ -35,6 +40,10 @@ class Session(BaseModel):
     status: Literal["open", "closed"] = "open"
     correlation_id: str
     metadata: dict[str, Any] = Field(default_factory=dict)
+    # alfred-litellm-header-injection (G1): persisted so RequestContext
+    # for any subsequent LLM call on this session can be reconstructed
+    # without re-deriving from JWT.
+    tenant_id: str = ""
 
 
 class DecisionRecord(BaseModel):

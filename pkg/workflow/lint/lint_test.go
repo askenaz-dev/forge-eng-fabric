@@ -97,3 +97,163 @@ func hasCode(fs []Finding, c Code) bool {
 	}
 	return false
 }
+
+// --- ai-flow-authoring change: triggers + LLM step lint coverage ---
+
+func TestLintReportsUnknownTriggerType(t *testing.T) {
+	wf := &ast.Workflow{
+		APIVersion: ast.APIVersion, Kind: ast.Kind,
+		Metadata: ast.Metadata{ID: "wf", Name: "wf", Version: "1.0.0"},
+		Spec: ast.Spec{
+			Triggers: []ast.Trigger{
+				{ID: "t1", Type: "telegram-bot"},
+			},
+			Steps: []ast.Step{{ID: "a", Type: ast.StepSkill, Ref: "registry:skill/a/x@1.0.0"}},
+		},
+	}
+	r := Lint(wf)
+	if !hasCode(r.Findings, CodeUnknownTriggerType) {
+		t.Fatalf("expected unknown_trigger_type, got %+v", r.Findings)
+	}
+}
+
+func TestLintRejectsUnknownEventTopic(t *testing.T) {
+	wf := &ast.Workflow{
+		APIVersion: ast.APIVersion, Kind: ast.Kind,
+		Metadata: ast.Metadata{ID: "wf", Name: "wf", Version: "1.0.0"},
+		Spec: ast.Spec{
+			Triggers: []ast.Trigger{
+				{ID: "t", Type: ast.TriggerEventBus, Config: map[string]any{"topic": "unregistered.topic.v1"}},
+			},
+			Steps: []ast.Step{{ID: "a", Type: ast.StepSkill, Ref: "registry:skill/a/x@1.0.0"}},
+		},
+	}
+	r := Lint(wf)
+	if !hasCode(r.Findings, CodeUnknownEventTopic) {
+		t.Fatalf("expected unknown_event_topic, got %+v", r.Findings)
+	}
+}
+
+func TestLintAcceptsKnownEventTopic(t *testing.T) {
+	wf := &ast.Workflow{
+		APIVersion: ast.APIVersion, Kind: ast.Kind,
+		Metadata: ast.Metadata{ID: "wf", Name: "wf", Version: "1.0.0"},
+		Spec: ast.Spec{
+			Triggers: []ast.Trigger{
+				{ID: "t", Type: ast.TriggerEventBus, Config: map[string]any{"topic": "github.push.v1"}},
+			},
+			Steps: []ast.Step{{ID: "a", Type: ast.StepSkill, Ref: "registry:skill/a/x@1.0.0"}},
+		},
+	}
+	r := Lint(wf)
+	if hasCode(r.Findings, CodeUnknownEventTopic) {
+		t.Fatalf("did not expect unknown_event_topic for known topic, got %+v", r.Findings)
+	}
+}
+
+func TestLintReportsDanglingTriggerField(t *testing.T) {
+	wf := &ast.Workflow{
+		APIVersion: ast.APIVersion, Kind: ast.Kind,
+		Metadata: ast.Metadata{ID: "wf", Name: "wf", Version: "1.0.0"},
+		Spec: ast.Spec{
+			Triggers: []ast.Trigger{
+				{ID: "email", Type: ast.TriggerEmailInbound, Outputs: map[string]string{"from": "string"}},
+			},
+			Steps: []ast.Step{
+				{ID: "a", Type: ast.StepSkill, Ref: "registry:skill/a/x@1.0.0",
+					Inputs: map[string]any{"body": "$triggers.email.body"}},
+			},
+		},
+	}
+	r := Lint(wf)
+	if !hasCode(r.Findings, CodeDanglingTriggerRef) {
+		t.Fatalf("expected dangling_trigger_field, got %+v", r.Findings)
+	}
+}
+
+func TestLintLLMRequiresPromptAndModel(t *testing.T) {
+	wf := &ast.Workflow{
+		APIVersion: ast.APIVersion, Kind: ast.Kind,
+		Metadata: ast.Metadata{ID: "wf", Name: "wf", Version: "1.0.0"},
+		Spec: ast.Spec{
+			Steps: []ast.Step{
+				{ID: "think", Type: ast.StepLLM},
+			},
+		},
+	}
+	r := Lint(wf)
+	if !hasCode(r.Findings, CodeMissingPromptTpl) {
+		t.Fatalf("expected missing_prompt_template, got %+v", r.Findings)
+	}
+	if !hasCode(r.Findings, CodeMissingModelRef) {
+		t.Fatalf("expected missing_model_ref, got %+v", r.Findings)
+	}
+}
+
+func TestLintRejectsLLMWithFloatingPromptTemplate(t *testing.T) {
+	wf := &ast.Workflow{
+		APIVersion: ast.APIVersion, Kind: ast.Kind,
+		Metadata: ast.Metadata{ID: "wf", Name: "wf", Version: "1.0.0"},
+		Spec: ast.Spec{
+			Steps: []ast.Step{
+				{
+					ID:             "think",
+					Type:           ast.StepLLM,
+					PromptTemplate: "registry:prompt/foo/bar@latest",
+					Model:          &ast.ModelBinding{Ref: "gateway:model/x@latest-stable"},
+				},
+			},
+		},
+	}
+	r := Lint(wf)
+	if !hasCode(r.Findings, CodeFloatingRef) {
+		t.Fatalf("expected floating_reference_not_allowed for prompt_template@latest, got %+v", r.Findings)
+	}
+}
+
+func TestLintRejectsDownstreamRefToUndeclaredLLMOutput(t *testing.T) {
+	wf := &ast.Workflow{
+		APIVersion: ast.APIVersion, Kind: ast.Kind,
+		Metadata: ast.Metadata{ID: "wf", Name: "wf", Version: "1.0.0"},
+		Spec: ast.Spec{
+			Steps: []ast.Step{
+				{
+					ID:             "think",
+					Type:           ast.StepLLM,
+					PromptTemplate: "registry:prompt/foo/bar@1.0.0",
+					Model:          &ast.ModelBinding{Ref: "gateway:model/x@latest-stable"},
+					StepOutputs:    map[string]string{"category": "string"},
+				},
+				{
+					ID:        "act",
+					Type:      ast.StepSkill,
+					Ref:       "registry:skill/a/x@1.0.0",
+					DependsOn: []string{"think"},
+					Inputs:    map[string]any{"draft": "$steps.think.outputs.draft"},
+				},
+			},
+		},
+	}
+	r := Lint(wf)
+	if !hasCode(r.Findings, CodeDanglingStepField) {
+		t.Fatalf("expected dangling_step_field for undeclared LLM output, got %+v", r.Findings)
+	}
+}
+
+func TestLintEmitsDeprecationForMigratedEventTrigger(t *testing.T) {
+	wf := &ast.Workflow{
+		APIVersion: ast.APIVersion, Kind: ast.Kind,
+		Metadata: ast.Metadata{ID: "wf", Name: "wf", Version: "1.0.0"},
+		Spec: ast.Spec{
+			Triggers: []ast.Trigger{
+				{ID: "src", Type: ast.TriggerEventBus, MigratedFrom: ast.StepEventTrigger,
+					Config: map[string]any{"topic": "github.push.v1"}},
+			},
+			Steps: []ast.Step{{ID: "a", Type: ast.StepSkill, Ref: "registry:skill/a/x@1.0.0"}},
+		},
+	}
+	r := Lint(wf)
+	if !hasCode(r.Findings, CodeDeprecatedStepKind) {
+		t.Fatalf("expected deprecated_step_kind for migrated trigger, got %+v", r.Findings)
+	}
+}

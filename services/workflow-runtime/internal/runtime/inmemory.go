@@ -31,6 +31,7 @@ type InMemoryEngine struct {
 	registry   *ActivityRegistry
 	sink       Sink
 	audit      AuditLogger
+	tracker    *concurrencyTracker
 }
 
 type signalEnvelope struct {
@@ -54,6 +55,7 @@ func NewInMemoryEngine(registry *ActivityRegistry, sink Sink) *InMemoryEngine {
 		registry:   registry,
 		sink:       sink,
 		audit:      NoopAuditLogger{},
+		tracker:    newConcurrencyTracker(),
 	}
 }
 
@@ -81,6 +83,22 @@ func (e *InMemoryEngine) StartWorkflow(ctx context.Context, req StartRequest) (*
 	if req.Workflow == nil {
 		return nil, errors.New("workflow_required")
 	}
+	// Per-trigger concurrency policy applies only when the execution is
+	// trigger-originated. Direct-POST executions (no TriggerEvent) bypass
+	// the tracker — historical behavior.
+	var concurrencyTrackerKey concurrencyKey
+	var concurrencyTrackerActive bool
+	if req.TriggerEvent != nil {
+		concurrencyTrackerKey = concurrencyKey{
+			WorkflowID: req.Workflow.Metadata.ID,
+			TriggerID:  req.TriggerEvent.TriggerID,
+		}
+		policy := lookupTriggerPolicy(req.Workflow, req.TriggerEvent.TriggerID)
+		if err := e.tracker.Acquire(concurrencyTrackerKey, policy); err != nil {
+			return nil, err
+		}
+		concurrencyTrackerActive = true
+	}
 	exec := &Execution{
 		ID:             uuid.NewString(),
 		TenantID:       req.TenantID,
@@ -96,6 +114,7 @@ func (e *InMemoryEngine) StartWorkflow(ctx context.Context, req StartRequest) (*
 		UpdatedAt:      e.now(),
 		DryRun:         req.DryRun,
 		SelectedAssets: req.SelectedAssets,
+		TriggerEvent:   req.TriggerEvent,
 	}
 	e.put(exec)
 	signalCh := make(chan signalEnvelope, 8)
@@ -103,12 +122,28 @@ func (e *InMemoryEngine) StartWorkflow(ctx context.Context, req StartRequest) (*
 	e.signals[exec.ID] = signalCh
 	e.mu.Unlock()
 
-	_ = e.sink.Emit(newEvent(exec, EventExecutionStarted, map[string]any{
+	startData := map[string]any{
 		"workflow_id": exec.WorkflowID,
 		"version":     exec.Version,
 		"dry_run":     exec.DryRun,
-	}))
-	go e.run(ctx, exec, req.Workflow, signalCh)
+	}
+	if exec.TriggerEvent != nil {
+		// Cause attribution per ai-flow-authoring spec workflow-runtime
+		// requirement "Accept trigger-originated executions". Lets the
+		// traceability-graph service link the firing to the execution.
+		startData["cause"] = map[string]any{
+			"trigger_id":     exec.TriggerEvent.TriggerID,
+			"fired_at":       exec.TriggerEvent.FiredAt,
+			"queue_position": exec.TriggerEvent.QueuePosition,
+		}
+	}
+	_ = e.sink.Emit(newEvent(exec, EventExecutionStarted, startData))
+	go func() {
+		e.run(ctx, exec, req.Workflow, signalCh)
+		if concurrencyTrackerActive {
+			e.tracker.Release(concurrencyTrackerKey)
+		}
+	}()
 	// Allow the goroutine to run-up; tests poll via GetExecution.
 	return e.snapshot(exec.ID), nil
 }
@@ -271,7 +306,7 @@ func (e *InMemoryEngine) run(ctx context.Context, exec *Execution, wf *ast.Workf
 			DryRun:      exec.DryRun,
 			TenantID:    exec.TenantID,
 			WorkspaceID: exec.WorkspaceID,
-			Inputs:      resolveInputs(next, exec.Inputs, completedOutputs),
+			Inputs:      resolveInputsWithTrigger(next, exec.Inputs, completedOutputs, exec.TriggerEvent),
 		}
 		out, err := e.runStep(ctx, exec, stepCtx, signals)
 		if err != nil {
@@ -363,6 +398,24 @@ func (e *InMemoryEngine) runStep(ctx context.Context, exec *Execution, sc stepCo
 			"type":    sc.Step.Type,
 			"attempt": attempt,
 		}))
+		// Catch unbound $triggers.* references left as sentinels by the
+		// resolver (the execution had no TriggerEvent bound or the
+		// trigger_id did not match). Fail the step non-retryably with a
+		// structured reason so the caller can fix the spec or supply a
+		// trigger event.
+		if unbound := UnboundTriggerReferences(sc.Inputs); len(unbound) > 0 {
+			runErr := fmt.Errorf("%w: %v", ErrUnboundTriggerReference, unbound)
+			now := e.now()
+			markStep(exec, sc.Step.ID, attempt, StepStatusFailed, &now, sc.Inputs, nil, runErr.Error())
+			e.update(exec)
+			_ = e.sink.Emit(newEvent(exec, EventStepFailed, map[string]any{
+				"step_id":             sc.Step.ID,
+				"reason":              runErr.Error(),
+				"attempt":             attempt,
+				"unbound_references":  unbound,
+			}))
+			return nil, runErr
+		}
 		stepCtx, cancel := context.WithTimeout(ctx, timeout)
 		out, runErr := activity.Execute(stepCtx, ActivityInput{
 			TenantID:    sc.TenantID,
@@ -377,8 +430,13 @@ func (e *InMemoryEngine) runStep(ctx context.Context, exec *Execution, sc stepCo
 				Approver:  sc.Step.ApproverRole,
 				OnTimeout: sc.Step.OnTimeout,
 			},
-			Inputs: sc.Inputs,
-			DryRun: sc.DryRun,
+			Inputs:            sc.Inputs,
+			DryRun:            sc.DryRun,
+			LLMPromptTemplate: sc.Step.PromptTemplate,
+			LLMModel:          sc.Step.Model,
+			LLMTools:          sc.Step.Tools,
+			LLMMaxToolCalls:   sc.Step.MaxToolCalls,
+			LLMOutputsSchema:  sc.Step.StepOutputs,
 		})
 		cancel()
 		// HITL: suspend awaiting signal.
@@ -636,6 +694,16 @@ func stepIDSet(steps []ast.Step) map[string]struct{} {
 }
 
 func resolveInputs(step ast.Step, wfInputs map[string]any, completed map[string]map[string]any) map[string]any {
+	return resolveInputsWithTrigger(step, wfInputs, completed, nil)
+}
+
+// resolveInputsWithTrigger resolves step expressions against workflow inputs,
+// completed step outputs, and (when present) the firing trigger payload.
+// $triggers.<id>.<field> references against a nil triggerEvent leave a
+// sentinel ErrorMarker so the step executor can fail the step with
+// unbound_trigger_reference. (See ai-flow-authoring change, workflow-runtime
+// spec.)
+func resolveInputsWithTrigger(step ast.Step, wfInputs map[string]any, completed map[string]map[string]any, triggerEvent *TriggerEvent) map[string]any {
 	out := map[string]any{}
 	for k, v := range step.Inputs {
 		s, ok := v.(string)
@@ -659,8 +727,37 @@ func resolveInputs(step ast.Step, wfInputs map[string]any, completed map[string]
 					out[k] = v
 				}
 			}
+		case len(parts) >= 3 && parts[0] == "triggers":
+			if triggerEvent == nil || triggerEvent.TriggerID != parts[1] {
+				out[k] = unboundTriggerSentinel{Reference: s}
+				continue
+			}
+			if v, ok := triggerEvent.Payload[parts[2]]; ok {
+				out[k] = v
+			}
 		default:
 			out[k] = s
+		}
+	}
+	return out
+}
+
+// unboundTriggerSentinel is left in the resolved input map when a step
+// references $triggers.* but the execution has no trigger event bound (or
+// the trigger id does not match). The step executor checks for these
+// sentinels before invoking the underlying activity and fails the step
+// with `unbound_trigger_reference`.
+type unboundTriggerSentinel struct {
+	Reference string
+}
+
+// UnboundTriggerReferences scans a resolved inputs map for sentinel
+// values and returns their original expressions for error reporting.
+func UnboundTriggerReferences(inputs map[string]any) []string {
+	out := []string{}
+	for _, v := range inputs {
+		if s, ok := v.(unboundTriggerSentinel); ok {
+			out = append(out, s.Reference)
 		}
 	}
 	return out

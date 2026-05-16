@@ -19,7 +19,7 @@ from typing import Any
 
 from alfred.gateways import OpenSpecClient, RAGClient
 from alfred.guardrails import Guardrails
-from alfred.llm import LiteLLMClient
+from alfred.llm import LiteLLMClient, RequestContext
 from alfred.logging import get_logger
 
 log = get_logger(__name__)
@@ -119,6 +119,7 @@ async def build_initial_plan(
     model: str,
     rag_top_k: int = 8,
     start_step: str | None = None,
+    llm_context: RequestContext | None = None,
 ) -> dict[str, Any]:
     """Return a plan dict matching D2. Falls back to CANONICAL_PLAN on error.
 
@@ -148,18 +149,25 @@ async def build_initial_plan(
         {"role": "user", "content": "\n\n".join(user_prompt_parts)},
     ]
 
+    chat_kwargs: dict[str, Any] = {
+        "model": model,
+        "messages": messages,
+        "metadata": {
+            "correlation_id": correlation_id,
+            "actor": "alfred",
+            "phase": "agent_mode.plan",
+            "openspec_id": openspec_id,
+            "start_step": start_step or "discovery",
+        },
+    }
+    if llm_context is not None:
+        chat_kwargs["context"] = llm_context
+    else:
+        # Planner is system-driven (no user session); use the system factory
+        # so the four standard headers are populated. Reflects design D5.
+        chat_kwargs["context"] = RequestContext.system(correlation_id=correlation_id)
     try:
-        completion = await llm.chat(
-            model=model,
-            messages=messages,
-            metadata={
-                "correlation_id": correlation_id,
-                "actor": "alfred",
-                "phase": "agent_mode.plan",
-                "openspec_id": openspec_id,
-                "start_step": start_step or "discovery",
-            },
-        )
+        completion = await llm.chat(**chat_kwargs)
         content = (
             completion.get("choices", [{}])[0].get("message", {}).get("content") or ""
         )

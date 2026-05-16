@@ -33,6 +33,11 @@ class Settings(BaseSettings):
     approvals_url: str = Field(default="http://localhost:8105", alias="APPROVALS_URL")
     rag_query_url: str = Field(default="http://localhost:8086", alias="RAG_QUERY_URL")
     prompt_registry_url: str = Field(default="http://localhost:8087", alias="PROMPT_REGISTRY_URL")
+    # alfred-litellm-header-injection (G2): the canonical prompt service.
+    # Alfred's ToolRouter dispatches `prompt:<id>:render` to
+    # `<prompt_template_service_url>/v1/render`. No default — refuse to start
+    # without it so we never silently route to a stale or unconfigured target.
+    prompt_template_service_url: str = Field(default="", alias="PROMPT_TEMPLATE_SERVICE_URL")
     permissions_url: str = Field(default="http://localhost:8092", alias="PERMISSIONS_URL")
     skill_runner_url: str = Field(default="http://localhost:8091", alias="SKILL_RUNNER_URL")
     mcp_github_url: str = Field(default="http://localhost:8101", alias="MCP_GITHUB_URL")
@@ -95,4 +100,11 @@ class Settings(BaseSettings):
 
 
 def load_settings() -> Settings:
-    return Settings()
+    settings = Settings()
+    if not settings.prompt_template_service_url:
+        raise RuntimeError(
+            "PROMPT_TEMPLATE_SERVICE_URL is required: Alfred dispatches "
+            "prompt:<id>:render tools through prompt-template-service. "
+            "Set the env var to the base URL (e.g. http://localhost:8099)."
+        )
+    return settings

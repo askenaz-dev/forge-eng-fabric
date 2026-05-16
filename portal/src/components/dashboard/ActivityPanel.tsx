@@ -82,6 +82,11 @@ export function ActivityPanel() {
             {error}
           </div>
         )}
+        {events !== null && !error && events.length === 0 && (
+          <div className="note" style={{ textAlign: "center", color: "var(--fg-3)" }}>
+            {t("act_empty")}
+          </div>
+        )}
         {events?.map((ev) => {
           const mapping = EVENT_MAP[ev.type];
           const tone: EventTone = mapping?.tone ?? "em";

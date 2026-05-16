@@ -1,0 +1,85 @@
+apiVersion: forge.workflows/v1
+kind: Workflow
+metadata:
+  id: forge.reference.ai-email-triage
+  name: AI Email Triage (Reference)
+  version: 1.0.0
+  visibility: forge-certified
+  criticality: medium
+  description: >
+    End-to-end demo of the AI-Flow primitives shipped by the ai-flow-authoring
+    change. An email arrives, an LLM classifies and drafts a reply, a branch
+    routes urgent messages to a human and routine ones to an auto-response MCP.
+  owners:
+    - platform-architecture
+  tags:
+    - reference
+    - ai-flow
+    - email
+spec:
+  inputs: []
+  triggers:
+    - id: support-mail
+      type: email-inbound
+      config:
+        mailbox_ref: ws:mailbox:support
+        filter:
+          subject_contains: "[support]"
+      outputs:
+        subject: string
+        from: string
+        body: string
+        received_at: string
+        message_id: string
+      concurrency: queue
+  steps:
+    - id: classify
+      type: llm
+      prompt_template: registry:prompt/sdlc-product/email-classify@1.3.0
+      model:
+        ref: gateway:model/claude-haiku-4-5-20251001@latest-stable
+        overrides:
+          temperature: 0.2
+          max_tokens: 1024
+      tools: []
+      max_tool_calls: 5
+      inputs:
+        body: $triggers.support-mail.body
+        from: $triggers.support-mail.from
+        subject: $triggers.support-mail.subject
+      outputs_schema:
+        category: string     # enum-ish: urgent | billing | general
+        draft: string
+        confidence: number
+    - id: route
+      type: branch
+      depends_on:
+        - classify
+      branches:
+        - when: $steps.classify.outputs.category == "urgent"
+          goto: escalate
+        - when: true
+          goto: auto-reply
+    - id: escalate
+      type: human-in-the-loop
+      depends_on:
+        - route
+      approver_role: support-lead
+      on_timeout: escalate
+      escalation_role: engineering-manager
+      timeout: 30m
+      inputs:
+        category: $steps.classify.outputs.category
+        draft: $steps.classify.outputs.draft
+        from: $triggers.support-mail.from
+        subject: $triggers.support-mail.subject
+    - id: auto-reply
+      type: mcp
+      depends_on:
+        - route
+      ref: registry:mcp/email-tools@2.0.0
+      tool: send_reply
+      inputs:
+        to: $triggers.support-mail.from
+        subject: $triggers.support-mail.subject
+        body: $steps.classify.outputs.draft

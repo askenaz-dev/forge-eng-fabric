@@ -1,10 +1,23 @@
 # ADR-0001: Workflow Visual Editor — Embed Flowise
 
-**Status:** Accepted
+**Status:** Superseded by [ADR-0002](./0002-canvas-react-flow.md) (2026-05-16)
 **Date:** 2026-05-09
 **Author:** Platform Architecture
 **Reviewers:** SDLC Leads, Security, Frontend Engineering
 **Review date:** 2026-Q4 (or sooner if Flowise upstream releases a major version with breaking changes)
+
+> **Supersession note (2026-05-16):** The Flowise embed was never installed
+> (`flowise` and `reactflow` absent from `portal/package.json`) and the
+> Phase 5 sign-off acknowledged this gap in its deferred items list while
+> marking the visual-editor exit criterion as done. The
+> [ai-flow-authoring](../../../openspec/changes/ai-flow-authoring/) change
+> records the post-mortem and adopts React Flow (`@xyflow/react`, MIT) as
+> the canvas library. The adapter remains as `ast-canvas-adapter`; the
+> 1-quarter cost differential that justified Flowise no longer exists
+> because the adapter, the persistence shell, the gateway-catalog
+> palette, the dry-run UX, and the version diff have all landed. See
+> [ADR-0002](./0002-canvas-react-flow.md) for the new decision and
+> rationale.
 
 ## Context
 

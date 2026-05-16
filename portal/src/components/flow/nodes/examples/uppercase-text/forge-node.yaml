@@ -1,0 +1,27 @@
+id: uppercase-text
+version: 0.1.0
+publisher: forge-examples
+display_name: Uppercase Text (Example)
+description: Uppercases its input string. Reference node shipped with the custom-node SDK.
+category: action
+inputs:
+  type: object
+  required: [text]
+  properties:
+    text: { type: string }
+outputs:
+  type: object
+  required: [text]
+  properties:
+    text: { type: string }
+config:
+  type: object
+  properties:
+    locale: { type: string, default: en }
+permissions: []
+endpoint:
+  url: https://example.invalid/uppercase
+  timeout: 30s
+  retries:
+    max: 3
+    backoff: exponential

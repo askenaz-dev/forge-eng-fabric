@@ -3,6 +3,8 @@ package runtime
 import (
 	"context"
 	"errors"
+
+	"github.com/forge-eng-fabric/pkg/workflow/ast"
 )
 
 // TemporalEngine abstracts a Temporal-shaped workflow engine. The production
@@ -35,6 +37,16 @@ type ActivityInput struct {
 	Step        StepRuntimeInfo
 	Inputs      map[string]any
 	DryRun      bool
+
+	// LLM-specific fields populated only for steps of type llm. The
+	// engine flattens the typed shape from ast.Step here so the activity
+	// has every field the LLM executor needs without re-fetching the
+	// workflow. Empty for other step types.
+	LLMPromptTemplate string
+	LLMModel          *ast.ModelBinding
+	LLMTools          []string
+	LLMMaxToolCalls   int
+	LLMOutputsSchema  map[string]string
 }
 
 // StepRuntimeInfo is the static portion of a step that activities need.
@@ -61,3 +73,15 @@ var ErrCrossTenantAccess = errors.New("cross_tenant_access_denied")
 
 // ErrExecutionNotFound is returned when an execution id is unknown.
 var ErrExecutionNotFound = errors.New("execution_not_found")
+
+// ErrUnboundTriggerReference is returned when a step's resolved inputs
+// reference $triggers.<id>.<field> but the execution has no TriggerEvent
+// bound (or the trigger_id does not match). Non-retryable: the spec
+// is structurally wrong for the current execution context.
+var ErrUnboundTriggerReference = errors.New("unbound_trigger_reference")
+
+// ErrStepTypeNotYetImplemented is returned by stub activities for step
+// types that exist in the canonical enum but whose executor is the
+// subject of a follow-up change (per design.md §D8 priority table).
+// Non-retryable.
+var ErrStepTypeNotYetImplemented = errors.New("step_type_not_yet_implemented")

@@ -129,6 +129,152 @@ spec:
 	}
 }
 
+// TestPromptStepMigratesToPromptTemplate verifies that the catalog
+// reconciliation (ai-flow-authoring change) migrates legacy `prompt` step
+// kinds to `prompt-template` on Parse and records the original in
+// MigratedFrom for lint to surface.
+func TestPromptStepMigratesToPromptTemplate(t *testing.T) {
+	yaml := `apiVersion: forge.workflows/v1
+kind: Workflow
+metadata:
+  id: legacy-prompt
+  name: Legacy Prompt
+  version: 1.0.0
+spec:
+  steps:
+    - id: classify
+      type: prompt
+      ref: registry:prompt/sdlc-product/classify@1.0.0
+`
+	wf, err := Parse([]byte(yaml))
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	if got := wf.Spec.Steps[0].Type; got != ast.StepPromptTemplate {
+		t.Fatalf("expected step type migrated to %q, got %q", ast.StepPromptTemplate, got)
+	}
+	if got := wf.Spec.Steps[0].MigratedFrom; got != ast.StepPrompt {
+		t.Fatalf("expected MigratedFrom %q, got %q", ast.StepPrompt, got)
+	}
+}
+
+// TestNewStepTypesParse verifies the newly enumerated step types from the
+// catalog reconciliation are accepted by Parse + the standard sample shape.
+func TestNewStepTypesParse(t *testing.T) {
+	yaml := `apiVersion: forge.workflows/v1
+kind: Workflow
+metadata:
+  id: catalog
+  name: Catalog
+  version: 1.0.0
+spec:
+  steps:
+    - id: think
+      type: llm
+      ref: registry:prompt/foo/bar@1.0.0
+    - id: send
+      type: notification-action
+      ref: registry:mcp/email@write
+      tool: send
+    - id: emit
+      type: webhook
+      ref: registry:mcp/http@write
+      tool: post
+`
+	wf, err := Parse([]byte(yaml))
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	wantTypes := []ast.StepType{ast.StepLLM, ast.StepNotificationAction, ast.StepWebhookOut}
+	for i, want := range wantTypes {
+		if got := wf.Spec.Steps[i].Type; got != want {
+			t.Fatalf("step[%d]: got %q want %q", i, got, want)
+		}
+	}
+}
+
+// TestEventTriggerStepMigratesToTriggersBlock verifies that the legacy
+// `event-trigger` step kind is moved into spec.Triggers on Parse, with the
+// EventPattern fields mapped onto the trigger's Config.
+func TestEventTriggerStepMigratesToTriggersBlock(t *testing.T) {
+	yaml := `apiVersion: forge.workflows/v1
+kind: Workflow
+metadata:
+  id: legacy-event
+  name: Legacy Event
+  version: 1.0.0
+spec:
+  steps:
+    - id: src
+      type: event-trigger
+      event_pattern:
+        type: github.push.v1
+        source: github
+        filter:
+          repo: acme/*
+    - id: do
+      type: skill
+      ref: registry:skill/a/x@1.0.0
+      depends_on:
+        - src
+`
+	wf, err := Parse([]byte(yaml))
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	if len(wf.Spec.Triggers) != 1 {
+		t.Fatalf("expected one migrated trigger, got %d: %+v", len(wf.Spec.Triggers), wf.Spec.Triggers)
+	}
+	tr := wf.Spec.Triggers[0]
+	if tr.ID != "src" {
+		t.Errorf("trigger.ID: got %q want %q", tr.ID, "src")
+	}
+	if tr.Type != ast.TriggerEventBus {
+		t.Errorf("trigger.Type: got %q want %q (non-HTTP source maps to event-bus)", tr.Type, ast.TriggerEventBus)
+	}
+	if tr.MigratedFrom != ast.StepEventTrigger {
+		t.Errorf("trigger.MigratedFrom: got %q want %q", tr.MigratedFrom, ast.StepEventTrigger)
+	}
+	if topic, _ := tr.Config["topic"].(string); topic != "github.push.v1" {
+		t.Errorf("trigger.Config.topic: got %v want github.push.v1", tr.Config["topic"])
+	}
+	// The event-trigger step should be gone from Spec.Steps.
+	for _, s := range wf.Spec.Steps {
+		if s.Type == ast.StepEventTrigger {
+			t.Errorf("event-trigger step %q should have been removed from spec.steps", s.ID)
+		}
+	}
+}
+
+// TestEventTriggerWithHTTPSourceMapsToWebhookIn verifies the source-based
+// routing in eventTriggerToTrigger.
+func TestEventTriggerWithHTTPSourceMapsToWebhookIn(t *testing.T) {
+	yaml := `apiVersion: forge.workflows/v1
+kind: Workflow
+metadata:
+  id: legacy-http
+  name: Legacy HTTP
+  version: 1.0.0
+spec:
+  steps:
+    - id: hook
+      type: event-trigger
+      event_pattern:
+        type: incoming.payload
+        source: https://example.com/hook
+    - id: do
+      type: skill
+      ref: registry:skill/a/x@1.0.0
+`
+	wf, err := Parse([]byte(yaml))
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	if len(wf.Spec.Triggers) != 1 || wf.Spec.Triggers[0].Type != ast.TriggerWebhookIn {
+		t.Fatalf("expected webhook-in trigger, got %+v", wf.Spec.Triggers)
+	}
+}
+
 func TestParseDefaultsAPIVersion(t *testing.T) {
 	yaml := `metadata:
   id: x

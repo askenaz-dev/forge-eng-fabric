@@ -18,7 +18,7 @@ type DiffResult struct {
 
 // DiffWorkflows classifies the change between previous and next.
 //
-// Rules (from design D5.4):
+// Rules (from design D5.4, extended by ai-flow-authoring):
 //   - Removing or making required an existing input → MAJOR
 //   - Removing an output → MAJOR
 //   - Changing input/output type → MAJOR
@@ -26,6 +26,13 @@ type DiffResult struct {
 //   - Adding output → MINOR
 //   - New step added → MINOR
 //   - Step removed → MAJOR (consumers may reference its outputs)
+//   - New trigger added → MINOR
+//   - Trigger removed → MAJOR (external sources may have been pointed at it)
+//   - Trigger type changed → MAJOR
+//   - LLM step prompt_template / model.ref changed → MINOR
+//   - LLM step outputs_schema: field removed → MAJOR; field added → MINOR
+//   - Migration-only change (prompt→prompt-template, event-trigger→triggers
+//     block) → PATCH with the corresponding migrate_* reason
 //   - Retry tweaks / metadata-only changes → PATCH
 func DiffWorkflows(prev, next *ast.Workflow) DiffResult {
 	out := DiffResult{Bump: BumpPatch, Reasons: []string{}}
@@ -86,7 +93,12 @@ func DiffWorkflows(prev, next *ast.Workflow) DiffResult {
 			continue
 		}
 		if p.Type != n.Type {
-			markMajor(&out, fmt.Sprintf("step_type_changed:%s:%s->%s", id, p.Type, n.Type))
+			// The prompt → prompt-template alias is migration-only — keep it PATCH.
+			if isPromptToTemplateMigration(p.Type, n.Type) {
+				markPatchMigration(&out, fmt.Sprintf("migrate_prompt_to_prompt_template:%s", id))
+			} else {
+				markMajor(&out, fmt.Sprintf("step_type_changed:%s:%s->%s", id, p.Type, n.Type))
+			}
 		}
 		if p.Ref != n.Ref || p.Tool != n.Tool {
 			markMinor(&out, fmt.Sprintf("step_ref_changed:%s", id))
@@ -94,9 +106,126 @@ func DiffWorkflows(prev, next *ast.Workflow) DiffResult {
 		if !reflect.DeepEqual(p.DependsOn, n.DependsOn) {
 			markMinor(&out, fmt.Sprintf("step_deps_changed:%s", id))
 		}
+		// LLM-specific field comparisons. Apply only when both sides are LLM
+		// (or one side becomes LLM and the other did not, which is already
+		// covered as step_type_changed).
+		if p.Type == ast.StepLLM && n.Type == ast.StepLLM {
+			diffLLMStep(&out, id, p, n)
+		}
 	}
+
+	diffTriggers(&out, prev.Spec.Triggers, next.Spec.Triggers)
+
 	if out.Bump == BumpPatch && metadataChanged(prev, next) {
 		out.Reasons = append(out.Reasons, "metadata_only_change")
+	}
+	return out
+}
+
+// isPromptToTemplateMigration reports whether the type change is the
+// deprecated-prompt-to-prompt-template auto-migration. The DSL layer
+// normally applies this on parse, but the registry runs the diff against
+// the raw stored AST; an old version may still carry `prompt`.
+func isPromptToTemplateMigration(prev, next ast.StepType) bool {
+	return prev == ast.StepPrompt && next == ast.StepPromptTemplate
+}
+
+// markPatchMigration records a PATCH-level reason for a migration-only
+// change. If a MAJOR or MINOR change has already been observed in this
+// diff, the bump stays where it is; the reason is added either way.
+func markPatchMigration(d *DiffResult, reason string) {
+	d.Reasons = appendOnce(d.Reasons, reason)
+}
+
+func diffLLMStep(d *DiffResult, id string, p, n ast.Step) {
+	if p.PromptTemplate != n.PromptTemplate {
+		markMinor(d, fmt.Sprintf("llm_prompt_template_changed:%s", id))
+	}
+	pModelRef, nModelRef := modelRef(p.Model), modelRef(n.Model)
+	if pModelRef != nModelRef {
+		markMinor(d, fmt.Sprintf("llm_model_ref_changed:%s", id))
+	}
+	if !reflect.DeepEqual(p.Tools, n.Tools) {
+		markMinor(d, fmt.Sprintf("llm_tools_changed:%s", id))
+	}
+	// Outputs schema: removed field → MAJOR (consumers downstream may
+	// reference it); added field → MINOR.
+	for name := range p.StepOutputs {
+		if _, ok := n.StepOutputs[name]; !ok {
+			markMajor(d, fmt.Sprintf("llm_outputs_removed:%s:%s", id, name))
+		}
+	}
+	for name := range n.StepOutputs {
+		if _, ok := p.StepOutputs[name]; !ok {
+			markMinor(d, fmt.Sprintf("llm_outputs_added:%s:%s", id, name))
+		}
+	}
+}
+
+func modelRef(m *ast.ModelBinding) string {
+	if m == nil {
+		return ""
+	}
+	return m.Ref
+}
+
+// diffTriggers classifies trigger-block changes. Migrations from a legacy
+// event-trigger step into a triggers entry are not visible at this layer
+// (they appear as an event-trigger step removal in steps and a brand-new
+// trigger addition with MigratedFrom set) — the caller can detect the
+// pair and downgrade to PATCH if needed. For the current API we surface
+// the structural diff and let the publish path apply the migrate_*
+// downgrade when both sides match exactly.
+func diffTriggers(out *DiffResult, prev, next []ast.Trigger) {
+	prevIdx := indexTriggers(prev)
+	nextIdx := indexTriggers(next)
+
+	// Removals.
+	for id := range prevIdx {
+		if _, ok := nextIdx[id]; !ok {
+			markMajor(out, fmt.Sprintf("trigger_removed:%s", id))
+		}
+	}
+
+	// Additions and changes.
+	for id, n := range nextIdx {
+		p, ok := prevIdx[id]
+		if !ok {
+			if n.MigratedFrom != "" {
+				// Auto-migrated from a deprecated step kind — patch-level.
+				markPatchMigration(out, fmt.Sprintf("migrate_event_trigger_to_triggers_block:%s", id))
+			} else {
+				markMinor(out, fmt.Sprintf("trigger_added:%s", id))
+			}
+			continue
+		}
+		if p.Type != n.Type {
+			markMajor(out, fmt.Sprintf("trigger_type_changed:%s:%s->%s", id, p.Type, n.Type))
+		}
+		if !reflect.DeepEqual(p.Config, n.Config) {
+			markMinor(out, fmt.Sprintf("trigger_config_changed:%s", id))
+		}
+		// Output schema additions are MINOR; removals are MAJOR.
+		for name := range p.Outputs {
+			if _, ok := n.Outputs[name]; !ok {
+				markMajor(out, fmt.Sprintf("trigger_outputs_removed:%s:%s", id, name))
+			}
+		}
+		for name := range n.Outputs {
+			if _, ok := p.Outputs[name]; !ok {
+				markMinor(out, fmt.Sprintf("trigger_outputs_added:%s:%s", id, name))
+			}
+		}
+		if p.ConcurrencyOrDefault() != n.ConcurrencyOrDefault() {
+			markMinor(out, fmt.Sprintf("trigger_concurrency_changed:%s", id))
+		}
+	}
+}
+
+func indexTriggers(in []ast.Trigger) map[string]ast.Trigger {
+	out := map[string]ast.Trigger{}
+	for _, t := range in {
+		out[t.ID] = t
 	}
 	return out
 }

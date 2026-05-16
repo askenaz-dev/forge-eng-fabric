@@ -10,10 +10,11 @@ import {
 } from "./AlfredSessionProvider";
 import { useCommandPalette } from "../providers/CommandPaletteProvider";
 import { useLang } from "../providers/LangProvider";
+import type { DictKey } from "@/i18n/dictionary";
 import { cx } from "../primitives/cx";
 
-const MARK_URL = "/alfred-mark.svg";
-const MARK_WORKING_URL = "/alfred-mark-working.svg";
+const MARK_URL = "/alfred-avatar.png";
+const MARK_WORKING_URL = "/alfred-avatar.png";
 
 type AlfredPermissions = {
   alfred_invoke: boolean;
@@ -165,17 +166,22 @@ function DockBody({ perms }: { perms: AlfredPermissions }) {
   const { t } = useLang();
   const session = useAlfredSession();
   const [intent, setIntent] = useState("");
-  const [openspecId, setOpenspecId] = useState("");
   const [followUp, setFollowUp] = useState("");
+  const [startError, setStartError] = useState<string | null>(null);
 
   const canStart = perms.alfred_agent_mode_run && intent.trim().length > 0;
 
   const onStart = useCallback(async () => {
-    if (!intent.trim() || !openspecId.trim()) return;
-    // Workspace id is resolved server-side via the active workspace cookie/header.
-    await session.start({ workspaceId: "", openspecId, intent });
-    setIntent("");
-  }, [session, intent, openspecId]);
+    if (!intent.trim()) return;
+    setStartError(null);
+    try {
+      // workspace_id resolved server-side from the next-auth JWT session.
+      await session.start({ workspaceId: "", intent });
+      setIntent("");
+    } catch (err) {
+      setStartError(err instanceof Error ? err.message : t("alfred_err_generic"));
+    }
+  }, [session, intent, t]);
 
   const onFollowUp = useCallback(async () => {
     if (!followUp.trim()) return;
@@ -189,18 +195,9 @@ function DockBody({ perms }: { perms: AlfredPermissions }) {
         <section className="alfred-dock__section">
           <h3>{t("alfred_dock_compose_title")}</h3>
           <label className="alfred-dock__label">
-            <span>{t("alfred_dock_openspec_label")}</span>
-            <input
-              data-alfred-first
-              className="alfred-dock__input"
-              value={openspecId}
-              onChange={(e) => setOpenspecId(e.target.value)}
-              placeholder="openspec-id"
-            />
-          </label>
-          <label className="alfred-dock__label">
             <span>{t("alfred_dock_intent_label")}</span>
             <textarea
+              data-alfred-first
               className="alfred-dock__input"
               value={intent}
               onChange={(e) => setIntent(e.target.value)}
@@ -208,6 +205,9 @@ function DockBody({ perms }: { perms: AlfredPermissions }) {
               placeholder={t("alfred_dock_intent_placeholder")}
             />
           </label>
+          {startError && (
+            <p role="alert" className="alfred-dock__error">{startError}</p>
+          )}
           <button
             type="button"
             className="alfred-dock__btn alfred-dock__btn--primary"
@@ -327,13 +327,14 @@ function AlfredMark({ working }: { working: boolean }) {
       alt=""
       aria-hidden
       className={cx("alfred-mark", working && "alfred-mark--working")}
-      width={24}
-      height={24}
+      width={32}
+      height={32}
+      style={{ borderRadius: "50%", objectFit: "cover" }}
     />
   );
 }
 
-function statusLabel(status: AlfredSessionStatus | null, t: (k: string) => string): string {
+function statusLabel(status: AlfredSessionStatus | null, t: (k: DictKey) => string): string {
   switch (status) {
     case "planning":
       return t("alfred_status_planning");

@@ -58,6 +58,7 @@ type Execution struct {
 	Compensations  []CompensationItem `json:"compensations,omitempty"`
 	DryRun         bool               `json:"dry_run,omitempty"`
 	SelectedAssets *SelectedAssets    `json:"selected_assets,omitempty"`
+	TriggerEvent   *TriggerEvent      `json:"trigger_event,omitempty"`
 }
 
 // SelectedAssets is the pinned set the wizard / visual editor saved on
@@ -141,6 +142,24 @@ type StartRequest struct {
 	CorrelationID  string          `json:"correlation_id,omitempty"`
 	DryRun         bool            `json:"dry_run,omitempty"`
 	SelectedAssets *SelectedAssets `json:"selected_assets,omitempty"`
+	// TriggerEvent is populated by trigger-router when an execution is
+	// fired by a registered trigger. Steps may reference its payload via
+	// $triggers.<trigger_id>.<field>. When TriggerEvent is nil, any step
+	// expression referencing $triggers.* is rejected at run time with
+	// unbound_trigger_reference (see ai-flow-authoring change). Direct-
+	// POST executions without triggers behave exactly as before.
+	TriggerEvent *TriggerEvent `json:"trigger_event,omitempty"`
+}
+
+// TriggerEvent describes the firing that started a trigger-originated
+// execution. trigger_id MUST match a Trigger.ID in the workflow AST;
+// payload is the event body shaped according to the trigger's declared
+// outputs schema.
+type TriggerEvent struct {
+	TriggerID     string         `json:"trigger_id"`
+	FiredAt       time.Time      `json:"fired_at"`
+	Payload       map[string]any `json:"payload,omitempty"`
+	QueuePosition int            `json:"queue_position,omitempty"`
 }
 
 // SignalRequest is the input for delivering a signal to an execution.

@@ -29,7 +29,7 @@ from alfred.gateways import (
     RAGClient,
 )
 from alfred.guardrails import Guardrails
-from alfred.llm import LiteLLMClient
+from alfred.llm import LiteLLMClient, RequestContext
 from alfred.logging import get_logger
 from alfred.models import DecisionRecord, IntentResponse, Session
 from alfred.observability import AIObserver
@@ -100,8 +100,16 @@ async def run_intent(
     correlation_id: str,
     openspec_id: str | None = None,
     metadata: dict[str, Any] | None = None,
+    tenant_id: str = "",
+    data_classification: str = "internal",
 ) -> IntentResponse:
-    """Run a single intent through the loop. Persists session + decisions."""
+    """Run a single intent through the loop. Persists session + decisions.
+
+    `tenant_id` and `data_classification` flow into every LiteLLM call
+    via `RequestContext` (alfred-litellm-header-injection G1). The HTTP
+    layer derives `tenant_id` from the JWT/principal; tests pass a fixed
+    value. Missing tenant_id causes LiteLLMClient to fail closed.
+    """
 
     session = Session(
         id=uuid.uuid4(),
@@ -112,6 +120,13 @@ async def run_intent(
         status="open",
         correlation_id=correlation_id,
         metadata=metadata or {},
+        tenant_id=tenant_id,
+    )
+    llm_context = RequestContext(
+        tenant_id=tenant_id,
+        workspace_id=str(workspace_id),
+        correlation_id=correlation_id,
+        data_classification=data_classification,
     )
     await deps.store.create_session(session)
     await deps.store.append_message(
@@ -153,6 +168,7 @@ async def run_intent(
         completion = await deps.llm.chat(
             model=deps.default_model,
             messages=history,
+            context=llm_context,
             metadata={
                 "correlation_id": correlation_id,
                 "session_id": str(session.id),

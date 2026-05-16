@@ -310,6 +310,15 @@ func writeError(w http.ResponseWriter, err error) {
 		writeJSON(w, http.StatusUnprocessableEntity, map[string]any{"error": "missing_owners"})
 	case errors.Is(err, ErrMissingName):
 		writeJSON(w, http.StatusUnprocessableEntity, map[string]any{"error": "missing_name"})
+	// alfred-design-system-picker: atomic create can return both kinds of DS
+	// errors. Map them to the same status codes the swap endpoint uses so
+	// portal copy can share strings.
+	case errors.Is(err, ErrDesignSystemNotApproved):
+		writeJSON(w, http.StatusConflict, map[string]any{"error": "design_system_not_approved", "message": err.Error()})
+	case errors.Is(err, ErrDesignSystemNotVisible):
+		writeJSON(w, http.StatusNotFound, map[string]any{"error": "design_system_not_visible", "message": err.Error()})
+	case errors.Is(err, ErrDesignSystemNotFound):
+		writeJSON(w, http.StatusNotFound, map[string]any{"error": "design_system_not_found"})
 	case errors.Is(err, ErrForbidden):
 		writeJSON(w, http.StatusForbidden, map[string]any{"error": "forbidden"})
 	default:

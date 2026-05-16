@@ -31,6 +31,7 @@ from alfred.agent_mode.store import AgentModeStore
 from alfred.auth import Principal, fga_check, mint_sub_principal
 from alfred.autonomy_presets import PresetStore
 from alfred.config import Settings
+from alfred.llm import RequestContext
 from alfred.logging import get_logger
 
 log = get_logger(__name__)
@@ -128,6 +129,20 @@ def build_router(
         active_preset = next(iter(presets), {})
 
         # alfred-console-redesign 7.3: build plan starting at start_step.
+        # alfred-litellm-header-injection (G1): planner LLM call carries the
+        # four standard headers via RequestContext built from the session's
+        # workspace + correlation. tenant_id derived from JWT claims when
+        # present; falls back to dev sentinel only outside auth-required mode.
+        tenant_claim = (
+            principal.raw.get("forge_tenant_id")
+            or principal.raw.get("tenant_id")
+            or ("dev-tenant" if not request.app.state.auth_required else "")
+        )
+        llm_context = RequestContext(
+            tenant_id=tenant_claim or "",
+            workspace_id=str(body.workspace_id),
+            correlation_id=correlation_id,
+        )
         plan = await build_initial_plan(
             workspace_id=body.workspace_id,
             openspec_id=body.openspec_id,
@@ -138,6 +153,7 @@ def build_router(
             openspec=executor_deps.openspec,
             model=settings.agent_mode_default_model,
             start_step=start_step,
+            llm_context=llm_context,
         )
 
         session = AgentModeSession(

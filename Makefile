@@ -97,6 +97,12 @@ verify-runtime:
 demo-intent-to-deploy:
 	@python scripts/demo_intent_to_deploy.py
 
+# ai-flow-authoring: publishes forge.reference.ai-email-triage@1, fires a
+# synthetic trigger event against trigger-router, and prints the dry-run
+# trace from workflow-runtime. Requires: make up.
+demo-ai-email-triage:
+	@python scripts/integration/smoke_ai_email_triage.py
+
 # sdlc-end-to-end: exercises forge.reference.intent-to-infrastructure@1 end-to-end
 # against the local stack. Requires: make up, a registered Minikube runtime, and
 # the feature flags forge.workflow.intent_to_infrastructure.enabled=true (per-tenant).

@@ -9,7 +9,6 @@ import { Chev, ChevDown, ForgeMark, More } from "../icons";
 import { useLang } from "../providers/LangProvider";
 import { NAV_GROUPS, type NavGroupId } from "./nav";
 import { cx } from "../primitives/cx";
-import { TenantPicker } from "./TenantPicker";
 
 type Counts = {
   agents?: number;
@@ -56,13 +55,11 @@ function useGroupCollapse(): {
 }
 
 export function Sidebar({
-  tenantSlug,
   counts,
   permissions,
   collapsed = false,
   onToggleCollapse,
 }: {
-  tenantSlug: string;
   counts: Counts;
   permissions: PermissionSet;
   collapsed?: boolean;
@@ -118,7 +115,6 @@ export function Sidebar({
           <span className="w">Forge</span>
           <span className="o">Engineering Fabric</span>
         </div>
-        <TenantPicker activeSlug={tenantSlug} />
       </div>
 
       <nav className="side-nav" aria-label="primary">

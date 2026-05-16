@@ -17,6 +17,15 @@ type SearchParams = { workspace_id?: string; workflow_id?: string; version?: str
 const workflowRegistryUrl = () =>
   process.env.WORKFLOW_REGISTRY_URL ?? "http://localhost:8094";
 
+// Source of truth for the canonical step types is pkg/workflow/ast/catalog.json,
+// mirrored by CANONICAL_STEP_TYPES in @/lib/ast-canvas-adapter. The palette
+// below adds presentation metadata (label, color) per type but MUST NOT
+// introduce types not in the canonical list — the Go parity test would catch
+// the drift if the AST changed, but a TS-only invented type here would
+// silently break save.
+//
+// Retry is intentionally absent: it is a per-step policy (Step.Retries), not a
+// step type. The editor surfaces it inside the property panel of any step.
 const NODE_CATALOG = [
   { type: "llm", label: "LLM", color: "purple" },
   { type: "mcp", label: "MCP", color: "blue" },
@@ -26,13 +35,14 @@ const NODE_CATALOG = [
   { type: "human-in-the-loop", label: "HITL Gate", color: "rose" },
   { type: "branch", label: "Branch", color: "sky" },
   { type: "loop", label: "Loop", color: "sky" },
-  { type: "retry", label: "Retry", color: "yellow" },
+  { type: "sub-workflow", label: "Sub-workflow", color: "neutral" },
   { type: "eval", label: "Eval", color: "violet" },
   { type: "webhook", label: "Webhook", color: "teal" },
   { type: "github-action", label: "GitHub Action", color: "neutral" },
   { type: "deploy-action", label: "Deploy Action", color: "lime" },
   { type: "approval-action", label: "Approval Action", color: "rose" },
   { type: "notification-action", label: "Notification Action", color: "pink" },
+  { type: "custom", label: "Custom", color: "gray" },
 ] as const;
 
 async function userHasWorkflowAuthor(token: string | undefined, workspaceId: string | undefined): Promise<boolean> {

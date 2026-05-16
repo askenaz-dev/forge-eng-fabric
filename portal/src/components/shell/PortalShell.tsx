@@ -18,14 +18,18 @@ const EMPTY_COUNTS: Counts = { agents: 0, skills: 0, mcp: 0, approvals: 0 };
 
 export function PortalShell({
   tenantSlug,
-  workspaceLabel,
+  tenantName,
+  workspaceSlug,
+  workspaceName,
   githubHref,
   initialPermissions,
   initialCounts = EMPTY_COUNTS,
   children,
 }: {
   tenantSlug: string;
-  workspaceLabel: string;
+  tenantName: string;
+  workspaceSlug: string;
+  workspaceName: string;
   githubHref?: string;
   initialPermissions: string[];
   initialCounts?: Counts;
@@ -65,13 +69,18 @@ export function PortalShell({
       <NavigationProgress />
       <div className={cx("app", collapsed && "app--collapsed")}>
         <Sidebar
-          tenantSlug={tenantSlug}
           counts={counts}
           permissions={permissions}
           collapsed={collapsed}
           onToggleCollapse={toggle}
         />
-        <TopBar workspaceLabel={workspaceLabel} githubHref={githubHref} />
+        <TopBar
+          tenantSlug={tenantSlug}
+          tenantName={tenantName}
+          workspaceSlug={workspaceSlug}
+          workspaceName={workspaceName}
+          githubHref={githubHref}
+        />
         <main className="main">
           <div className="main-inner">{children}</div>
         </main>

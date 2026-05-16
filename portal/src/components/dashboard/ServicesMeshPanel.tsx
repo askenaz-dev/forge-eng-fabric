@@ -6,14 +6,15 @@ import { useLang } from "@/components/providers/LangProvider";
 import type { ServiceHealth, ServicesHealthPayload } from "@/app/api/observability/services/health/route";
 
 const POSITIONS: Record<string, { x: number; y: number }> = {
-  orchestrator:    { x: 220, y: 110 },
-  "policy-svc":    { x:  60, y:  40 },
-  openfga:         { x:  60, y: 110 },
-  registry:        { x:  60, y: 180 },
-  audit:           { x: 220, y: 200 },
-  "context-eng":   { x: 380, y: 180 },
-  "spec-engine":   { x: 380, y: 110 },
-  pgvector:        { x: 380, y:  40 },
+  orchestrator:        { x: 220, y: 110 },
+  "policy-svc":        { x:  60, y:  40 },
+  openfga:             { x:  60, y: 110 },
+  registry:            { x:  60, y: 180 },
+  audit:               { x: 220, y: 200 },
+  "workflow-runtime":  { x: 220, y:  20 },
+  "context-eng":       { x: 380, y: 180 },
+  "spec-engine":       { x: 380, y: 110 },
+  pgvector:            { x: 380, y:  40 },
 };
 
 function color(state: ServiceHealth["state"]) {
@@ -123,6 +124,7 @@ function kindKey(kind: string): string {
     case "authz":         return "authz";
     case "registry":      return "registry";
     case "audit":         return "audit";
+    case "runtime":       return "runtime";
     case "context":       return "ctx";
     case "spec":          return "spec";
     case "db":

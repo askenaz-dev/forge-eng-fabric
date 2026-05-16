@@ -10,6 +10,13 @@ import { fontClassNames, geist } from "./fonts";
 import { initialDataTheme, readPreferences } from "@/lib/prefs";
 import { endpoint } from "@/lib/api";
 
+function titleCase(slug: string): string {
+  return slug
+    .split(/[-_]/)
+    .map((s) => (s.length === 0 ? s : s[0].toUpperCase() + s.slice(1)))
+    .join(" ");
+}
+
 export const metadata = {
   title: "Forge Engineering Fabric",
   description: "Forge Engineering Fabric — Internal Developer Portal",
@@ -81,7 +88,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   }
 
   const session = await getServerSession(authOptions);
-  const token = (session as { accessToken?: string } | null)?.accessToken;
+  const token = session?.accessToken;
   const actor = session?.user?.email ?? session?.user?.name ?? "anonymous";
 
   const [permissions, counts] = await Promise.all([
@@ -89,8 +96,10 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     fetchInitialCounts(token, actor),
   ]);
 
-  const tenantSlug = "acme"; // populated from prefs/cookie in subsequent iterations
-  const workspaceLabel = "Workspace · Engineering";
+  const tenantSlug = session?.tenantSlug ?? "acme";
+  const workspaceSlug = session?.workspaceSlug ?? "engineering";
+  const tenantName = titleCase(tenantSlug);
+  const workspaceName = titleCase(workspaceSlug);
   const githubHref = process.env.PORTAL_GITHUB_HREF;
 
   // Surface the correlation id from the incoming request for traceability.
@@ -108,7 +117,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <Providers initialTheme={prefs.theme} initialDensity={prefs.density} initialLang={prefs.lang}>
           <PortalShell
             tenantSlug={tenantSlug}
-            workspaceLabel={workspaceLabel}
+            tenantName={tenantName}
+            workspaceSlug={workspaceSlug}
+            workspaceName={workspaceName}
             githubHref={githubHref}
             initialPermissions={permissions}
             initialCounts={counts}

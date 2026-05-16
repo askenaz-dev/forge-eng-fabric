@@ -78,6 +78,12 @@ class AccessibilityAuditRequest(BaseModel):
     stub_files: list[str] = Field(default_factory=list)
     tenant_id: str
     workspace_id: str | None = None
+    # alfred-design-system-picker (7.x): the workflow propagates the App's
+    # resolved design_system_ref into every design-skill invocation so the
+    # audit reports against the right tokens. Optional to preserve
+    # backwards-compatibility with existing test fixtures; the workflow
+    # always supplies it in production.
+    design_system_ref: str | None = None
 
 
 class AuditReport(BaseModel):

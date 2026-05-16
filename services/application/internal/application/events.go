@@ -16,21 +16,32 @@ const (
 	EventAppRestored     EventType = "app.restored.v1"
 	EventAppDeleted      EventType = "app.deleted.v1"
 	EventSpecReparented  EventType = "spec.reparented.v1"
+	// alfred-design-system-picker (D3): emitted alongside `app.created.v1`
+	// when the App was created with `design_system_chosen_explicitly=false`
+	// (the picker's Skip path, or any caller that did not opt in). Subscribers
+	// use this to measure catalog discoverability.
+	EventDesignSystemUserSkipped EventType = "app.design_system.user_skipped.v1"
 )
 
 // Event is the payload shipped to the platform event bus. We carry both the
 // `before` and `after` App bodies on update events so subscribers do not have
 // to issue an extra lookup (per spec scenario "Update event carries diff").
+//
+// alfred-design-system-picker adds `Extra` for event-type-specific fields
+// that do not belong on every event (e.g. `resolved_ref`, `chosen_explicitly`
+// on `app.design_system.user_skipped.v1`). Subscribers consume it selectively
+// per event type.
 type Event struct {
-	Type          EventType `json:"type"`
-	AppID         string    `json:"app_id"`
-	WorkspaceID   string    `json:"workspace_id"`
-	TenantID      string    `json:"tenant_id"`
-	Actor         string    `json:"actor"`
-	CorrelationID string    `json:"correlation_id"`
-	Before        *App      `json:"before,omitempty"`
-	After         *App      `json:"after,omitempty"`
-	OccurredAt    time.Time `json:"occurred_at"`
+	Type          EventType      `json:"type"`
+	AppID         string         `json:"app_id"`
+	WorkspaceID   string         `json:"workspace_id"`
+	TenantID      string         `json:"tenant_id"`
+	Actor         string         `json:"actor"`
+	CorrelationID string         `json:"correlation_id"`
+	Before        *App           `json:"before,omitempty"`
+	After         *App           `json:"after,omitempty"`
+	Extra         map[string]any `json:"extra,omitempty"`
+	OccurredAt    time.Time      `json:"occurred_at"`
 }
 
 // EventSink is the seam between this service and the platform event bus. The

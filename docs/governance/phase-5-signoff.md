@@ -13,7 +13,7 @@ Phase 5 makes Forge a workflow marketplace: customers can browse, install, and r
 - [x] `services/workflow-runtime` running with persistent event store.
 - [x] `services/workflow-registry` with versioned, immutable workflows — see [registry tests](../../services/workflow-registry/internal/registry/).
 - [x] Marketplace listing surface in Portal at `/marketplace`.
-- [x] Visual workflow editor at `/workflows/editor` (Flowise embed) — see [ADR-0001](adrs/0001-workflow-visual-editor.md).
+- [ ] Visual workflow editor at `/workflows/editor` — **correction 2026-05-16**: moved back to deferred. Original sign-off marked this box done while the deferred-items list contained "Live Flowise embed browser session" — i.e. the editor itself. The [ai-flow-authoring](../../openspec/changes/ai-flow-authoring/) change replaces the Flowise decision with React Flow (see [ADR-0002](adrs/0002-canvas-react-flow.md)) and ships the canvas as part of its cutover. Also acknowledges a previously undocumented step-catalog mismatch (Portal advertised 15 types; Go AST enumerated 8) which the change reconciles.
 - [x] Advanced eval harness `services/eval-harness-adv` integrated.
 - [x] Reference workflow `forge.reference.intent-to-deploy@1` registered.
 - [ ] ≥ 1 long-lived workflow execution recorded — **deferred**, see [Deferred Items](#deferred-items).
@@ -38,7 +38,7 @@ Phase 5 makes Forge a workflow marketplace: customers can browse, install, and r
 |---|---|---|---|
 | ≥ 1 long-lived workflow execution (≥ 1h wall-clock) | SDLC | 2026-Q3 | follow-up |
 | ≥ 1 marketplace install with end-to-end usage | SDLC | 2026-Q3 | follow-up |
-| Live Flowise embed browser session | Frontend Eng | 2026-Q3 | follow-up |
+| Visual canvas at /workflows/editor (React Flow per ADR-0002) | Frontend Eng | 2026-Q3 | [ai-flow-authoring](../../openspec/changes/ai-flow-authoring/) — supersedes the original "Flowise embed" deferred row |
 | Advanced eval-harness run on a productive workflow | SDLC | 2026-Q3 | follow-up |
 
 ## Approvers

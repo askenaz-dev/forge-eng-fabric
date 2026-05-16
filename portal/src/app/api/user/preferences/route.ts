@@ -6,16 +6,19 @@
  * PUT  — persists the user's choice and emits alfred.console.view_toggled.v1
  */
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/auth";
 import { authToken, correlationId, endpoint, emitAudit } from "@/lib/api";
 
-export async function GET(req: NextRequest) {
-  const { token } = await authToken();
-  const workspaceCookie = req.cookies.get("forge_workspace")?.value ?? "";
+export async function GET(_req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  const token = session?.accessToken;
+  const workspaceId = session?.workspaceSlug ?? "";
 
   try {
     // Resolve from the control-plane user-prefs store.
     const r = await fetch(
-      `${endpoint("CONTROL_PLANE_URL")}/v1/user/preferences?workspace_id=${workspaceCookie}`,
+      `${endpoint("CONTROL_PLANE_URL")}/v1/user/preferences?workspace_id=${workspaceId}`,
       {
         headers: {
           ...(token ? { authorization: `Bearer ${token}` } : {}),

@@ -46,35 +46,146 @@ The editor MUST support a `dry_run` mode that executes the workflow with mocked 
 
 ### Requirement: Implementation choice recorded as ADR
 
-The platform SHALL record the visual editor implementation choice (embed Flowise vs fork n8n vs build custom) as an Architecture Decision Record at `docs/governance/adrs/0001-workflow-visual-editor.md`. The ADR SHALL be referenced from this capability and from `docs/platform-enablement.md`.
+The platform SHALL record the visual editor implementation choice as an Architecture Decision Record. ADR-0001 (`docs/governance/adrs/0001-workflow-visual-editor.md`) SHALL be set to status `Superseded` with a forward reference to ADR-0002. ADR-0002 (`docs/governance/adrs/0002-canvas-react-flow.md`) SHALL record the React Flow + custom-canvas decision, alternatives considered (Flowise embed, n8n fork, Drawflow/LiteFlow, native SVG), consequences, and review date. The new ADR SHALL be referenced from this capability and from `docs/platform-enablement.md`.
 
-#### Scenario: ADR exists and is referenced
+#### Scenario: Superseded ADR-0001 and accepted ADR-0002 exist
 
 - **WHEN** a contributor reads this capability or `docs/platform-enablement.md`
-- **THEN** a link SHALL navigate to `docs/governance/adrs/0001-workflow-visual-editor.md`, and the ADR SHALL be in `accepted` status with the chosen approach, alternatives, consequences, and review date
+- **THEN** ADR-0001 SHALL show status `Superseded by ADR-0002` with a link
+- **AND** ADR-0002 SHALL be in `Accepted` status with the React Flow choice, alternatives, consequences, and review date
 
 ### Requirement: Editor integrated into the Portal
 
-The visual editor SHALL be embedded in the Portal at `/workflows/editor` and SHALL operate within the Portal's authentication, authorization, and Workspace context.
+The visual editor SHALL be embedded in the Portal at `/workflows/editor` and SHALL operate within the Portal's authentication, authorization, and Workspace context. The user-facing copy SHALL refer to AI Flows (ES: "Flujos AI") sourced from `portal/src/i18n/dictionary.ts`. Internal identifiers (routes, API paths, service names) SHALL keep `workflow` to preserve backward compatibility.
 
 #### Scenario: Editor opens within a Workspace
 
 - **WHEN** a user with `workflow.author` permission navigates to `/workflows/editor` in their Workspace
-- **THEN** the editor SHALL load with the Workspace context applied and SHALL only display nodes and assets visible to the Workspace per OpenFGA
+- **THEN** the editor SHALL load with the Workspace context applied
+- **AND** SHALL display the canvas, trigger palette, node palette, property panel, and dry-run drawer
+- **AND** SHALL only display nodes and assets visible to the Workspace per OpenFGA
 
 #### Scenario: Editor honors approval policies
 
 - **WHEN** a user without `workflow.author` permission attempts to open the editor
-- **THEN** the Portal SHALL deny access and surface a clear permission-error message
+- **THEN** the Portal SHALL deny access and surface a clear permission-error message localized via `portal/src/i18n/dictionary.ts`
+
+#### Scenario: User-facing copy reads "AI Flows"
+
+- **WHEN** the editor renders chrome (page title, headings, palette section labels, save button)
+- **THEN** copy SHALL render as "AI Flows" / "Flujos AI" sourced from the dictionary
 
 ### Requirement: Canonical node catalog rendered
 
-The editor SHALL render exactly the canonical node catalog: LLM, MCP, Skill, Agent, Prompt Template, HITL Gate, Branch, Loop, Retry, Eval, Webhook, GitHub Action, Deploy Action, Approval Action, Notification Action. Additional node types SHALL be added only via OpenSpec change with capability impact.
+The editor SHALL render the canonical node catalog. The catalog SHALL be split into four palette sections:
 
-#### Scenario: Catalog matches the canonical list
+- **Triggers**: `manual`, `cron`, `webhook-in`, `event-bus`, `email-inbound`.
+- **AI**: `llm`, `agent`, `prompt-template`.
+- **Actions**: `mcp`, `skill`, `webhook` (outbound), `github-action`, `deploy-action`, `approval-action`, `notification-action`.
+- **Logic**: `branch`, `loop`, `retry`, `human-in-the-loop`, `eval`.
+
+A `custom` node category SHALL appear once at least one custom node is registered for the workspace, rendered under its declared `category`. Additional node types SHALL be added only via OpenSpec change with capability impact.
+
+#### Scenario: Palette renders the four canonical sections
 
 - **WHEN** a user opens the node palette
-- **THEN** every canonical node type SHALL be present and SHALL be queryable from the Registry; nodes referencing assets in non-`approved` state SHALL be visually marked and disallowed in saved workflows
+- **THEN** the palette SHALL show four sections in order: Triggers, AI, Actions, Logic
+- **AND** every canonical node type SHALL be present in its section
+- **AND** assets in non-`approved` state SHALL be visually marked and disallowed in saved workflows
+
+### Requirement: Canvas based on React Flow
+
+The visual editor SHALL be built on `@xyflow/react` (MIT). Canvas behaviors (drag-drop, pan, zoom, minimap, keyboard navigation, edge routing) SHALL be implemented using the library's primitives. Custom node renderers SHALL live under `portal/src/components/flow/nodes/` and SHALL implement the `FlowNodeRenderer` interface defined by the custom-node SDK. The canvas SHALL persist canonical AST via the `ast-canvas-adapter` (renamed from `flowise-adapter`), with round-trip parity preserved by an existing-style test.
+
+#### Scenario: Canvas round-trips AST losslessly
+
+- **GIVEN** a canonical AST with two triggers, an LLM node, a branch, and an MCP action
+- **WHEN** the AST is loaded via the adapter, modified by adding a node, and saved
+- **THEN** the persisted AST MUST contain the original nodes plus the new one
+- **AND** the round-trip test `ast-canvas-adapter` MUST pass
+
+#### Scenario: Canvas accessibility primitives present
+
+- **WHEN** a keyboard-only user opens the editor
+- **THEN** every palette item SHALL be reachable via Tab
+- **AND** Enter on a focused palette item SHALL add the node to the canvas
+- **AND** the canvas SHALL announce node additions via an ARIA live region
+
+### Requirement: Trigger palette section
+
+The editor SHALL render a `Triggers` palette section above the node palette. Triggers SHALL be dragged onto a dedicated canvas region distinct from steps, and the canvas SHALL visually indicate the trigger → steps flow. A workflow MAY have zero triggers (invoke-only) and the canvas SHALL surface a `Triggered by: Manual invoke` placeholder when no trigger is present.
+
+#### Scenario: Add an email trigger from the palette
+
+- **WHEN** a user drags `email-inbound` onto the trigger region
+- **THEN** the canvas SHALL render the trigger node
+- **AND** the property panel SHALL prompt the user to select a mailbox secret and optional filter
+- **AND** the canonical AST SHALL include the trigger in `spec.triggers` on save
+
+#### Scenario: Invoke-only workflow renders placeholder
+
+- **WHEN** a workflow has no triggers
+- **THEN** the trigger region SHALL render `Triggered by: Manual invoke` and `Show how to invoke this flow` link to docs
+
+### Requirement: LLM node configuration panel
+
+When an `llm` node is selected on the canvas, the property panel SHALL allow the author to: pick a prompt template (filtered to `approved` assets in the workspace), pick a model via `model-gateway` (filtered to the workspace's `allowed_models` whitelist if declared), set per-node overrides (`temperature`, `max_tokens`, `top_p`), select tools from the workflow's in-scope MCPs (sourced from `selected_assets.mcps` when pinned), define the output schema, and set `max_tool_calls`. The panel SHALL surface estimated cost-per-execution computed from the selected model's per-token pricing × prompt template token count + per-tool-call estimate.
+
+#### Scenario: Author configures an LLM node end-to-end
+
+- **WHEN** the author selects an `llm` node and fills the property panel
+- **THEN** the panel SHALL update the canonical AST step in real time
+- **AND** the dry-run drawer SHALL show the estimated cost
+- **AND** saving SHALL persist the full LLM step shape per the `llm-flow-node` spec
+
+### Requirement: Code view tab
+
+The editor SHALL provide a `Code view` tab that renders the current AST as canonical YAML. Edits in code view SHALL update the canvas in real time and vice versa. The YAML SHALL be the exact canonical form persisted by `workflow-registry`.
+
+#### Scenario: Edits in code view reflect in canvas
+
+- **GIVEN** a workflow open in the editor with the canvas tab active
+- **WHEN** the user switches to the `Code view` tab and edits the YAML to add a `cron` trigger
+- **THEN** switching back to the canvas SHALL render the new trigger node
+- **AND** saving SHALL persist the trigger
+
+#### Scenario: Invalid YAML in code view blocks save
+
+- **WHEN** the user edits the YAML to invalid syntax
+- **THEN** the editor SHALL surface the parse error inline
+- **AND** the save button SHALL be disabled until the YAML parses
+
+### Requirement: Library surface at `/workflows`
+
+The route `/workflows` SHALL render the AI Flow library: a list of workflows scoped to the active Workspace, filterable by name/tags, with version count and last-published timestamp per row. Clicking a row SHALL navigate to `/workflows/[id]/history` showing the version timeline and the diff viewer. Editing SHALL happen exclusively at `/workflows/editor`.
+
+#### Scenario: Library lists workflows for the workspace
+
+- **WHEN** an authorized user navigates to `/workflows`
+- **THEN** the page SHALL list every workflow visible per OpenFGA
+- **AND** each row SHALL show name, id, visibility, version count, last published
+
+#### Scenario: History sub-route shows version diff
+
+- **WHEN** a user clicks a row and lands on `/workflows/[id]/history`
+- **THEN** the page SHALL list versions newest-first and render the existing diff viewer comparing any two selected versions
+
+### Requirement: Reference AI-Flow demo published
+
+The platform SHALL publish a reference workflow `forge.reference.ai-email-triage@1` exercising: an `email-inbound` trigger, an `llm` classify-and-draft step, a `branch` on classification, and an `mcp` outbound webhook for the send. The workflow SHALL be the basis of an end-to-end Playwright test that drag-builds it and dry-runs it.
+
+#### Scenario: Reference flow exists in the registry
+
+- **WHEN** a user opens the workflow library in a workspace where the reference flow is provisioned
+- **THEN** `forge.reference.ai-email-triage@1` SHALL appear in the library
+- **AND** opening it in the editor SHALL render the canvas with all four primitive families (trigger, AI, logic, action)
+
+#### Scenario: Playwright e2e dry-runs the reference flow
+
+- **WHEN** the Playwright suite `portal/tests/e2e/ai-email-triage.spec.ts` runs
+- **THEN** the test SHALL drag-build the flow, configure each node, and trigger a dry-run
+- **AND** the dry-run drawer SHALL show each step's mock input/output
+- **AND** no real MCP/email/LLM call SHALL be made
 
 ### Requirement: Editor persists canonical AST in `workflow-registry`
 
@@ -89,16 +200,6 @@ The editor SHALL persist workflows by writing the canonical AST to `workflow-reg
 
 - **WHEN** a user opens a non-latest version
 - **THEN** the editor SHALL render the workflow read-only and SHALL offer "fork as new latest" as the only mutating action
-
-### Requirement: Saved nodes carry the gateway endpoint
-
-When a workflow is saved, each skill / MCP / agent node SHALL persist both the asset reference (`id@version`) and the `active_surface.endpoint` resolved at save time, so the runtime invokes through the same gateway endpoint that the editor surfaced.
-
-#### Scenario: Saved AST contains gateway endpoint
-
-- **GIVEN** a workflow with one `mcp` node referencing `github@2.0.0`
-- **WHEN** the user saves the workflow
-- **THEN** the persisted AST MUST include `node.asset_ref="github@2.0.0"` and `node.active_surface.endpoint="/v1/gw/mcp/github"`
 
 ### Requirement: Editor honors pinned set from OpenSpec
 

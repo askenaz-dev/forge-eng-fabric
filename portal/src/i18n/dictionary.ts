@@ -22,7 +22,11 @@ const DICTIONARY = {
     nav_skills:      "Skills",
     nav_mcp:         "Herramientas MCP",
     nav_gateway:     "Skill gateway",
-    nav_workflows:   "Workflows",
+    nav_workflows:   "Flujos AI",
+    ai_flows_title:  "Flujos AI",
+    ai_flows_sub:    "Automatiza con IA: triggers + LLM + acciones, en un canvas visual.",
+    ai_flows_open_canvas: "Abrir en el canvas",
+    ai_flows_code_view: "Vista de código",
     nav_autonomous_activity: "Actividad Autónoma",
     nav_noise_rules: "Reglas de Ruido",
     nav_approvals:   "Aprobaciones",
@@ -68,7 +72,6 @@ const DICTIONARY = {
     density_spacious:    "Amplia",
 
     // Crumbs
-    crumb_workspace: "Workspace · Engineering",
 
     // Greetings (time-of-day)
     h_hello:    "Buenos días,",
@@ -123,6 +126,7 @@ const DICTIONARY = {
     act_title: "Actividad de la plataforma",
     act_sub:   "eventos firmados · audit-log",
     act_view:  "Ver auditoría",
+    act_empty: "Sin actividad reciente.",
 
     // Services mesh
     svc_title:    "Mesh de servicios",
@@ -134,6 +138,7 @@ const DICTIONARY = {
     svck_authz:    "AuthZ",
     svck_registry: "Registro",
     svck_audit:    "Auditoría",
+    svck_runtime:  "Runtime",
     svck_ctx:      "Contexto",
     svck_spec:     "Specs",
     svck_db:       "Datos",
@@ -185,6 +190,9 @@ const DICTIONARY = {
     tenant_no_others:     "No tienes acceso a otros tenants.",
     tenant_no_workspaces: "Este tenant aún no tiene workspaces.",
     tenant_manage:        "Gestionar tenants",
+    workspace_active:     "Workspace activo",
+    workspace_picker_aria:"Cambiar workspace",
+    scope_group_aria:     "Tenant y workspace activos",
     tenants_title:        "Tenants",
     tenants_sub:          "Crea tenants nuevos y revisa los existentes. Acción restringida a `platform-admin`.",
     tenants_new:          "Nuevo tenant",
@@ -236,7 +244,6 @@ const DICTIONARY = {
     alfred_dock_close: "Cerrar consola",
     alfred_dock_cancel: "Cancelar sesión",
     alfred_dock_compose_title: "Iniciar una sesión",
-    alfred_dock_openspec_label: "OpenSpec",
     alfred_dock_intent_label: "Intención",
     alfred_dock_intent_placeholder: "Describe el resultado esperado.",
     alfred_dock_start: "Iniciar agente",
@@ -294,6 +301,18 @@ const DICTIONARY = {
     alfred_new_app_workflow_started: "¡Pipeline iniciado! Puedes seguir el progreso en la pestaña Actividad.",
     alfred_new_app_workflow_err:     "No se pudo iniciar el pipeline. Inténtalo desde la vista avanzada.",
 
+    // alfred-design-system-picker: Friendly view picker step
+    alfred_ds_step_title:            "Elige el look-and-feel",
+    alfred_ds_step_sub:              "Selecciona el Design System que aplicará a esta app. Puedes cambiarlo después desde Ajustes.",
+    alfred_ds_skip:                  "Saltar",
+    alfred_ds_select_cta:            "Continuar",
+    alfred_ds_default_hint:          "Predeterminado: ds-forge-default",
+    alfred_ds_loading:               "Cargando catálogo…",
+    alfred_ds_load_error:            "No pudimos cargar el catálogo de Design Systems. Continuaremos con el predeterminado.",
+    alfred_ds_new_badge:             "NUEVO",
+    alfred_ds_card_light_label:      "Claro",
+    alfred_ds_card_dark_label:       "Oscuro",
+
     // sdlc-end-to-end: Operar card — healing L1/L2 events
     alfred_operate_healing_title:    "Eventos de auto-sanación",
     alfred_operate_healing_empty:    "No hay eventos recientes.",
@@ -317,6 +336,7 @@ const DICTIONARY = {
 
     // alfred-console-redesign: error messages (friendly copies)
     alfred_err_missing_app_editor:   "No tienes permisos para editar esta App. Pide acceso a {owner}.",
+    alfred_err_feature_disabled:     "Esta función no está disponible en este workspace. Contacta a tu administrador.",
     alfred_err_generic:              "Ocurrió un error inesperado.",
     alfred_err_show_details:         "Ver detalles técnicos",
     alfred_err_hide_details:         "Ocultar detalles técnicos",
@@ -366,7 +386,11 @@ const DICTIONARY = {
     nav_skills:      "Skills",
     nav_mcp:         "MCP Tools",
     nav_gateway:     "Skill gateway",
-    nav_workflows:   "Workflows",
+    nav_workflows:   "AI Flows",
+    ai_flows_title:  "AI Flows",
+    ai_flows_sub:    "Automate with AI: triggers + LLM + actions, on a visual canvas.",
+    ai_flows_open_canvas: "Open in canvas",
+    ai_flows_code_view: "Code view",
     nav_autonomous_activity: "Autonomous Activity",
     nav_noise_rules: "Noise Rules",
     nav_approvals:   "Approvals",
@@ -408,7 +432,6 @@ const DICTIONARY = {
     density_comfortable: "Comfortable",
     density_spacious:    "Spacious",
 
-    crumb_workspace: "Workspace · Engineering",
 
     h_hello:    "Good morning,",
     h_hello_pm: "Good afternoon,",
@@ -455,6 +478,7 @@ const DICTIONARY = {
     act_title: "Platform activity",
     act_sub:   "signed events · audit-log",
     act_view:  "View audit",
+    act_empty: "No recent activity.",
 
     svc_title:    "Service mesh",
     svc_sub:      "Temporal · OPA · OpenFGA · pgvector",
@@ -465,6 +489,7 @@ const DICTIONARY = {
     svck_authz:    "AuthZ",
     svck_registry: "Registry",
     svck_audit:    "Audit",
+    svck_runtime:  "Runtime",
     svck_ctx:      "Context",
     svck_spec:     "Specs",
     svck_db:       "Data",
@@ -512,6 +537,9 @@ const DICTIONARY = {
     tenant_no_others:     "No other tenants available to you.",
     tenant_no_workspaces: "This tenant has no workspaces yet.",
     tenant_manage:        "Manage tenants",
+    workspace_active:     "Active workspace",
+    workspace_picker_aria:"Switch workspace",
+    scope_group_aria:     "Active tenant and workspace",
     tenants_title:        "Tenants",
     tenants_sub:          "Create new tenants and review existing ones. Restricted to `platform-admin`.",
     tenants_new:          "New tenant",
@@ -561,7 +589,6 @@ const DICTIONARY = {
     alfred_dock_close: "Close console",
     alfred_dock_cancel: "Cancel session",
     alfred_dock_compose_title: "Start a session",
-    alfred_dock_openspec_label: "OpenSpec",
     alfred_dock_intent_label: "Intent",
     alfred_dock_intent_placeholder: "Describe the expected outcome.",
     alfred_dock_start: "Start agent",
@@ -606,11 +633,11 @@ const DICTIONARY = {
     // alfred-console-redesign: Friendly view landing cards
     alfred_friendly_title:           "Alfred",
     alfred_friendly_subtitle:        "What do you want to do today?",
-    alfred_card_new_app:             "Nueva App",
+    alfred_card_new_app:             "New App",
     alfred_card_new_app_body:        "Start a brand new app",
-    alfred_card_improve:             "Mejorar",
+    alfred_card_improve:             "Improve",
     alfred_card_improve_body:        "Add or change something in an existing app",
-    alfred_card_operate:             "Operar",
+    alfred_card_operate:             "Operate",
     alfred_card_operate_body:        "Deploy, monitor or troubleshoot",
     alfred_card_start:               "Start",
 
@@ -618,6 +645,18 @@ const DICTIONARY = {
     alfred_new_app_run_workflow:     "Launch full pipeline (SDLC)",
     alfred_new_app_workflow_started: "Pipeline started! Track progress in the Activity tab.",
     alfred_new_app_workflow_err:     "Could not start the pipeline. Try from developer view.",
+
+    // alfred-design-system-picker: Friendly view picker step
+    alfred_ds_step_title:            "Pick the look-and-feel",
+    alfred_ds_step_sub:              "Choose the Design System for this app. You can swap it later from Settings.",
+    alfred_ds_skip:                  "Skip",
+    alfred_ds_select_cta:            "Continue",
+    alfred_ds_default_hint:          "Default: ds-forge-default",
+    alfred_ds_loading:               "Loading catalog…",
+    alfred_ds_load_error:            "We couldn't load the Design System catalog. We'll continue with the default.",
+    alfred_ds_new_badge:             "NEW",
+    alfred_ds_card_light_label:      "Light",
+    alfred_ds_card_dark_label:       "Dark",
 
     // sdlc-end-to-end: Operar card — healing L1/L2 events
     alfred_operate_healing_title:    "Self-healing events",
@@ -642,6 +681,7 @@ const DICTIONARY = {
 
     // alfred-console-redesign: error messages (friendly copies)
     alfred_err_missing_app_editor:   "You don't have permission to edit this app. Ask {owner}.",
+    alfred_err_feature_disabled:     "This feature is not available in your workspace. Contact your administrator.",
     alfred_err_generic:              "An unexpected error occurred.",
     alfred_err_show_details:         "Show technical details",
     alfred_err_hide_details:         "Hide technical details",

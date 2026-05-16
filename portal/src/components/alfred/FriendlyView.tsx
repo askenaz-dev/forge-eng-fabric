@@ -13,6 +13,10 @@ import { useLang } from "@/components/providers/LangProvider";
 import { useToast } from "@/components/providers/ToastProvider";
 import { AppSwitcher, type AppEntry } from "./AppSwitcher";
 import { mapErrorCode } from "./errorMessages";
+import {
+  DesignSystemPicker,
+  type DesignSystemEntry,
+} from "./DesignSystemPicker";
 
 type CardKind = "new_app" | "improve_app" | "operate_app";
 
@@ -66,6 +70,27 @@ export function FriendlyView({
   const [healingEvents, setHealingEvents] = useState<HealingEvent[]>([]);
   const [healingLoading, setHealingLoading] = useState(false);
   const [healingError, setHealingError] = useState(false);
+  // alfred-design-system-picker (D1): the picker step renders between
+  // intent commit and workflow dispatch. State machine:
+  //   pendingIntent → picker visible → selection persisted → dispatch button shown
+  // The picker is gated on activeCard==="new_app" and the
+  // `friendly_view.design_system_picker_enabled` flag (window-injected by
+  // the parent for now; defaults true in dev so the surface is testable).
+  const [designSystemCatalog, setDesignSystemCatalog] = useState<DesignSystemEntry[] | null>(null);
+  const [dsCatalogLoading, setDsCatalogLoading] = useState(false);
+  const [dsCatalogError, setDsCatalogError] = useState(false);
+  const [dsSelectedRef, setDsSelectedRef] = useState<string | null>(null);
+  const [dsStepResolved, setDsStepResolved] = useState(false);
+  const pickerEnabled = (() => {
+    try {
+      return typeof window !== "undefined"
+        ? (window as { __forge_flags?: { friendly_view_ds_picker?: boolean } }).__forge_flags
+            ?.friendly_view_ds_picker !== false
+        : true;
+    } catch {
+      return true;
+    }
+  })();
 
   const cards: { kind: CardKind; title: string; body: string }[] = [
     { kind: "new_app", title: t("alfred_card_new_app"), body: t("alfred_card_new_app_body") },
@@ -86,6 +111,68 @@ export function FriendlyView({
       .catch(() => setHealingError(true))
       .finally(() => setHealingLoading(false));
   }, [activeCard, activeAppId]);
+
+  // alfred-design-system-picker: fetch the catalog the first time the picker
+  // step becomes visible (after committedIntent is set for a Nueva App run).
+  // Cached for the session — once loaded, no re-fetches.
+  useEffect(() => {
+    if (!pickerEnabled) return;
+    if (activeCard !== "new_app" || !committedIntent || dsStepResolved) return;
+    if (designSystemCatalog !== null || dsCatalogLoading) return;
+    setDsCatalogLoading(true);
+    setDsCatalogError(false);
+    void fetch("/api/design-systems", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+      .then((data: { entries?: DesignSystemEntry[] } | DesignSystemEntry[]) => {
+        const list = Array.isArray(data) ? data : data.entries ?? [];
+        setDesignSystemCatalog(list);
+        // Default selection: first built-in (resolves to ds-forge-default).
+        const firstBuiltIn = list.find((e) => e.built_in_template);
+        if (firstBuiltIn) {
+          setDsSelectedRef(`${firstBuiltIn.asset_id}@${firstBuiltIn.version}`);
+        }
+      })
+      .catch(() => setDsCatalogError(true))
+      .finally(() => setDsCatalogLoading(false));
+  }, [activeCard, committedIntent, dsStepResolved, designSystemCatalog, dsCatalogLoading, pickerEnabled]);
+
+  // alfred-design-system-picker (D3): apply the user's pick by PATCHing the
+  // App. Intent commit currently happens server-side during /v1/intent/start
+  // so the App already exists when the picker shows. The application service
+  // already supports the atomic POST contract (Section 2); a follow-up will
+  // refactor /v1/intent/start to defer App creation and let this host issue
+  // the single POST. Until then, PATCH-after-create is the realistic path
+  // and produces the same end state: App.design_system_ref + audit + the
+  // user_skipped event (emitted by the app service when chosen=false).
+  async function applyDesignSystemSelection(opts: {
+    appId: string;
+    ref: string | null;
+    chosenExplicitly: boolean;
+  }) {
+    try {
+      // Skip = leave the alias-resolved default; no PATCH needed when ref
+      // is null. We still mark the step resolved so the UI advances.
+      if (opts.ref !== null) {
+        const r = await fetch(`/api/apps/${opts.appId}`, {
+          method: "PATCH",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            design_system_ref: opts.ref,
+            design_system_chosen_explicitly: opts.chosenExplicitly,
+          }),
+        });
+        if (!r.ok) {
+          const text = await r.text();
+          const key = mapErrorCode(`${r.status} ${text}`);
+          setError({ friendly: t(key), raw: text });
+          return;
+        }
+      }
+      setDsStepResolved(true);
+    } catch (err) {
+      setError({ friendly: t("alfred_err_generic"), raw: String(err) });
+    }
+  }
 
   // Trigger forge.reference.intent-to-infrastructure@1 after intent commit.
   async function launchIntentToInfrastructure(openspecId: string, appId: string) {
@@ -326,8 +413,38 @@ export function FriendlyView({
         )}
       </div>
 
+      {/* alfred-design-system-picker (D1): picker step between intent commit
+          and workflow dispatch. Only on "Nueva App", gated by flag, hidden
+          once the user picks or skips. "Mejorar"/"Operar" never show it. */}
+      {pickerEnabled && activeCard === "new_app" && committedIntent && !dsStepResolved && (
+        <div className="alfred-ds-step" style={{ padding: "16px", borderTop: "1px solid var(--border-1)" }}>
+          <DesignSystemPicker
+            catalog={designSystemCatalog ?? []}
+            selectedRef={dsSelectedRef}
+            onSelect={(ref) => setDsSelectedRef(ref)}
+            onContinue={() =>
+              void applyDesignSystemSelection({
+                appId: committedIntent.app_id,
+                ref: dsSelectedRef,
+                chosenExplicitly: true,
+              })
+            }
+            onSkip={() =>
+              void applyDesignSystemSelection({
+                appId: committedIntent.app_id,
+                ref: null,
+                chosenExplicitly: false,
+              })
+            }
+            loading={dsCatalogLoading}
+            loadError={dsCatalogError}
+            showNewBadge
+          />
+        </div>
+      )}
+
       {/* sdlc-end-to-end (10.1): workflow trigger after intent committed for new_app */}
-      {activeCard === "new_app" && committedIntent && !workflowStarted && (
+      {activeCard === "new_app" && committedIntent && !workflowStarted && (!pickerEnabled || dsStepResolved) && (
         <div className="alfred-workflow-trigger" style={{ padding: "12px 16px", borderTop: "1px solid var(--border-1)" }}>
           <button
             type="button"

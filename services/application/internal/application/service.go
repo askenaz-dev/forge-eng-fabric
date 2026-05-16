@@ -106,8 +106,9 @@ func (s *Service) insert(ctx context.Context, caller Caller, workspaceID, tenant
 	if in.RuntimeLinks == nil {
 		in.RuntimeLinks = []string{}
 	}
-	// design-system-catalog: every App carries a design_system_ref. Default
-	// to `ds-forge-default` and validate the resolved asset is approved.
+	// design-system-catalog + alfred-design-system-picker (D3, D4): every App
+	// carries a design_system_ref. Default to `ds-forge-default` when omitted;
+	// validate the resolved asset is approved AND visible to the App's tenant.
 	// System-managed Apps (e.g. `_unassigned`) skip validation to keep the
 	// workspace bootstrap path independent of the Registry's readiness.
 	if in.DesignSystemRef == "" {
@@ -120,6 +121,12 @@ func (s *Service) insert(ctx context.Context, caller Caller, workspaceID, tenant
 		}
 		if rec.LifecycleState != "approved" {
 			return nil, ErrDesignSystemNotApproved
+		}
+		// Visibility check: tenant_global and built-in templates are visible
+		// to every tenant. Tenant- or workspace-scoped entries MUST belong to
+		// the caller's tenant.
+		if !rec.BuiltInTemplate && rec.Visibility != "tenant_global" && rec.TenantID != "" && rec.TenantID != tenantID {
+			return nil, ErrDesignSystemNotVisible
 		}
 	}
 	app := &App{
@@ -153,6 +160,15 @@ func (s *Service) insert(ctx context.Context, caller Caller, workspaceID, tenant
 	for _, owner := range stored.Owners {
 		_ = s.Authz.WriteTuple(ctx, principalToFGAUser(owner), string(PermOwner), "app:"+stored.ID)
 	}
+	// alfred-design-system-picker (D3): emit `app.created.v1` with the picker
+	// flag in Extra so subscribers can branch. System-managed bootstrap inserts
+	// (`_unassigned`) bypass the picker concept entirely — emit chosen=true
+	// so the skip event does not fire for the platform's own writes.
+	chosenExplicitly := in.DesignSystemChosenExplicitly
+	if systemManaged {
+		chosenExplicitly = true
+	}
+	createdAt := s.Now()
 	_ = s.Events.Publish(ctx, Event{
 		Type:          EventAppCreated,
 		AppID:         stored.ID,
@@ -161,7 +177,11 @@ func (s *Service) insert(ctx context.Context, caller Caller, workspaceID, tenant
 		Actor:         caller.Principal,
 		CorrelationID: caller.CorrelationID,
 		After:         stored,
-		OccurredAt:    s.Now(),
+		Extra: map[string]any{
+			"design_system_ref":              stored.DesignSystemRef,
+			"design_system_chosen_explicitly": chosenExplicitly,
+		},
+		OccurredAt: createdAt,
 	})
 	_ = s.Audit.Record(ctx, AuditRecord{
 		AppID:         stored.ID,
@@ -171,8 +191,29 @@ func (s *Service) insert(ctx context.Context, caller Caller, workspaceID, tenant
 		Actor:         caller.Principal,
 		CorrelationID: caller.CorrelationID,
 		After:         stored,
-		CreatedAt:     s.Now(),
+		Evidence: map[string]any{
+			"design_system_chosen_explicitly": chosenExplicitly,
+		},
+		CreatedAt: createdAt,
 	})
+	// alfred-design-system-picker (D3): when the picker recorded a skip (or
+	// the caller did not opt in), emit a sibling event so observability can
+	// measure catalog discoverability without parsing every `app.created.v1`.
+	// Shares the same correlation_id and timestamp as `app.created.v1`.
+	if !chosenExplicitly {
+		_ = s.Events.Publish(ctx, Event{
+			Type:          EventDesignSystemUserSkipped,
+			AppID:         stored.ID,
+			WorkspaceID:   stored.WorkspaceID,
+			TenantID:      stored.TenantID,
+			Actor:         caller.Principal,
+			CorrelationID: caller.CorrelationID,
+			Extra: map[string]any{
+				"resolved_ref": stored.DesignSystemRef,
+			},
+			OccurredAt: createdAt,
+		})
+	}
 	return stored, nil
 }
 

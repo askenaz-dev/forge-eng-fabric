@@ -68,6 +68,10 @@ def generate_ui_blueprint(req: UiBlueprintRequest, sink: EventSink) -> UiBluepri
             "app_id": req.app_id,
             "openspec_id": req.openspec_id,
             "blueprint_path": blueprint_path,
+            # alfred-design-system-picker (7.3): top-level so downstream
+            # subscribers (traceability-graph, observability) can read the
+            # ref without parsing the blueprint document body.
+            "design_system_ref": req.design_system_ref,
         },
     )
     sink.emit(event)
@@ -170,6 +174,9 @@ def generate_component_stubs(req: ComponentStubsRequest, sink: EventSink) -> Com
             "framework": req.framework,
             "stub_count": len(stub_files),
             "stub_paths": [f.path for f in stub_files],
+            # alfred-design-system-picker (7.3): top-level so downstream
+            # subscribers can link stubs → DS without inspecting file bodies.
+            "design_system_ref": req.design_system_ref,
         },
     )
     sink.emit(event)
@@ -235,6 +242,9 @@ def accessibility_audit(req: AccessibilityAuditRequest, sink: EventSink) -> Acce
             "audit_passed": audit_passed,
             "total_violations": audit_report.total_violations,
             "summary_by_severity": summary,
+            # alfred-design-system-picker (7.3): top-level so the audit can
+            # be correlated with the App's resolved DS at dispatch time.
+            "design_system_ref": req.design_system_ref,
         },
     )
     sink.emit(event)

@@ -196,3 +196,44 @@ def test_http_accessibility_audit(client):
     assert "audit_report" in body
     assert "audit_passed" in body
     assert body["audit_passed"] is False
+
+
+# --- alfred-design-system-picker (7.3) propagation tests ---
+
+
+def test_ui_blueprint_event_carries_design_system_ref_top_level():
+    """The workflow propagation contract requires sdlc.ui_blueprint.proposed.v1
+    to carry design_system_ref at top level of `data` (not buried in metadata)
+    so traceability-graph can read it without parsing the blueprint body."""
+    sink = MemorySink()
+    generate_ui_blueprint(make_blueprint_request(design_system_ref="desing-system-3@2.0.0"), sink)
+    ev = sink.events[0]
+    assert ev["data"]["design_system_ref"] == "desing-system-3@2.0.0", (
+        f"missing top-level design_system_ref, got {ev['data']!r}"
+    )
+
+
+def test_component_stubs_event_carries_design_system_ref_top_level():
+    sink = MemorySink()
+    generate_component_stubs(make_stubs_request(design_system_ref="desing-system-3@2.0.0"), sink)
+    ev = sink.events[0]
+    assert ev["data"]["design_system_ref"] == "desing-system-3@2.0.0"
+
+
+def test_accessibility_audit_event_carries_design_system_ref_top_level():
+    sink = MemorySink()
+    accessibility_audit(make_audit_request(design_system_ref="desing-system-3@2.0.0"), sink)
+    ev = sink.events[0]
+    assert ev["data"]["design_system_ref"] == "desing-system-3@2.0.0"
+
+
+def test_accessibility_audit_accepts_omitted_design_system_ref_for_legacy_callers():
+    """Pre-existing callers without the picker still work — design_system_ref
+    is optional on AccessibilityAuditRequest. The event payload then carries
+    None for that field, which downstream tools handle as 'unknown'."""
+    sink = MemorySink()
+    accessibility_audit(make_audit_request(), sink)
+    ev = sink.events[0]
+    # design_system_ref key MUST be present even when None for schema stability.
+    assert "design_system_ref" in ev["data"]
+    assert ev["data"]["design_system_ref"] is None

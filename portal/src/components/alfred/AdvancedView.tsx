@@ -11,7 +11,6 @@
 
 import { useState } from "react";
 import { useLang } from "@/components/providers/LangProvider";
-import { ScopeSelect } from "@/components/scope/ScopeSelect";
 import type { AppEntry } from "./AppSwitcher";
 
 interface AdvancedViewProps {
@@ -93,7 +92,7 @@ export function AdvancedView({
             {t("alfred_advanced_app_label")}
           </span>
           {/* App picker scopes subsequent slash commands (2.2). */}
-          {visible.length > 0 ? (
+          {visible.length > 0 && (
             <select
               value={scopedAppId ?? APP_PICKER_SENTINEL}
               onChange={(e) =>
@@ -108,12 +107,6 @@ export function AdvancedView({
                 </option>
               ))}
             </select>
-          ) : (
-            <ScopeSelect
-              kind="app"
-              name="app_id"
-              className="rounded border border-neutral-300 bg-transparent px-2 py-1 text-sm dark:border-neutral-700"
-            />
           )}
         </div>
         <button

@@ -1,18 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
-import { authToken, correlationId, endpoint, proxyJson } from "@/lib/api";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/auth";
+import { correlationId, endpoint, proxyJson } from "@/lib/api";
 
 type AlfredAdminState = { workspace_id: string; dock_enabled: boolean };
 
-function workspaceIdFromCookie(req: NextRequest): string | null {
-  return req.cookies.get("forge_workspace")?.value ?? null;
+async function resolveWorkspace(): Promise<{ workspace: string | null; token?: string }> {
+  const session = await getServerSession(authOptions);
+  return { workspace: session?.workspaceSlug ?? null, token: session?.accessToken };
 }
 
-export async function GET(req: NextRequest) {
-  const workspace = workspaceIdFromCookie(req);
+export async function GET(_req: NextRequest) {
+  const { workspace, token } = await resolveWorkspace();
   if (!workspace) {
     return NextResponse.json({ error: "no active workspace" }, { status: 409 });
   }
-  const { token } = await authToken();
   try {
     const data = await proxyJson<AlfredAdminState>(
       `${endpoint("ALFRED_URL")}/v1/agent-mode/admin/settings?workspace_id=${workspace}`,
@@ -25,7 +27,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const workspace = workspaceIdFromCookie(req);
+  const { workspace, token } = await resolveWorkspace();
   if (!workspace) {
     return NextResponse.json({ error: "no active workspace" }, { status: 409 });
   }
@@ -33,7 +35,6 @@ export async function POST(req: NextRequest) {
   if (typeof body?.dock_enabled !== "boolean") {
     return NextResponse.json({ error: "dock_enabled is required" }, { status: 400 });
   }
-  const { token } = await authToken();
   try {
     const data = await proxyJson<AlfredAdminState>(
       `${endpoint("ALFRED_URL")}/v1/agent-mode/admin/settings`,

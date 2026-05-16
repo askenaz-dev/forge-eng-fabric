@@ -20,7 +20,8 @@ export type Endpoint =
   | "RUNTIME_REGISTRY_URL"
   | "ALFRED_URL"
   | "HEALING_URL"
-  | "WORKFLOW_RUNTIME_URL";
+  | "WORKFLOW_RUNTIME_URL"
+  | "APPLICATION_URL";
 
 const DEFAULTS: Record<Endpoint, string> = {
   CONTROL_PLANE_URL:    "http://localhost:8081",
@@ -40,6 +41,7 @@ const DEFAULTS: Record<Endpoint, string> = {
   ALFRED_URL:           "http://localhost:8090",
   HEALING_URL:          "http://localhost:8107",
   WORKFLOW_RUNTIME_URL: "http://localhost:8095",
+  APPLICATION_URL:      "http://localhost:8095",
 };
 
 export function endpoint(name: Endpoint): string {

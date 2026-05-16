@@ -1,9 +1,10 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useLang } from "@/components/providers/LangProvider";
 import { Button } from "@/components/primitives";
 import { Plus, User } from "@/components/icons";
-import Link from "next/link";
 
 export function DashboardHeadline({
   agentsActive,
@@ -13,6 +14,14 @@ export function DashboardHeadline({
   approvalsPending: number;
 }) {
   const { t } = useLang();
+  const router = useRouter();
+  const [navigating, setNavigating] = useState<string | null>(null);
+
+  function go(href: string) {
+    setNavigating(href);
+    router.push(href);
+  }
+
   return (
     <div className="page-head">
       <div>
@@ -23,16 +32,22 @@ export function DashboardHeadline({
         </h1>
       </div>
       <div className="page-meta">
-        <Link href="/workspaces/new">
-          <Button variant="secondary" leading={<User />}>
-            {t("h_invite")}
-          </Button>
-        </Link>
-        <Link href="/workflows">
-          <Button variant="primary" leading={<Plus />}>
-            {t("h_new_run")}
-          </Button>
-        </Link>
+        <Button
+          variant="secondary"
+          leading={navigating === "/workspaces/new" ? <span className="spinner" /> : <User />}
+          disabled={navigating !== null}
+          onClick={() => go("/workspaces/new")}
+        >
+          {t("h_invite")}
+        </Button>
+        <Button
+          variant="primary"
+          leading={navigating === "/workflows" ? <span className="spinner" /> : <Plus />}
+          disabled={navigating !== null}
+          onClick={() => go("/workflows")}
+        >
+          {t("h_new_run")}
+        </Button>
       </div>
     </div>
   );
